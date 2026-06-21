@@ -4,6 +4,8 @@
 
 export type LessonStatus = 'completed' | 'current' | 'locked';
 
+export type LessonCategory = 'hiragana' | 'katakana' | 'kanji' | 'vocabulary' | 'pronunciation' | 'grammar';
+
 export interface Lesson {
   id: string;
   title: string;
@@ -18,4 +20,29 @@ export interface LessonSection {
   unitNumber: number;
   title: string;
   lessons: Lesson[];
+}
+
+export interface LessonSubItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  status: LessonStatus;
+}
+
+export interface LessonDetail {
+  id: string;
+  category: LessonCategory;
+  title: string;
+  totalLessons: number;
+  subItems: LessonSubItem[];
+  overallQuiz?: LessonSubItem;
+}
+
+export interface LearningPathNode {
+  id: string;
+  title: string;
+  category: LessonCategory;
+  progress: number;
+  total: number;
+  isLocked: boolean;
 }

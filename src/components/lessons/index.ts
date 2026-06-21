@@ -8,6 +8,9 @@ export { SectionCard } from './section-card';
 export { SectionHeader } from './section-header';
 export { LessonNode } from './lesson-node';
 export { PathConnector } from './path-connector';
+export { LessonGrid } from './lesson-grid';
+export { CharacterDisplay } from './character-display';
+export { WritingCanvas } from './writing-canvas';
 export { getPathOffset } from './lesson-path-constants';
 export {
   PAGE_BG,

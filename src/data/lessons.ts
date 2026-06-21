@@ -1,10 +1,9 @@
 /**
  * Sample/mock data for lessons.
- * Matches the app's categories: Grammar, Reading, Pronunciation, Hand writing.
- * Replace with API data in production.
+ * Matches the Kotodama Figma designs.
  */
 
-import type { LessonSection } from '@/types';
+import type { LessonSection, LessonDetail, LearningPathNode } from '@/types';
 
 export const LESSON_SECTIONS: LessonSection[] = [
   {
@@ -60,3 +59,27 @@ export const LESSON_SECTIONS: LessonSection[] = [
     ],
   },
 ];
+
+export const LEARNING_PATH: LearningPathNode[] = [
+  { id: 'lp1', title: 'Hiragana', category: 'hiragana', progress: 4, total: 8, isLocked: false },
+  { id: 'lp2', title: 'Katakana', category: 'katakana', progress: 0, total: 8, isLocked: true },
+  { id: 'lp3', title: 'Pronunciation', category: 'pronunciation', progress: 0, total: 6, isLocked: true },
+  { id: 'lp4', title: 'Vocabulary', category: 'vocabulary', progress: 0, total: 10, isLocked: true },
+  { id: 'lp5', title: 'Grammar', category: 'grammar', progress: 0, total: 8, isLocked: true },
+];
+
+export const HIRAGANA_LESSON_DETAIL: LessonDetail = {
+  id: 'ld-hiragana',
+  category: 'hiragana',
+  title: 'Hiragana 6 lessons',
+  totalLessons: 6,
+  subItems: [
+    { id: 'hs1', title: 'Hiragana\n1-20', status: 'completed' },
+    { id: 'hs2', title: 'Hiragana\n21-47', status: 'completed' },
+    { id: 'hs3', title: 'Writing\nHiragana', status: 'completed', subtitle: 'Part 1' },
+    { id: 'hs4', title: 'Writing\nHiragana', status: 'completed', subtitle: 'Part 2' },
+    { id: 'hs5', title: 'Listening\nHiragana', status: 'completed' },
+    { id: 'hs6', title: 'Speaking\nHiragana', status: 'completed' },
+  ],
+  overallQuiz: { id: 'hq1', title: 'Part1 overall quiz (Hiragana)', status: 'completed' },
+};
