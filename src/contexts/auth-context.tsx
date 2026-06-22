@@ -32,23 +32,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const signIn = useCallback(async (_email: string, _password: string) => {
+  const signIn = useCallback(async (email: string, _password: string) => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual sign-in logic
-      // const response = await apiClient.post('/auth/login', { email, password });
-      // setUser(response.user);
-      console.warn("signIn not implemented");
+      setUser({
+        id: "1",
+        email: email || "user@example.com",
+        displayName: email ? email.split('@')[0] : "User",
+      });
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const signUp = useCallback(async (_email: string, _password: string, _displayName: string) => {
+  const signUp = useCallback(async (email: string, _password: string, displayName: string) => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual sign-up logic
-      console.warn("signUp not implemented");
+      setUser({
+        id: "1",
+        email: email || "user@example.com",
+        displayName: displayName || "User",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -57,7 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual sign-out logic
       setUser(null);
     } finally {
       setIsLoading(false);

@@ -123,16 +123,18 @@ export default function RootLayout() {
     <AuthProvider>
       <OnboardingProvider>
         <QuizProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: Colors.cream },
-              animation: 'slide_from_right',
-            }}
-          >
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(onboarding)" />
-            <Stack.Screen name="(tabs)" />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: Colors.cream },
+                animation: 'slide_from_right',
+              }}
+            >
+              <Stack.Screen name="index" />
+              <Stack.Screen name="welcome" />
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(onboarding)" />
+              <Stack.Screen name="(tabs)" />
             <Stack.Screen name="lesson" />
             <Stack.Screen name="quiz" options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="voice" options={{ animation: 'slide_from_bottom' }} />
