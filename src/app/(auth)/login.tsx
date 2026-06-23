@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { StyledTextInput } from '@/components/ui/text-input';
 import { SocialAuthSection } from '@/components/auth/social-auth-section';
 import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import LottieView from 'lottie-react-native';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -46,8 +47,16 @@ export default function LoginScreen() {
           <View style={styles.headerPlaceholder} />
         </View>
 
-        {/* Title */}
+        {/* Title & Mascot Section */}
         <View style={styles.titleSection}>
+          <View style={styles.mascotContainer}>
+            <LottieView
+              source={require('@/assets/animations/hi_mascot.json')}
+              autoPlay
+              loop
+              style={styles.mascot}
+            />
+          </View>
           <Text style={styles.titleText}>Đăng nhập</Text>
         </View>
 
@@ -147,19 +156,29 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     paddingHorizontal: Spacing.six,
-    paddingTop: Spacing.six,
+    paddingTop: Spacing.four,
     paddingBottom: Spacing.four,
+    alignItems: 'center',
+  },
+  mascotContainer: {
+    width: 140,
+    height: 140,
+    marginBottom: Spacing.two,
+  },
+  mascot: {
+    width: '100%',
+    height: '100%',
   },
   titleText: {
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
+    alignSelf: 'flex-start',
   },
   formContainer: {
     paddingHorizontal: Spacing.six,
     gap: Spacing.four,
   },
-  // 3D Primary Button Style
   submitButton: {
     width: '100%',
     height: 52,
