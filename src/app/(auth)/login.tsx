@@ -14,7 +14,7 @@ import LottieView from 'lottie-react-native';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const [emailOrUser, setEmailOrUser] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -100,7 +100,7 @@ export default function LoginScreen() {
         {/* Social Auth */}
         <SocialAuthSection
           onGooglePress={async () => {
-            await signIn('google@user.com', 'googlepwd');
+            await signInWithGoogle();
             router.replace('/(tabs)');
           }}
           onFacebookPress={async () => {
