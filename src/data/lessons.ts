@@ -61,11 +61,14 @@ export const LESSON_SECTIONS: LessonSection[] = [
 ];
 
 export const LEARNING_PATH: LearningPathNode[] = [
-  { id: 'lp1', title: 'Hiragana', category: 'hiragana', progress: 4, total: 8, isLocked: false },
-  { id: 'lp2', title: 'Katakana', category: 'katakana', progress: 0, total: 8, isLocked: true },
-  { id: 'lp3', title: 'Pronunciation', category: 'pronunciation', progress: 0, total: 6, isLocked: true },
-  { id: 'lp4', title: 'Vocabulary', category: 'vocabulary', progress: 0, total: 10, isLocked: true },
-  { id: 'lp5', title: 'Grammar', category: 'grammar', progress: 0, total: 8, isLocked: true },
+  { id: 'lp1', title: 'Hiragana: Mặt chữ', category: 'hiragana', progress: 8, total: 8, isLocked: false, icon: '📖' },
+  { id: 'lp2', title: 'Hiragana: Tập viết', category: 'hiragana', progress: 2, total: 5, isLocked: false, icon: '✍️' },
+  { id: 'lp3', title: 'Hiragana: Luyện nghe', category: 'hiragana', progress: 0, total: 5, isLocked: true, icon: '🔊' },
+  { id: 'lp4', title: 'Hiragana: Luyện nói', category: 'hiragana', progress: 0, total: 5, isLocked: true, icon: '🗣️' },
+  { id: 'lp5', title: 'Hiragana: Tổng ôn', category: 'hiragana', progress: 0, total: 5, isLocked: true, icon: '🏆' },
+  { id: 'lp6', title: 'Katakana: Mặt chữ', category: 'katakana', progress: 0, total: 8, isLocked: true, icon: '📖' },
+  { id: 'lp7', title: 'Katakana: Tập viết', category: 'katakana', progress: 0, total: 5, isLocked: true, icon: '✍️' },
+  { id: 'lp8', title: 'Ngữ pháp N5: Khẳng định', category: 'grammar', progress: 0, total: 6, isLocked: true, icon: '💡' },
 ];
 
 export const HIRAGANA_LESSON_DETAIL: LessonDetail = {

@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing } from '@/constants/theme';
 import {
@@ -16,28 +16,18 @@ import {
   KanjiFillQuestionCard,
 } from '@/components/quiz';
 import { GradientButton } from '@/components/ui/gradient-button';
-import {
-  MOCK_VOCAB_QUESTIONS,
-  MOCK_KANA_QUESTIONS,
-  MOCK_PICTURE_QUESTIONS,
-  MOCK_KANJI_FILL_QUESTIONS,
-} from '@/data';
+import { LESSON_QUESTIONS } from '@/data/quiz';
 import type { QuizQuestion } from '@/types';
 
 export default function QuizScreen() {
   const router = useRouter();
+  const { lessonId = 'lp1' } = useLocalSearchParams<{ lessonId: string }>();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
   const [currentIsCorrect, setCurrentIsCorrect] = useState<boolean>(false);
   const [hasInteracted, setHasInteracted] = useState<boolean>(false);
 
-  // Combine all types of questions for the demo quiz flow
-  const questions: QuizQuestion[] = [
-    MOCK_VOCAB_QUESTIONS[0],
-    MOCK_KANA_QUESTIONS[0],
-    MOCK_PICTURE_QUESTIONS[0],
-    MOCK_KANJI_FILL_QUESTIONS[0],
-  ];
+  const questions: QuizQuestion[] = LESSON_QUESTIONS[lessonId as keyof typeof LESSON_QUESTIONS] || LESSON_QUESTIONS.lp5;
 
   const currentQuestion = questions[currentIndex];
   const progress = (currentIndex + 1) / questions.length;

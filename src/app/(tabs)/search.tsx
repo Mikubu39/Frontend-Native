@@ -71,14 +71,18 @@ export default function ShopScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Premium Super Banner */}
         <View style={styles.superBanner}>
-          <Text style={styles.superIcon}>🦉⚡</Text>
-          <View style={styles.superContent}>
-            <Text style={styles.superTitle}>Super Kotodama</Text>
-            <Text style={styles.superDesc}>Học không quảng cáo, vô hạn Tim và các tính năng độc quyền!</Text>
-            <TouchableOpacity style={styles.superButton} activeOpacity={0.8}>
-              <Text style={styles.superButtonText}>DÙNG THỬ 2 TUẦN MIỄN PHÍ</Text>
-            </TouchableOpacity>
+          <View style={styles.superHeader}>
+            <Text style={styles.superIcon}>🦉⚡</Text>
+            <View style={styles.superContent}>
+              <Text style={styles.superTitle}>Super Kotodama</Text>
+              <Text style={styles.superDesc}>
+                Học không quảng cáo, vô hạn Tim và các tính năng độc quyền!
+              </Text>
+            </View>
           </View>
+          <TouchableOpacity style={styles.superButton} activeOpacity={0.8}>
+            <Text style={styles.superButtonText}>DÙNG THỬ 2 TUẦN MIỄN PHÍ</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Section title */}
@@ -166,12 +170,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.lg,
     padding: Spacing.five,
-    flexDirection: 'row',
+    flexDirection: 'column',
     gap: Spacing.four,
-    alignItems: 'center',
     borderBottomWidth: 4,
     borderBottomColor: Colors.primaryDark,
     marginBottom: Spacing.six,
+  },
+  superHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.four,
   },
   superIcon: {
     fontSize: 48,
@@ -186,7 +194,7 @@ const styles = StyleSheet.create({
   },
   superDesc: {
     fontSize: FontSizes.sm,
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 2,
     lineHeight: 18,
   },
@@ -195,7 +203,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     paddingVertical: Spacing.three,
     alignItems: 'center',
-    marginTop: Spacing.four,
+    width: '100%',
     borderWidth: 1.5,
     borderColor: Colors.lockedBg,
   },

@@ -175,19 +175,19 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1E293B', // Sleek dark mode background matching screenshot
+    backgroundColor: Colors.cream,
   },
   header: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
     paddingVertical: Spacing.four,
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomWidth: 2,
+    borderBottomColor: Colors.lockedBg,
   },
   headerTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.extrabold,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
   },
   scrollContent: {
     paddingHorizontal: Spacing.four,
@@ -195,12 +195,12 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   postCard: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.lg,
     padding: Spacing.four,
     marginBottom: Spacing.four,
     borderWidth: 1.5,
-    borderColor: '#334155',
+    borderColor: Colors.lockedBg,
   },
   authorRow: {
     flexDirection: 'row',
@@ -244,15 +244,15 @@ const styles = StyleSheet.create({
   authorName: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.extrabold,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
   },
   actionText: {
     fontWeight: FontWeights.regular,
-    color: '#94A3B8',
+    color: Colors.textSecondary,
   },
   timeAgo: {
     fontSize: FontSizes.xs,
-    color: '#64748B',
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   // Phrase post styling
@@ -264,11 +264,11 @@ const styles = StyleSheet.create({
   },
   speechBubble: {
     flex: 1,
-    backgroundColor: '#1E293B',
+    backgroundColor: Colors.cream,
     borderRadius: BorderRadius.md,
     padding: Spacing.four,
     borderWidth: 1.5,
-    borderColor: '#334155',
+    borderColor: Colors.lockedBg,
     position: 'relative',
   },
   flagEmoji: {
@@ -278,12 +278,12 @@ const styles = StyleSheet.create({
   japaneseText: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.extrabold,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
     lineHeight: 24,
   },
   vietnameseText: {
     fontSize: FontSizes.sm,
-    color: '#94A3B8',
+    color: Colors.textSecondary,
     marginTop: 4,
   },
   mascotStand: {
@@ -301,11 +301,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginVertical: Spacing.four,
-    backgroundColor: '#1E293B',
+    backgroundColor: Colors.cream,
     borderRadius: BorderRadius.md,
     padding: Spacing.four,
     borderWidth: 1.5,
-    borderColor: '#334155',
+    borderColor: Colors.lockedBg,
   },
   streakInfo: {
     flex: 1,
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   streakText: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.extrabold,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
     lineHeight: 22,
   },
   streakBadgeContainer: {
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   // Footer
   postFooter: {
     borderTopWidth: 1,
-    borderTopColor: '#334155',
+    borderTopColor: Colors.lockedBg,
     paddingTop: Spacing.three,
     gap: Spacing.two,
   },
@@ -349,26 +349,27 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: '#334155',
+    borderColor: Colors.lockedBg,
     borderRadius: BorderRadius.sm,
     paddingVertical: 6,
     paddingHorizontal: Spacing.three,
   },
   likedButton: {
     borderColor: Colors.secondary,
+    backgroundColor: '#FFF1F2',
   },
   likeIcon: {
     fontSize: FontSizes.lg,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
   },
   likeText: {
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
   },
   likedBy: {
     fontSize: FontSizes.xs,
-    color: '#94A3B8',
+    color: Colors.textSecondary,
     marginTop: 2,
   },
 });

@@ -1,95 +1,135 @@
 /**
- * Leaderboard / League Screen - Redesigned to match Duolingo League
+ * Practice Hub / Trung Tâm Luyện Tập Screen - Redesigned to match Duolingo
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
 
-interface LeaderboardUser {
-  rank: number;
-  name: string;
-  avatarEmoji: string;
-  xp: number;
-  isCurrentUser?: boolean;
-  change?: 'up' | 'down' | 'same';
+interface PracticeItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  route: string;
+  badge?: string;
+  color: string;
 }
 
-const LEAGUE_USERS: LeaderboardUser[] = [
-  { rank: 1, name: 'Hoàng', avatarEmoji: '🦊', xp: 1450, change: 'up' },
-  { rank: 2, name: 'uyên', avatarEmoji: '🐱', xp: 1320, change: 'up' },
-  { rank: 3, name: 'dunn', avatarEmoji: '🐼', xp: 1100, change: 'same' },
-  { rank: 4, name: 'Bạn (User)', avatarEmoji: '🦉', xp: 980, isCurrentUser: true, change: 'up' },
-  { rank: 5, name: 'Jaime', avatarEmoji: '🦁', xp: 850, change: 'down' },
-  { rank: 6, name: 'Hà Thạch', avatarEmoji: '🐰', xp: 720, change: 'same' },
-  { rank: 7, name: 'Trang', avatarEmoji: '🐨', xp: 600, change: 'same' },
-  { rank: 8, name: 'Happy', avatarEmoji: '🦄', xp: 520, change: 'down' },
-  { rank: 9, name: 'Minh', avatarEmoji: '🐸', xp: 480, change: 'same' },
-  { rank: 10, name: 'Linh', avatarEmoji: '🐙', xp: 350, change: 'down' },
-];
+export default function PracticeHubScreen() {
+  const router = useRouter();
 
-export default function LeaderboardScreen() {
-  const renderItem = ({ item }: { item: LeaderboardUser }) => {
-    const isTop3 = item.rank <= 3;
-    const rankColors = ['#FFD700', '#C0C0C0', '#CD7F32']; // Gold, Silver, Bronze
+  const primaryItems: PracticeItem[] = [
+    {
+      id: 'p1',
+      title: 'Luyện tập Lỗi Sai',
+      description: 'Xem lại và giải quyết các câu bạn từng làm sai.',
+      icon: '⚠️',
+      route: '/quiz/ready?lessonId=lp5',
+      badge: 'Cần thiết',
+      color: Colors.error,
+    },
+    {
+      id: 'p2',
+      title: 'Sổ tay Từ điển',
+      description: 'Ôn tập và kiểm tra từ vựng bạn đã mở khóa.',
+      icon: '📓',
+      route: '/dictionary',
+      color: Colors.primary,
+    },
+  ];
 
-    return (
-      <View style={[styles.userRow, item.isCurrentUser && styles.currentUserRow]}>
-        {/* Rank Number / Badge */}
-        <View style={styles.rankContainer}>
-          {isTop3 ? (
-            <View style={[styles.rankBadge, { backgroundColor: rankColors[item.rank - 1] }]}>
-              <Text style={styles.rankBadgeText}>{item.rank}</Text>
-            </View>
-          ) : (
-            <Text style={styles.rankText}>{item.rank}</Text>
-          )}
-        </View>
-
-        {/* User Info */}
-        <Text style={styles.avatar}>{item.avatarEmoji}</Text>
-        <View style={styles.userInfo}>
-          <Text style={[styles.userName, item.isCurrentUser && styles.currentUserText]}>
-            {item.name}
-          </Text>
-          {item.isCurrentUser && <Text style={styles.youBadge}>Bạn</Text>}
-        </View>
-
-        {/* XP Status */}
-        <Text style={styles.xpText}>{item.xp} XP</Text>
-      </View>
-    );
-  };
+  const additionalItems: PracticeItem[] = [
+    {
+      id: 'p3',
+      title: 'Thử thách thời gian',
+      description: 'Luyện phản xạ nhanh để giành thêm Đá quý.',
+      icon: '⚡',
+      route: '/quiz/ready?lessonId=lp1',
+      color: Colors.accent,
+    },
+    {
+      id: 'p4',
+      title: 'Luyện phát âm chuyên sâu',
+      description: 'Nghe giọng bản xứ và tập nói lại chuẩn xác.',
+      icon: '🗣️',
+      route: '/voice/record',
+      color: '#10B981', // Emerald green
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* League Header */}
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Bảng xếp hạng</Text>
+        <Text style={styles.headerTitle}>Trung tâm luyện tập</Text>
       </View>
 
-      <FlatList
-        data={LEAGUE_USERS}
-        keyExtractor={(item) => item.rank.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <View style={styles.leagueBanner}>
-            <Text style={styles.leagueEmoji}>🛡️</Text>
-            <Text style={styles.leagueName}>Giải đấu Ngọc Lục Bảo</Text>
-            <Text style={styles.leagueTimer}>Thời gian còn lại: 2 ngày 5 giờ</Text>
-            
-            {/* Promo card */}
-            <View style={styles.promoCard}>
-              <Text style={styles.promoText}>
-                Top 10 người đứng đầu sẽ được thăng cấp lên Giải đấu Hồng Ngọc!
-              </Text>
-            </View>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Intro Banner */}
+        <View style={styles.introBanner}>
+          <Text style={styles.introEmoji}>🏋️</Text>
+          <View style={styles.introInfo}>
+            <Text style={styles.introTitle}>Nâng cao phản xạ tiếng Nhật</Text>
+            <Text style={styles.introDesc}>
+              Ôn luyện hằng ngày giúp bạn nhớ lâu hơn gấp 4 lần.
+            </Text>
           </View>
-        }
-      />
+        </View>
+
+        {/* Section 1 */}
+        <Text style={styles.sectionTitle}>Bài học tập trung</Text>
+        <View style={styles.itemsList}>
+          {primaryItems.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.card}
+              onPress={() => router.push(item.route as any)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
+                <Text style={[styles.itemIcon, { color: item.color }]}>{item.icon}</Text>
+              </View>
+              <View style={styles.cardContent}>
+                <View style={styles.titleRow}>
+                  <Text style={styles.itemTitle}>{item.title}</Text>
+                  {item.badge ? (
+                    <View style={[styles.badge, { backgroundColor: item.color }]}>
+                      <Text style={styles.badgeText}>{item.badge}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={styles.itemDesc}>{item.description}</Text>
+              </View>
+              <Text style={styles.arrowIcon}>→</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Section 2 */}
+        <Text style={styles.sectionTitle}>Các hoạt động ôn tập</Text>
+        <View style={styles.itemsList}>
+          {additionalItems.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.card}
+              onPress={() => router.push(item.route as any)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
+                <Text style={[styles.itemIcon, { color: item.color }]}>{item.icon}</Text>
+              </View>
+              <View style={styles.cardContent}>
+                <Text style={styles.itemTitle}>{item.title}</Text>
+                <Text style={styles.itemDesc}>{item.description}</Text>
+              </View>
+              <Text style={styles.arrowIcon}>→</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -111,119 +151,102 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
-  listContent: {
-    paddingBottom: Spacing.six,
-  },
-  leagueBanner: {
-    alignItems: 'center',
+  scrollContent: {
+    paddingHorizontal: Spacing.six,
     paddingVertical: Spacing.six,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.lockedBg,
-    marginBottom: Spacing.four,
+    paddingBottom: 100,
   },
-  leagueEmoji: {
-    fontSize: 70,
-  },
-  leagueName: {
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.primary,
-    marginTop: Spacing.two,
-  },
-  leagueTimer: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.bold,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
-  promoCard: {
-    backgroundColor: '#E8F5E9',
-    borderColor: '#C8E6C9',
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.three,
-    marginTop: Spacing.four,
-    marginHorizontal: Spacing.six,
-  },
-  promoText: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.semibold,
-    color: '#2E7D32',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  listContainer: {
-    paddingHorizontal: Spacing.four,
-  },
-  userRow: {
+  introBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    marginHorizontal: Spacing.four,
-    marginVertical: 4,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.five,
     borderWidth: 1.5,
     borderColor: Colors.lockedBg,
+    marginBottom: Spacing.six,
+    gap: Spacing.four,
   },
-  currentUserRow: {
-    borderColor: Colors.primary,
-    backgroundColor: '#F5F0FF',
+  introEmoji: {
+    fontSize: 48,
   },
-  rankContainer: {
-    width: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rankBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rankBadgeText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-  rankText: {
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.bold,
-    color: Colors.textSecondary,
-  },
-  avatar: {
-    fontSize: 28,
-    marginHorizontal: Spacing.three,
-  },
-  userInfo: {
+  introInfo: {
     flex: 1,
+  },
+  introTitle: {
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.extrabold,
+    color: Colors.textPrimary,
+  },
+  introDesc: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 18,
+  },
+  sectionTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.extrabold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.four,
+    marginTop: Spacing.two,
+  },
+  itemsList: {
+    gap: Spacing.four,
+    marginBottom: Spacing.six,
+  },
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.four,
+    borderWidth: 1.5,
+    borderColor: Colors.lockedBg,
+    gap: Spacing.four,
   },
-  userName: {
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemIcon: {
+    fontSize: 24,
+  },
+  cardContent: {
+    flex: 1,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  itemTitle: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
   },
-  currentUserText: {
-    color: Colors.primary,
-  },
-  youBadge: {
-    backgroundColor: Colors.primary,
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-    paddingHorizontal: 6,
+  badge: {
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 8,
   },
-  xpText: {
-    fontSize: FontSizes.md,
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
     fontWeight: FontWeights.extrabold,
+  },
+  itemDesc: {
+    fontSize: FontSizes.xs,
     color: Colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  arrowIcon: {
+    fontSize: FontSizes.lg,
+    color: Colors.textSecondary,
+    fontWeight: 'bold',
   },
 });

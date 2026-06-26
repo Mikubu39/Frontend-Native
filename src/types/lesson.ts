@@ -45,4 +45,5 @@ export interface LearningPathNode {
   progress: number;
   total: number;
   isLocked: boolean;
+  icon?: string;
 }

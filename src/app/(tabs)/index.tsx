@@ -153,10 +153,10 @@ export default function LearnScreen() {
                 {isActive && (
                   <View style={styles.tooltipContainer}>
                     <View style={styles.tooltipBody}>
-                      <Text style={styles.tooltipTitle}>CỬA 1</Text>
+                      <Text style={styles.tooltipTitle}>BÀI TIẾP THEO</Text>
                       <TouchableOpacity
                         style={styles.tooltipButton}
-                        onPress={() => router.push(`/lesson/${node.id}`)}
+                        onPress={() => router.push(`/quiz/ready?lessonId=${node.id}`)}
                         activeOpacity={0.8}
                       >
                         <Text style={styles.tooltipButtonText}>BẮT ĐẦU +10 XP</Text>
@@ -172,7 +172,7 @@ export default function LearnScreen() {
                     styles.nodeCircle, 
                     isLocked ? styles.nodeCircleLocked : styles.nodeCircleActive
                   ]}
-                  onPress={() => !isLocked && router.push(`/lesson/${node.id}`)}
+                  onPress={() => !isLocked && router.push(`/quiz/ready?lessonId=${node.id}`)}
                   disabled={isLocked}
                   activeOpacity={0.9}
                 >
@@ -182,7 +182,7 @@ export default function LearnScreen() {
                     strokeWidth={8}
                     color={isLocked ? Colors.locked : Colors.accent}
                     trackColor={isLocked ? Colors.lockedBg : 'rgba(255, 255, 255, 0.35)'}
-                    label={isLocked ? '🔒' : '⭐'}
+                    label={isLocked ? '🔒' : (node.icon || '⭐')}
                   />
                 </TouchableOpacity>
 

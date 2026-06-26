@@ -35,17 +35,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="review"
+        name="leaderboard"
         options={{
           title: 'Leaderboard',
           tabBarIcon: ({ color, focused }) => <TabIcon icon="🛡️" color={color} active={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: 'Nhiệm vụ',
-          tabBarIcon: ({ color, focused }) => <TabIcon icon="🎯" color={color} active={focused} />,
         }}
       />
       <Tabs.Screen
@@ -63,13 +56,31 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="more"
         options={{
-          title: 'Hồ sơ',
-          tabBarIcon: ({ color, focused }) => <TabIcon icon="👤" color={color} active={focused} />,
+          title: 'Khác',
+          tabBarIcon: ({ color, focused }) => <TabIcon icon="⋯" color={color} active={focused} />,
         }}
       />
-      {/* Hide the old dictionary screen from bottom navigation tab bar */}
+      {/* Hide internal screens from bottom tab bar */}
+      <Tabs.Screen
+        name="review"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="characters"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          href: null,
+        }}
+      />
       <Tabs.Screen
         name="dictionary"
         options={{
