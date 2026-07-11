@@ -1,11 +1,14 @@
 /**
- * Characters / Học Chữ Cái Screen - Interactive Hiragana & Katakana tables
+ * Characters / Học Chữ Cái Screen - Enhanced with animated tab switching,
+ * cell press animations, and animated preview panel entrance.
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import Animated, { FadeInDown, FadeIn, Layout } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
 const GRID_CELL_SIZE = (width - 48 - 24) / 5; // 5 columns layout
@@ -54,59 +57,71 @@ export default function CharactersScreen() {
       {/* Header Tabs */}
       <View style={styles.header}>
         <View style={styles.tabContainer}>
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.tabButton, activeTab === 'hiragana' && styles.activeTabButton]}
             onPress={() => {
               setActiveTab('hiragana');
               setSelectedChar(null);
             }}
+            pressScale={0.97}
           >
             <Text style={[styles.tabText, activeTab === 'hiragana' && styles.activeTabText]}>
               Hiragana (あ)
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
           
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.tabButton, activeTab === 'katakana' && styles.activeTabButton]}
             onPress={() => {
               setActiveTab('katakana');
               setSelectedChar(null);
             }}
+            pressScale={0.97}
           >
             <Text style={[styles.tabText, activeTab === 'katakana' && styles.activeTabText]}>
               Katakana (ア)
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Character Detail Preview Panel */}
         {selectedChar ? (
-          <View style={styles.previewPanel}>
+          <Animated.View
+            entering={FadeInDown.duration(300)}
+            style={styles.previewPanel}
+          >
             <View style={styles.previewHeader}>
               <Text style={styles.previewLabel}>KÝ TỰ ĐANG CHỌN</Text>
-              <TouchableOpacity onPress={() => setSelectedChar(null)}>
-                <Text style={styles.closeBtn}>×</Text>
-              </TouchableOpacity>
+              <AnimatedPressable onPress={() => setSelectedChar(null)} pressScale={0.9}>
+                <View style={styles.closeCircle}>
+                  <Text style={styles.closeBtn}>×</Text>
+                </View>
+              </AnimatedPressable>
             </View>
             <View style={styles.previewBody}>
-              <Text style={styles.bigChar}>{selectedChar.kana}</Text>
+              <View style={styles.bigCharContainer}>
+                <Text style={styles.bigChar}>{selectedChar.kana}</Text>
+              </View>
               <View style={styles.charInfo}>
                 <Text style={styles.romajiLabel}>Phiên âm: /{selectedChar.romaji}/</Text>
-                <TouchableOpacity style={styles.audioBtn} activeOpacity={0.8}>
+                <AnimatedPressable style={styles.audioBtn} onPress={() => {}} pressScale={0.95}>
                   <Text style={styles.audioEmoji}>🔊 Nghe phát âm</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
             </View>
-          </View>
+          </Animated.View>
         ) : (
-          <View style={styles.infoBanner}>
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            style={styles.infoBanner}
+          >
             <Text style={styles.infoEmoji}>💡</Text>
             <Text style={styles.infoText}>
               Chạm vào bất kỳ chữ cái nào để xem chi tiết cách phiên âm, nghe phát âm mẫu và học viết!
             </Text>
-          </View>
+          </Animated.View>
         )}
 
         {/* Character Grid */}
@@ -120,17 +135,19 @@ export default function CharactersScreen() {
             const isSelected = selectedChar?.kana === item.kana;
 
             return (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={item.kana}
                 style={[styles.cell, isSelected && styles.selectedCell]}
                 onPress={() => setSelectedChar(item)}
-                activeOpacity={0.7}
+                pressScale={0.92}
               >
                 <Text style={[styles.cellKana, isSelected && styles.selectedCellText]}>
                   {item.kana}
                 </Text>
-                <Text style={styles.cellRomaji}>{item.romaji}</Text>
-              </TouchableOpacity>
+                <Text style={[styles.cellRomaji, isSelected && styles.selectedRomaji]}>
+                  {item.romaji}
+                </Text>
+              </AnimatedPressable>
             );
           })}
         </View>
@@ -147,37 +164,32 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#FFFFFF',
     paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.six,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.lockedBg,
+    paddingHorizontal: Spacing.five,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
+    ...Shadows.sm,
   },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: Colors.cream,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: 4,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
     width: '100%',
     maxWidth: 400,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.md,
+    paddingVertical: 10,
+    borderRadius: BorderRadius.lg,
     alignItems: 'center',
   },
   activeTabButton: {
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.sm,
   },
   tabText: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     color: Colors.textSecondary,
   },
@@ -186,37 +198,37 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.extrabold,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.six,
-    paddingVertical: Spacing.six,
+    paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.five,
     paddingBottom: 100,
   },
   infoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.four,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
     marginBottom: Spacing.five,
     gap: Spacing.three,
+    ...Shadows.sm,
   },
   infoEmoji: {
-    fontSize: 24,
+    fontSize: 28,
   },
   infoText: {
     flex: 1,
-    fontSize: FontSizes.xs,
+    fontSize: FontSizes.sm,
     color: Colors.textSecondary,
-    lineHeight: 16,
+    lineHeight: 18,
   },
   previewPanel: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.xxl,
     padding: Spacing.five,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: Colors.primary,
     marginBottom: Spacing.five,
+    ...Shadows.glow(Colors.primary),
   },
   previewHeader: {
     flexDirection: 'row',
@@ -228,45 +240,63 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.four,
   },
   previewLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: FontWeights.extrabold,
     color: Colors.primary,
     letterSpacing: 0.5,
   },
+  closeCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.lockedBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   closeBtn: {
-    fontSize: 24,
+    fontSize: 18,
     color: Colors.textSecondary,
-    lineHeight: 24,
+    lineHeight: 20,
+    fontWeight: 'bold',
   },
   previewBody: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.six,
   },
+  bigCharContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: Colors.cream,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   bigChar: {
-    fontSize: 64,
+    fontSize: 52,
     fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
+    color: Colors.primaryDark,
   },
   charInfo: {
     flex: 1,
-    gap: 8,
+    gap: 10,
   },
   romajiLabel: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
   },
   audioBtn: {
     backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.md,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     alignSelf: 'flex-start',
+    ...Shadows.glow(Colors.primary),
   },
   audioEmoji: {
     color: '#FFFFFF',
-    fontSize: FontSizes.xs,
+    fontSize: FontSizes.sm,
     fontWeight: FontWeights.extrabold,
   },
   grid: {
@@ -279,18 +309,19 @@ const styles = StyleSheet.create({
     width: GRID_CELL_SIZE,
     height: GRID_CELL_SIZE + 10,
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.md,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    borderRadius: BorderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    ...Shadows.sm,
   },
   selectedCell: {
+    borderWidth: 2,
     borderColor: Colors.primary,
     backgroundColor: '#F5F3FF',
+    ...Shadows.glow(Colors.primary),
   },
   cellKana: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
@@ -302,9 +333,14 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 2,
   },
+  selectedRomaji: {
+    color: Colors.primary,
+    fontWeight: FontWeights.bold,
+  },
   emptyCell: {
     width: GRID_CELL_SIZE,
     height: GRID_CELL_SIZE + 10,
     backgroundColor: 'transparent',
   },
 });
+

@@ -8,6 +8,7 @@ export default function QuizLayout() {
         headerShown: false,
         contentStyle: { backgroundColor: Colors.cream },
         animation: 'slide_from_right',
+        animationDuration: 300,
       }}
     />
   );

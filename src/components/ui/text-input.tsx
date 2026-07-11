@@ -1,11 +1,19 @@
 /**
- * TextInput - Styled input with label and error support.
- * Matches the yellow-bordered inputs in Figma auth screens.
+ * TextInput - Styled input with animated focus border glow,
+ * floating label, and error support.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput as RNTextInput, Text, StyleSheet, type TextInputProps } from 'react-native';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolateColor,
+} from 'react-native-reanimated';
+import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows, AnimationPresets } from '@/constants/theme';
+
+const AnimatedView = Animated.View;
 
 interface StyledTextInputProps extends TextInputProps {
   label?: string;
@@ -14,22 +22,47 @@ interface StyledTextInputProps extends TextInputProps {
 
 export function StyledTextInput({ label, error, style, ...props }: StyledTextInputProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const focusAnim = useSharedValue(0);
+
+  useEffect(() => {
+    focusAnim.value = withTiming(isFocused ? 1 : 0, {
+      duration: AnimationPresets.duration.fast,
+    });
+  }, [isFocused]);
+
+  const borderAnimStyle = useAnimatedStyle(() => {
+    const borderColor = interpolateColor(
+      focusAnim.value,
+      [0, 1],
+      [Colors.inputBorder, Colors.primary]
+    );
+
+    return {
+      borderColor,
+      borderWidth: isFocused ? 2 : 1.5,
+    };
+  });
+
+  const shadowAnimStyle = useAnimatedStyle(() => ({
+    shadowOpacity: focusAnim.value * 0.15,
+    shadowRadius: focusAnim.value * 12,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: focusAnim.value * 4,
+  }));
 
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <RNTextInput
-        style={[
-          styles.input,
-          isFocused && styles.inputFocused,
-          error && styles.inputError,
-          style,
-        ]}
-        placeholderTextColor={Colors.textSecondary}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        {...props}
-      />
+      <AnimatedView style={[styles.inputWrapper, borderAnimStyle, shadowAnimStyle, error && styles.inputError]}>
+        <RNTextInput
+          style={[styles.input, style]}
+          placeholderTextColor={Colors.textSecondary}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          {...props}
+        />
+      </AnimatedView>
       {error && (
         <View style={styles.errorRow}>
           <Text style={styles.errorIcon}>ⓘ</Text>
@@ -49,19 +82,18 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.medium,
     color: Colors.textPrimary,
   },
-  input: {
-    height: 50,
+  inputWrapper: {
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.inputBackground,
     borderWidth: 1.5,
     borderColor: Colors.inputBorder,
-    borderRadius: BorderRadius.md,
+  },
+  input: {
+    height: 52,
     paddingHorizontal: Spacing.four,
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
-    backgroundColor: Colors.inputBackground,
-  },
-  inputFocused: {
-    borderColor: Colors.inputBorderFocus,
-    borderWidth: 2,
+    borderRadius: BorderRadius.lg,
   },
   inputError: {
     borderColor: Colors.error,

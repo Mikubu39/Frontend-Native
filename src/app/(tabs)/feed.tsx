@@ -1,11 +1,15 @@
 /**
- * Feed / Bảng Tin Screen - Recreates the user's shared Duolingo Feed screenshot.
+ * Feed / Bảng Tin Screen - Enhanced with animated like button,
+ * staggered card entrances, and improved card design.
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming } from 'react-native-reanimated';
+import { AnimatedScreen } from '@/components/ui/animated-screen';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
 
 interface FeedPost {
   id: string;
@@ -39,7 +43,7 @@ const INITIAL_POSTS: FeedPost[] = [
   {
     id: 'p2',
     authorName: 'dunn và Jaime',
-    authorAvatar: '🦊', // We'll show double avatar in render
+    authorAvatar: '🦊',
     actionText: '',
     timeAgo: '2 ngày',
     type: 'streak',
@@ -62,6 +66,35 @@ const INITIAL_POSTS: FeedPost[] = [
   },
 ];
 
+/** Animated like button with heart bounce */
+function LikeButton({ isLiked, count, onPress }: { isLiked: boolean; count: number; onPress: () => void }) {
+  const heartScale = useSharedValue(1);
+
+  const handlePress = () => {
+    heartScale.value = withSequence(
+      withTiming(0.6, { duration: 60 }),
+      withSpring(1.3, AnimationPresets.springBouncy),
+      withSpring(1, { damping: 15, stiffness: 200 })
+    );
+    onPress();
+  };
+
+  const heartStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: heartScale.value }],
+  }));
+
+  return (
+    <AnimatedPressable
+      style={[styles.likeButton, isLiked && styles.likedButton]}
+      onPress={handlePress}
+      pressScale={0.95}
+    >
+      <Animated.Text style={[styles.likeIcon, heartStyle]}>{isLiked ? '❤️' : '♡'}</Animated.Text>
+      <Text style={[styles.likeText, isLiked && { color: Colors.secondary }]}>{count}</Text>
+    </AnimatedPressable>
+  );
+}
+
 export default function FeedScreen() {
   const [posts, setPosts] = useState<FeedPost[]>(INITIAL_POSTS);
 
@@ -82,6 +115,7 @@ export default function FeedScreen() {
   };
 
   return (
+    <AnimatedScreen>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
@@ -89,86 +123,98 @@ export default function FeedScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {posts.map((post) => (
-          <View key={post.id} style={styles.postCard}>
-            {/* Post Author / Header */}
-            <View style={styles.authorRow}>
-              {post.id === 'p2' ? (
-                // Double avatar for dual streak
-                <View style={styles.doubleAvatarContainer}>
-                  <Text style={styles.avatarMini}>🦊</Text>
-                  <Text style={[styles.avatarMini, styles.avatarOffset]}>🦁</Text>
-                </View>
-              ) : post.id === 'p3' ? (
-                <View style={styles.doubleAvatarContainer}>
-                  <Text style={styles.avatarMini}>🦄</Text>
-                  <Text style={[styles.avatarMini, styles.avatarOffset]}>🐰</Text>
-                </View>
-              ) : (
-                <Text style={styles.avatar}>{post.authorAvatar}</Text>
-              )}
-              
-              <View style={styles.authorInfo}>
-                <Text style={styles.authorName}>
-                  {post.authorName}{' '}
-                  {post.actionText ? (
-                    <Text style={styles.actionText}>{post.actionText}</Text>
-                  ) : null}
-                </Text>
-                <Text style={styles.timeAgo}>{post.timeAgo}</Text>
-              </View>
-            </View>
-
-            {/* Post Content */}
-            {post.type === 'phrase' ? (
-              <View style={styles.contentPhraseContainer}>
-                {/* Speech Bubble */}
-                <View style={styles.speechBubble}>
-                  <Text style={styles.flagEmoji}>🇯🇵</Text>
-                  <Text style={styles.japaneseText}>{post.phraseJa}</Text>
-                  <Text style={styles.vietnameseText}>{post.phraseVi}</Text>
-                </View>
-                {/* Mascot standing next to bubble */}
-                <View style={styles.mascotStand}>
-                  <Text style={styles.mascotStandEmoji}>💁‍♀️</Text>
-                </View>
-              </View>
-            ) : (
-              // Streak achievement post
-              <View style={styles.contentStreakContainer}>
-                <View style={styles.streakInfo}>
-                  <Text style={styles.streakText}>
-                    Đã chạm mốc {post.streakDays} ngày{'\n'}Streak bạn bè!
+        {posts.map((post, index) => (
+          <Animated.View
+            key={post.id}
+            entering={FadeInDown.delay(index * AnimationPresets.staggerDelay).duration(400)}
+          >
+            <View style={styles.postCard}>
+              {/* Post Author / Header */}
+              <View style={styles.authorRow}>
+                {post.id === 'p2' ? (
+                  // Double avatar for dual streak
+                  <View style={styles.doubleAvatarContainer}>
+                    <View style={[styles.avatarCircle, { backgroundColor: '#60A5FA', zIndex: 2 }]}>
+                      <Text style={styles.avatarMiniText}>🦊</Text>
+                    </View>
+                    <View style={[styles.avatarCircle, styles.avatarOffset, { backgroundColor: '#F59E0B' }]}>
+                      <Text style={styles.avatarMiniText}>🦁</Text>
+                    </View>
+                  </View>
+                ) : post.id === 'p3' ? (
+                  <View style={styles.doubleAvatarContainer}>
+                    <View style={[styles.avatarCircle, { backgroundColor: '#A78BFA', zIndex: 2 }]}>
+                      <Text style={styles.avatarMiniText}>🦄</Text>
+                    </View>
+                    <View style={[styles.avatarCircle, styles.avatarOffset, { backgroundColor: '#F472B6' }]}>
+                      <Text style={styles.avatarMiniText}>🐰</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={[styles.singleAvatar, { backgroundColor: '#F472B6' }]}>
+                    <Text style={styles.singleAvatarText}>{post.authorAvatar}</Text>
+                  </View>
+                )}
+                
+                <View style={styles.authorInfo}>
+                  <Text style={styles.authorName}>
+                    {post.authorName}{' '}
+                    {post.actionText ? (
+                      <Text style={styles.actionText}>{post.actionText}</Text>
+                    ) : null}
                   </Text>
+                  <Text style={styles.timeAgo}>{post.timeAgo}</Text>
                 </View>
-                {/* Double Flame Badge */}
-                <View style={styles.streakBadgeContainer}>
-                  <Text style={styles.streakBadgeEmoji}>🔥</Text>
-                  <View style={styles.badgeAvatars}>
-                    <Text style={styles.badgeAvatarText}>🦊</Text>
-                    <Text style={styles.badgeAvatarText}>🦁</Text>
+              </View>
+
+              {/* Post Content */}
+              {post.type === 'phrase' ? (
+                <View style={styles.contentPhraseContainer}>
+                  {/* Speech Bubble */}
+                  <View style={styles.speechBubble}>
+                    <Text style={styles.flagEmoji}>🇯🇵</Text>
+                    <Text style={styles.japaneseText}>{post.phraseJa}</Text>
+                    <Text style={styles.vietnameseText}>{post.phraseVi}</Text>
+                  </View>
+                  {/* Mascot standing next to bubble */}
+                  <View style={styles.mascotStand}>
+                    <Text style={styles.mascotStandEmoji}>💁‍♀️</Text>
                   </View>
                 </View>
-              </View>
-            )}
+              ) : (
+                // Streak achievement post
+                <View style={styles.contentStreakContainer}>
+                  <View style={styles.streakInfo}>
+                    <Text style={styles.streakText}>
+                      Đã chạm mốc {post.streakDays} ngày{'\n'}Streak bạn bè!
+                    </Text>
+                  </View>
+                  {/* Double Flame Badge */}
+                  <View style={styles.streakBadgeContainer}>
+                    <Text style={styles.streakBadgeEmoji}>🔥</Text>
+                    <View style={styles.badgeAvatars}>
+                      <Text style={styles.badgeAvatarText}>🦊</Text>
+                      <Text style={styles.badgeAvatarText}>🦁</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
 
-            {/* Post Footer (Likes / Actions) */}
-            <View style={styles.postFooter}>
-              <TouchableOpacity 
-                style={[styles.likeButton, post.isLiked && styles.likedButton]}
-                onPress={() => toggleLike(post.id)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.likeIcon}>{post.isLiked ? '❤️' : '♡'}</Text>
-                <Text style={styles.likeText}>{post.likesCount}</Text>
-              </TouchableOpacity>
-              
-              <Text style={styles.likedBy}>{post.likedByText}</Text>
+              {/* Post Footer (Likes / Actions) */}
+              <View style={styles.postFooter}>
+                <LikeButton
+                  isLiked={post.isLiked ?? false}
+                  count={post.likesCount}
+                  onPress={() => toggleLike(post.id)}
+                />
+                <Text style={styles.likedBy}>{post.likedByText}</Text>
+              </View>
             </View>
-          </View>
+          </Animated.View>
         ))}
       </ScrollView>
     </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 
@@ -181,62 +227,66 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingVertical: Spacing.four,
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.lockedBg,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    ...Shadows.sm,
   },
   headerTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.four,
+    paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.five,
     paddingBottom: 100,
   },
   postCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.four,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.five,
     marginBottom: Spacing.four,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    ...Shadows.sm,
   },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
   },
-  avatar: {
-    fontSize: 32,
-    backgroundColor: '#F472B6',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    textAlign: 'center',
-    lineHeight: 44,
+  singleAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  singleAvatarText: {
+    fontSize: 26,
   },
   doubleAvatarContainer: {
     position: 'relative',
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
   },
-  avatarMini: {
-    fontSize: 24,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#60A5FA',
-    textAlign: 'center',
-    lineHeight: 32,
+  avatarCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'absolute',
     left: 0,
     top: 0,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  avatarMiniText: {
+    fontSize: 20,
   },
   avatarOffset: {
-    left: 12,
-    top: 12,
-    backgroundColor: '#F59E0B',
+    left: 14,
+    top: 14,
+    zIndex: 1,
   },
   authorInfo: {
     flex: 1,
@@ -265,26 +315,23 @@ const styles = StyleSheet.create({
   speechBubble: {
     flex: 1,
     backgroundColor: Colors.cream,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.four,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
-    position: 'relative',
   },
   flagEmoji: {
-    fontSize: 18,
+    fontSize: 20,
     marginBottom: 4,
   },
   japaneseText: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
-    lineHeight: 24,
+    lineHeight: 28,
   },
   vietnameseText: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
-    marginTop: 4,
+    marginTop: 6,
   },
   mascotStand: {
     width: 50,
@@ -302,19 +349,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginVertical: Spacing.four,
     backgroundColor: Colors.cream,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.four,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.five,
   },
   streakInfo: {
     flex: 1,
   },
   streakText: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   streakBadgeContainer: {
     alignItems: 'center',
@@ -350,20 +395,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1.5,
     borderColor: Colors.lockedBg,
-    borderRadius: BorderRadius.sm,
-    paddingVertical: 6,
-    paddingHorizontal: Spacing.three,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 8,
+    paddingHorizontal: Spacing.four,
   },
   likedButton: {
     borderColor: Colors.secondary,
     backgroundColor: '#FFF1F2',
   },
   likeIcon: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     color: Colors.textPrimary,
   },
   likeText: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
   },
@@ -373,3 +418,4 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+

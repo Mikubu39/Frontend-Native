@@ -1,9 +1,16 @@
+/**
+ * Quiz Ready Screen - Enhanced with animated entrance,
+ * improved card design, and press animation on buttons.
+ */
+
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { GradientButton } from '@/components/ui/gradient-button';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows, AnimationPresets } from '@/constants/theme';
 import { LESSON_TIPS } from '@/data/quiz';
 
 export default function QuizReadyScreen() {
@@ -17,20 +24,29 @@ export default function QuizReadyScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
-      <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+      <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} pressScale={0.9}>
         <Text style={styles.backText}>←</Text>
-      </TouchableOpacity>
+      </AnimatedPressable>
 
-      <View style={styles.flag}>
+      <Animated.View
+        entering={FadeInDown.delay(100).duration(400)}
+        style={styles.flag}
+      >
         <Text style={styles.flagEmoji}>💡</Text>
-      </View>
+      </Animated.View>
 
-      <View style={styles.tipHeader}>
+      <Animated.View
+        entering={FadeInDown.delay(200).duration(400)}
+        style={styles.tipHeader}
+      >
         <Text style={styles.tipSubtitle}>{tip.subtitle}</Text>
         <Text style={styles.tipTitle}>{tip.title}</Text>
-      </View>
+      </Animated.View>
 
-      <View style={styles.card}>
+      <Animated.View
+        entering={FadeInDown.delay(350).duration(400)}
+        style={styles.card}
+      >
         {tip.formula ? (
           <View style={styles.formulaContainer}>
             <Text style={styles.formulaText}>{tip.formula}</Text>
@@ -48,11 +64,11 @@ export default function QuizReadyScreen() {
           const setIsShow = index === 0 ? setShowTranslation1 : setShowTranslation2;
           
           return (
-            <TouchableOpacity 
+            <AnimatedPressable 
               key={index}
               style={styles.exampleRow} 
               onPress={() => setIsShow(!isShow)}
-              activeOpacity={0.8}
+              pressScale={0.98}
             >
               <View style={styles.exampleContent}>
                 <Text style={styles.japaneseText}>{ex.japanese}</Text>
@@ -60,17 +76,24 @@ export default function QuizReadyScreen() {
                   {isShow ? ex.translation : 'タップして翻訳を表示 (Nhấp để xem dịch)'}
                 </Text>
               </View>
-              <Text style={styles.speakerEmoji}>🔊</Text>
-            </TouchableOpacity>
+              <View style={styles.speakerBtn}>
+                <Text style={styles.speakerEmoji}>🔊</Text>
+              </View>
+            </AnimatedPressable>
           );
         })}
-      </View>
+      </Animated.View>
 
-      <GradientButton
-        title="BẮT ĐẦU LUYỆN TẬP"
-        onPress={() => router.replace(`/quiz/q1?lessonId=${lessonId}`)}
-        style={styles.button}
-      />
+      <Animated.View
+        entering={FadeInDown.delay(500).duration(400)}
+        style={{ width: '100%' }}
+      >
+        <GradientButton
+          title="BẮT ĐẦU LUYỆN TẬP"
+          onPress={() => router.replace(`/quiz/q1?lessonId=${lessonId}`)}
+          style={styles.button}
+        />
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -82,93 +105,81 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.six,
-    gap: Spacing.six,
+    gap: Spacing.five,
   },
   backBtn: {
     position: 'absolute',
     top: 50,
     left: Spacing.six,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    ...Shadows.md,
   },
   backText: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: Colors.textPrimary,
   },
   flag: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: Colors.surface,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 40,
+    ...Shadows.md,
   },
   flagEmoji: {
-    fontSize: 24,
+    fontSize: 28,
   },
   tipHeader: {
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   tipSubtitle: {
-    fontSize: FontSizes.xs,
+    fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
     color: Colors.primary,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
   },
   tipTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
     textAlign: 'center',
   },
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.five,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.six,
     width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    ...Shadows.lg,
   },
   formulaContainer: {
     backgroundColor: Colors.cream,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: BorderRadius.md,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: BorderRadius.lg,
     alignItems: 'center',
     marginBottom: Spacing.four,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.inputBorder,
   },
   formulaText: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.extrabold,
     color: Colors.primaryDark,
   },
   explanation: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.md,
     color: Colors.textPrimary,
-    lineHeight: 20,
+    lineHeight: 22,
     marginBottom: Spacing.five,
-  },
-  highlight: {
-    color: Colors.secondary,
-    fontWeight: FontWeights.extrabold,
   },
   sectionLabel: {
     fontSize: FontSizes.sm,
@@ -179,32 +190,40 @@ const styles = StyleSheet.create({
   exampleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    padding: Spacing.three,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.lockedBg,
+    backgroundColor: Colors.cream,
+    padding: Spacing.four,
+    borderRadius: BorderRadius.lg,
     marginBottom: Spacing.three,
   },
   exampleContent: {
     flex: 1,
   },
   japaneseText: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
     marginBottom: 4,
   },
   translationText: {
-    fontSize: FontSizes.xs,
+    fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     fontStyle: 'italic',
   },
-  speakerEmoji: {
-    fontSize: 20,
+  speakerBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: Spacing.two,
+    ...Shadows.sm,
+  },
+  speakerEmoji: {
+    fontSize: 18,
   },
   button: {
     width: '100%',
   },
 });
+

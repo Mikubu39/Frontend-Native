@@ -1,11 +1,12 @@
 /**
- * ModalCard - White card overlay with close button.
- * Used for "Ready to learn?" and other modal dialogs.
+ * ModalCard - White card overlay with animated entrance.
+ * Card scales in from 0.9 → 1 with a spring, backdrop fades in.
  */
 
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, type ViewStyle } from 'react-native';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows, AnimationPresets } from '@/constants/theme';
 
 interface ModalCardProps {
   children: React.ReactNode;
@@ -15,16 +16,26 @@ interface ModalCardProps {
 
 export function ModalCard({ children, onClose, style }: ModalCardProps) {
   return (
-    <View style={styles.overlay}>
-      <View style={[styles.card, style]}>
+    <Animated.View
+      entering={FadeIn.duration(AnimationPresets.duration.fast)}
+      style={styles.overlay}
+    >
+      <Animated.View
+        entering={FadeInDown.duration(AnimationPresets.duration.normal)
+          .springify()
+          .damping(AnimationPresets.spring.damping)
+          .stiffness(AnimationPresets.spring.stiffness)
+        }
+        style={[styles.card, style]}
+      >
         {onClose && (
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeIcon}>✕</Text>
           </TouchableOpacity>
         )}
         {children}
-      </View>
-    </View>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -39,29 +50,27 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.xxl,
     padding: Spacing.six,
     width: '100%',
     maxWidth: 360,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 8,
+    ...Shadows.xl,
   },
   closeButton: {
     position: 'absolute',
     top: Spacing.four,
     right: Spacing.four,
     zIndex: 1,
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: Colors.lockedBg,
   },
   closeIcon: {
-    fontSize: FontSizes.xl,
+    fontSize: FontSizes.lg,
     color: Colors.textSecondary,
-    fontWeight: FontWeights.medium,
+    fontWeight: FontWeights.bold,
   },
 });

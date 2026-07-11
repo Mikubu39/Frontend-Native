@@ -1,5 +1,6 @@
 /**
  * Root Layout - Stack navigator: Splash → Auth → Onboarding → Tabs
+ * Enhanced with smoother native-like transitions and gesture support.
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -127,20 +128,23 @@ export default function RootLayout() {
               screenOptions={{
                 headerShown: false,
                 contentStyle: { backgroundColor: Colors.cream },
-                animation: 'slide_from_right',
+                animation: 'fade', // Simplified transition
+                animationDuration: 250,
+                gestureEnabled: true,
+                fullScreenGestureEnabled: true,
               }}
             >
               <Stack.Screen name="index" />
               <Stack.Screen name="welcome" />
-              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
               <Stack.Screen name="(onboarding)" />
               <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="lesson" />
-            <Stack.Screen name="quiz" options={{ animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="voice" options={{ animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="profile" />
-            <Stack.Screen name="friends" />
-            <Stack.Screen name="reward" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="lesson" />
+              <Stack.Screen name="quiz" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
+              <Stack.Screen name="voice" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
+              <Stack.Screen name="profile" />
+              <Stack.Screen name="friends" />
+              <Stack.Screen name="reward" options={{ presentation: 'transparentModal' }} />
           </Stack>
         </QuizProvider>
       </OnboardingProvider>

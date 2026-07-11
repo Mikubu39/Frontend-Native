@@ -1,22 +1,36 @@
 /**
- * Learn / Home Screen - Redesigned to match Duolingo style
- * Features a winding vertical path of lesson nodes connected by a smooth SVG line.
+ * Learn / Home Screen - Redesigned with animated nodes,
+ * gradient header, pulse effects on active node, and staggered entrance.
  */
 
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
+import { FontAwesome5 } from '@expo/vector-icons';
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withDelay,
+  withSpring,
+  Easing,
+} from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { CircleProgress } from '@/components/ui/circle-progress';
+import { AnimatedScreen } from '@/components/ui/animated-screen';
 import { LEARNING_PATH } from '@/data';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
 
 // Constants for deterministic node mapping
-const NODE_SIZE = 84;
-const NODE_SPACING = 150; // Vertical distance between nodes
+const NODE_SIZE = 88;
+const NODE_SPACING = 155; // Vertical distance between nodes
 const START_Y = 40;       // Starting padding top of the map
 const CENTER_X = width / 2;
 
@@ -25,6 +39,48 @@ const getOffset = (index: number) => {
   const pattern = [0, 45, 75, 45, 0, -45, -75, -45];
   return pattern[index % pattern.length];
 };
+
+/** Pulsing glow ring for active node */
+function ActiveNodeGlow({ size }: { size: number }) {
+  const pulseScale = useSharedValue(1);
+  const pulseOpacity = useSharedValue(0.6);
+
+  useEffect(() => {
+    pulseScale.value = withRepeat(
+      withTiming(1.35, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+    pulseOpacity.value = withRepeat(
+      withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+  }, []);
+
+  const glowStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+    opacity: pulseOpacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          position: 'absolute',
+          width: size + 16,
+          height: size + 16,
+          borderRadius: (size + 16) / 2,
+          borderWidth: 3,
+          borderColor: Colors.accent,
+          top: -8,
+          left: -8,
+        },
+        glowStyle,
+      ]}
+    />
+  );
+}
 
 export default function LearnScreen() {
   const router = useRouter();
@@ -62,30 +118,34 @@ export default function LearnScreen() {
   const totalMapHeight = START_Y + LEARNING_PATH.length * NODE_SPACING + 60;
 
   return (
+    <AnimatedScreen>
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header Stats */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.flagButton}>
+      {/* Gradient Header Stats */}
+      <LinearGradient
+        colors={['#FFFFFF', '#FFF8E7']}
+        style={styles.header}
+      >
+        <AnimatedPressable style={styles.flagButton} onPress={() => {}} pressScale={0.9}>
           <Text style={styles.flagEmoji}>🇯🇵</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
         
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statEmoji}>🔥</Text>
+            <FontAwesome5 name="fire" size={20} color="#FF9600" solid />
             <Text style={styles.statText}>7</Text>
           </View>
           
           <View style={styles.statItem}>
-            <Text style={styles.statEmoji}>💎</Text>
-            <Text style={styles.statText}>520</Text>
+            <FontAwesome5 name="gem" size={20} color="#1CB0F6" solid />
+            <Text style={[styles.statText, { color: '#1CB0F6' }]}>520</Text>
           </View>
           
           <View style={styles.statItem}>
-            <Text style={styles.statEmoji}>❤️</Text>
-            <Text style={styles.statText}>5</Text>
+            <FontAwesome5 name="heart" size={20} color="#FF4B4B" solid />
+            <Text style={[styles.statText, { color: '#FF4B4B' }]}>5</Text>
           </View>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Main Scroll Content */}
       <ScrollView 
@@ -93,16 +153,23 @@ export default function LearnScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Unit Banner */}
-        <View style={styles.unitBanner}>
-          <View style={styles.unitTextContainer}>
-            <Text style={styles.unitSubtitle}>PHẦN 1: NHẬP MÔN</Text>
-            <Text style={styles.unitTitle}>Chào hỏi, giới thiệu bản thân</Text>
-          </View>
-          <TouchableOpacity style={styles.guidebookButton} activeOpacity={0.8}>
-            <Text style={styles.guidebookIcon}>📖</Text>
-            <Text style={styles.guidebookText}>HƯỚNG DẪN</Text>
-          </TouchableOpacity>
-        </View>
+        <Animated.View entering={FadeInDown.delay(100).duration(300)}>
+          <LinearGradient
+            colors={[Colors.accent, '#E6A300']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.unitBanner}
+          >
+            <View style={styles.unitTextContainer}>
+              <Text style={styles.unitSubtitle}>PHẦN 1: NHẬP MÔN</Text>
+              <Text style={styles.unitTitle}>Chào hỏi, giới thiệu bản thân</Text>
+            </View>
+            <AnimatedPressable style={styles.guidebookButton} onPress={() => {}} pressScale={0.95}>
+              <Text style={styles.guidebookIcon}>📖</Text>
+              <Text style={styles.guidebookText}>HƯỚNG DẪN</Text>
+            </AnimatedPressable>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Map Path Container */}
         <View style={[styles.mapContainer, { height: totalMapHeight }]}>
@@ -139,8 +206,12 @@ export default function LearnScreen() {
             const y = START_Y + index * NODE_SPACING;
 
             return (
-              <View 
-                key={node.id} 
+              <Animated.View 
+                key={node.id}
+                entering={FadeInDown
+                  .delay(200 + index * AnimationPresets.staggerDelay)
+                  .duration(300)
+                }
                 style={[
                   styles.nodeAbsoluteWrapper,
                   {
@@ -151,31 +222,35 @@ export default function LearnScreen() {
               >
                 {/* Speech Bubble Tooltip for Active Node */}
                 {isActive && (
-                  <View style={styles.tooltipContainer}>
+                  <Animated.View
+                    entering={FadeInDown.delay(600).duration(300)}
+                    style={styles.tooltipContainer}
+                  >
                     <View style={styles.tooltipBody}>
                       <Text style={styles.tooltipTitle}>BÀI TIẾP THEO</Text>
-                      <TouchableOpacity
+                      <AnimatedPressable
                         style={styles.tooltipButton}
                         onPress={() => router.push(`/quiz/ready?lessonId=${node.id}`)}
-                        activeOpacity={0.8}
+                        pressScale={0.95}
                       >
                         <Text style={styles.tooltipButtonText}>BẮT ĐẦU +10 XP</Text>
-                      </TouchableOpacity>
+                      </AnimatedPressable>
                     </View>
                     <View style={styles.tooltipArrow} />
-                  </View>
+                  </Animated.View>
                 )}
 
                 {/* Circular Lesson Node */}
-                <TouchableOpacity
+                <AnimatedPressable
                   style={[
                     styles.nodeCircle, 
                     isLocked ? styles.nodeCircleLocked : styles.nodeCircleActive
                   ]}
                   onPress={() => !isLocked && router.push(`/quiz/ready?lessonId=${node.id}`)}
                   disabled={isLocked}
-                  activeOpacity={0.9}
+                  pressScale={isLocked ? 1 : 0.92}
                 >
+                  {isActive && <ActiveNodeGlow size={NODE_SIZE} />}
                   <CircleProgress
                     progress={progress}
                     size={NODE_SIZE - 8}
@@ -184,18 +259,19 @@ export default function LearnScreen() {
                     trackColor={isLocked ? Colors.lockedBg : 'rgba(255, 255, 255, 0.35)'}
                     label={isLocked ? '🔒' : (node.icon || '⭐')}
                   />
-                </TouchableOpacity>
+                </AnimatedPressable>
 
                 {/* Node Title text below circle */}
                 <Text style={[styles.nodeTitle, isLocked && styles.nodeTitleLocked]} numberOfLines={1}>
                   {node.title}
                 </Text>
-              </View>
+              </Animated.View>
             );
           })}
         </View>
       </ScrollView>
     </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 
@@ -208,53 +284,51 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.lockedBg,
+    paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.four,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    ...Shadows.sm,
   },
   flagButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: Colors.cream,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: Colors.lockedBg,
+    ...Shadows.sm,
   },
   flagEmoji: {
-    fontSize: 22,
+    fontSize: 24,
   },
   statsContainer: {
     flexDirection: 'row',
-    gap: Spacing.four,
+    gap: Spacing.five,
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.one,
+    gap: 6,
   },
   statEmoji: {
-    fontSize: 22,
+    fontSize: 24,
   },
   statText: {
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.bold,
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
   scrollContent: {
-    paddingBottom: 80,
+    paddingBottom: 100,
   },
   unitBanner: {
-    backgroundColor: Colors.accent,
-    padding: Spacing.four,
+    padding: Spacing.five,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 4,
-    borderBottomColor: '#CC9300',
   },
   unitTextContainer: {
     flex: 1,
@@ -263,14 +337,17 @@ const styles = StyleSheet.create({
   unitSubtitle: {
     fontSize: FontSizes.xs,
     fontWeight: FontWeights.bold,
-    color: 'rgba(0, 0, 0, 0.5)',
-    letterSpacing: 1,
+    color: 'rgba(0, 0, 0, 0.4)',
+    letterSpacing: 1.2,
   },
   unitTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: '#FFFFFF',
-    marginTop: 2,
+    marginTop: 4,
+    textShadowColor: 'rgba(0,0,0,0.15)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   guidebookButton: {
     backgroundColor: '#FFFFFF',
@@ -279,17 +356,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.one,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    gap: 6,
+    ...Shadows.sm,
   },
   guidebookIcon: {
-    fontSize: 16,
+    fontSize: 18,
   },
   guidebookText: {
     fontSize: FontSizes.xs,
-    fontWeight: FontWeights.bold,
+    fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
+    letterSpacing: 0.5,
   },
   mapContainer: {
     position: 'relative',
@@ -304,16 +381,12 @@ const styles = StyleSheet.create({
   nodeCircle: {
     borderRadius: BorderRadius.full,
     padding: 2,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   nodeCircleActive: {
     backgroundColor: '#FFFFFF',
     borderWidth: 4,
     borderColor: Colors.accent,
+    ...Shadows.md,
   },
   nodeCircleLocked: {
     backgroundColor: Colors.lockedBg,
@@ -333,26 +406,20 @@ const styles = StyleSheet.create({
   },
   tooltipContainer: {
     position: 'absolute',
-    top: -85,
+    top: -90,
     alignSelf: 'center',
     zIndex: 10,
     alignItems: 'center',
-    width: 150,
+    width: 160,
   },
   tooltipBody: {
     backgroundColor: Colors.secondary,
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.two,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: 4,
-    borderWidth: 2,
-    borderColor: '#C81B75',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 4,
+    gap: 6,
+    ...Shadows.glow(Colors.secondary),
   },
   tooltipTitle: {
     fontSize: FontSizes.xs,
@@ -364,10 +431,9 @@ const styles = StyleSheet.create({
   tooltipButton: {
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.sm,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    ...Shadows.sm,
   },
   tooltipButtonText: {
     fontSize: FontSizes.xs,

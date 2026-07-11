@@ -1,29 +1,36 @@
 /**
- * Profile Screen Tab - Redesigned to match Duolingo Profile Tab
+ * Profile Screen Tab - Enhanced with gradient header banner,
+ * animated progress bars, avatar glow, and colored stat cards.
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { StaggeredList } from '@/components/ui/staggered-list';
+import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
+import { Alert } from 'react-native';
 
 interface StatBoxProps {
   label: string;
   value: string | number;
   icon: string;
+  accentColor: string;
 }
 
-function StatBox({ label, value, icon }: StatBoxProps) {
+function StatBox({ label, value, icon, accentColor }: StatBoxProps) {
   return (
-    <View style={styles.statBox}>
+    <AnimatedPressable style={[styles.statBox, { borderLeftColor: accentColor, borderLeftWidth: 3 }]} onPress={() => {}} pressScale={0.97}>
       <Text style={styles.statIcon}>{icon}</Text>
       <View>
         <Text style={styles.statValue}>{value}</Text>
         <Text style={styles.statLabel}>{label}</Text>
       </View>
-    </View>
+    </AnimatedPressable>
   );
 }
 
@@ -37,39 +44,39 @@ interface Achievement {
 }
 
 const ACHIEVEMENTS: Achievement[] = [
-  {
-    id: 'a1',
-    icon: '🔥',
-    title: 'Lửa rừng',
-    description: 'Đạt chuỗi 7 ngày Streak',
-    progress: 7,
-    target: 7,
-  },
-  {
-    id: 'a2',
-    icon: '🎓',
-    title: 'Học giả',
-    description: 'Học 100 từ vựng mới',
-    progress: 45,
-    target: 100,
-  },
-  {
-    id: 'a3',
-    icon: '🏆',
-    title: 'Vô địch',
-    description: 'Lọt vào top 3 của giải đấu',
-    progress: 1,
-    target: 1,
-  },
-  {
-    id: 'a4',
-    icon: '🌟',
-    title: 'Huyền thoại',
-    description: 'Hoàn thành 10 bài học huyền thoại',
-    progress: 3,
-    target: 10,
-  },
+  { id: 'a1', icon: '🔥', title: 'Lửa rừng', description: 'Đạt chuỗi 7 ngày Streak', progress: 7, target: 7 },
+  { id: 'a2', icon: '🎓', title: 'Học giả', description: 'Học 100 từ vựng mới', progress: 45, target: 100 },
+  { id: 'a3', icon: '🏆', title: 'Vô địch', description: 'Lọt vào top 3 của giải đấu', progress: 1, target: 1 },
+  { id: 'a4', icon: '🌟', title: 'Huyền thoại', description: 'Hoàn thành 10 bài học huyền thoại', progress: 3, target: 10 },
 ];
+
+/** Animated achievement progress bar */
+function AnimatedProgressFill({ progress, isCompleted }: { progress: number; isCompleted: boolean }) {
+  const animWidth = useSharedValue(0);
+
+  useEffect(() => {
+    animWidth.value = withDelay(
+      400,
+      withTiming(progress, { duration: 800, easing: Easing.out(Easing.cubic) })
+    );
+  }, [progress]);
+
+  const fillStyle = useAnimatedStyle(() => ({
+    width: `${animWidth.value}%` as any,
+  }));
+
+  return (
+    <View style={styles.progressBarBg}>
+      <Animated.View
+        style={[
+          styles.progressBarFill,
+          { backgroundColor: isCompleted ? Colors.accent : Colors.primary },
+          fillStyle,
+        ]}
+      />
+    </View>
+  );
+}
 
 export default function ProfileTabScreen() {
   const router = useRouter();
@@ -95,73 +102,85 @@ export default function ProfileTabScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Profile Header Title */}
-      <View style={styles.header}>
+      {/* Gradient Profile Header */}
+      <LinearGradient
+        colors={[Colors.primary, Colors.secondary]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <Text style={styles.headerTitle}>Hồ sơ cá nhân</Text>
-        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+        <AnimatedPressable style={styles.signOutBtn} onPress={handleSignOut} pressScale={0.95}>
           <Text style={styles.signOutBtnText}>Đăng xuất</Text>
-        </TouchableOpacity>
-      </View>
+        </AnimatedPressable>
+      </LinearGradient>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* User Card */}
-        <View style={styles.userCard}>
-          <View style={styles.avatarBg}>
-            <Text style={styles.avatarEmoji}>🦉</Text>
+        <Animated.View entering={FadeInDown.duration(400)}>
+          <View style={styles.userCard}>
+            <View style={styles.avatarBg}>
+              <Text style={styles.avatarEmoji}>🦉</Text>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.displayName}>{user?.displayName || 'Học viên Kotodama'}</Text>
+              <Text style={styles.userName}>@{user?.email?.split('@')[0] || 'kotodama_user'}</Text>
+              <Text style={styles.joinDate}>Tham gia từ tháng 6 năm 2026</Text>
+            </View>
           </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.displayName}>{user?.displayName || 'Học viên Kotodama'}</Text>
-            <Text style={styles.userName}>@{user?.email?.split('@')[0] || 'kotodama_user'}</Text>
-            <Text style={styles.joinDate}>Tham gia từ tháng 6 năm 2026</Text>
-          </View>
-        </View>
+        </Animated.View>
 
         {/* Statistics Grid */}
-        <Text style={styles.sectionTitle}>Thống kê</Text>
-        <View style={styles.statsGrid}>
-          <StatBox icon="🔥" label="Ngày Streak" value={7} />
-          <StatBox icon="⚡" label="Tổng số XP" value={980} />
-          <StatBox icon="🛡️" label="Giải đấu" value="Emerald" />
-          <StatBox icon="👑" label="Vương miện" value={12} />
-        </View>
+        <Animated.Text
+          entering={FadeInDown.delay(100).duration(400)}
+          style={styles.sectionTitle}
+        >
+          Thống kê
+        </Animated.Text>
+        <Animated.View
+          entering={FadeInDown.delay(200).duration(400)}
+          style={styles.statsGrid}
+        >
+          <StatBox icon="🔥" label="Ngày Streak" value={7} accentColor="#F59E0B" />
+          <StatBox icon="⚡" label="Tổng số XP" value={980} accentColor={Colors.primary} />
+          <StatBox icon="🛡️" label="Giải đấu" value="Emerald" accentColor="#10B981" />
+          <StatBox icon="👑" label="Vương miện" value={12} accentColor={Colors.secondary} />
+        </Animated.View>
 
         {/* Achievements Section */}
-        <Text style={styles.sectionTitle}>Thành tích</Text>
-        <View style={styles.achievementsContainer}>
+        <Animated.Text
+          entering={FadeInDown.delay(300).duration(400)}
+          style={styles.sectionTitle}
+        >
+          Thành tích
+        </Animated.Text>
+        <StaggeredList staggerDelay={80} initialDelay={400}>
           {ACHIEVEMENTS.map((item) => {
             const isCompleted = item.progress >= item.target;
             const progressPercent = Math.min((item.progress / item.target) * 100, 100);
 
             return (
-              <View key={item.id} style={styles.achievementCard}>
-                <Text style={styles.achievementIcon}>{item.icon}</Text>
+              <AnimatedPressable key={item.id} style={styles.achievementCard} onPress={() => {}} pressScale={0.98}>
+                <View style={styles.achievementIconBg}>
+                  <Text style={styles.achievementIcon}>{item.icon}</Text>
+                </View>
                 
                 <View style={styles.achievementContent}>
                   <Text style={styles.achievementTitle}>{item.title}</Text>
                   <Text style={styles.achievementDesc}>{item.description}</Text>
                   
-                  {/* Progress Row */}
+                  {/* Animated Progress Row */}
                   <View style={styles.progressRow}>
-                    <View style={styles.progressBarBg}>
-                      <View 
-                        style={[
-                          styles.progressBarFill, 
-                          { 
-                            width: `${progressPercent}%`,
-                            backgroundColor: isCompleted ? Colors.accent : Colors.primary 
-                          }
-                        ]} 
-                      />
-                    </View>
+                    <AnimatedProgressFill progress={progressPercent} isCompleted={isCompleted} />
                     <Text style={styles.progressText}>
                       {item.progress} / {item.target}
                     </Text>
                   </View>
                 </View>
-              </View>
+              </AnimatedPressable>
             );
           })}
-        </View>
+        </StaggeredList>
       </ScrollView>
     </SafeAreaView>
   );
@@ -173,80 +192,82 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   header: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: Spacing.four,
+    paddingVertical: Spacing.five,
     paddingHorizontal: Spacing.six,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.lockedBg,
   },
   headerTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.15)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   signOutBtn: {
-    backgroundColor: Colors.errorLight,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: 6,
-    borderRadius: BorderRadius.sm,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: Spacing.four,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   signOutBtnText: {
-    color: Colors.error,
-    fontSize: FontSizes.xs,
+    color: '#FFFFFF',
+    fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.six,
-    paddingVertical: Spacing.six,
+    paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.five,
     paddingBottom: 100,
   },
   userCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xxl,
     padding: Spacing.five,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.four,
-    borderWidth: 2,
-    borderColor: Colors.lockedBg,
     marginBottom: Spacing.six,
+    ...Shadows.md,
   },
   avatarBg: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: Colors.cream,
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: Colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
+    ...Shadows.glow(Colors.accent),
   },
   avatarEmoji: {
-    fontSize: 42,
+    fontSize: 44,
   },
   userInfo: {
     flex: 1,
   },
   displayName: {
-    fontSize: FontSizes.xl,
+    fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
   userName: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.md,
     color: Colors.textSecondary,
     marginTop: 2,
   },
   joinDate: {
-    fontSize: 11,
+    fontSize: FontSizes.xs,
     color: Colors.textSecondary,
     marginTop: 4,
   },
   sectionTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
     marginBottom: Spacing.four,
@@ -261,48 +282,53 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: '45%',
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.md,
-    padding: Spacing.three,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.four,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    ...Shadows.sm,
   },
   statIcon: {
-    fontSize: 28,
+    fontSize: 32,
   },
   statValue: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: FontSizes.xs,
     color: Colors.textSecondary,
     fontWeight: FontWeights.semibold,
-  },
-  achievementsContainer: {
-    gap: Spacing.four,
+    marginTop: 2,
   },
   achievementCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.md,
-    padding: Spacing.four,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.five,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.four,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    marginBottom: Spacing.three,
+    ...Shadows.sm,
+  },
+  achievementIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.cream,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   achievementIcon: {
-    fontSize: 32,
+    fontSize: 30,
   },
   achievementContent: {
     flex: 1,
   },
   achievementTitle: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
   },
@@ -322,6 +348,7 @@ const styles = StyleSheet.create({
     height: 8,
     backgroundColor: Colors.lockedBg,
     borderRadius: 4,
+    overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
@@ -331,7 +358,8 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     fontWeight: FontWeights.bold,
     color: Colors.textSecondary,
-    width: 45,
+    width: 50,
     textAlign: 'right',
   },
 });
+

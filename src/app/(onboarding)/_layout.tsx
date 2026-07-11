@@ -7,7 +7,10 @@ export default function OnboardingLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: Colors.cream },
-        animation: 'slide_from_right',
+        animation: 'ios_from_right',
+        animationDuration: 280,
+        gestureEnabled: true,
+        fullScreenGestureEnabled: true,
       }}
     >
       <Stack.Screen name="goal" />

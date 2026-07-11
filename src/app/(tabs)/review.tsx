@@ -1,12 +1,16 @@
 /**
- * Practice Hub / Trung Tâm Luyện Tập Screen - Redesigned to match Duolingo
+ * Practice Hub / Trung Tâm Luyện Tập Screen - Enhanced with larger icons,
+ * press animations, animated badges, and staggered entrance.
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { StaggeredList } from '@/components/ui/staggered-list';
+import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
 
 interface PracticeItem {
   id: string;
@@ -56,9 +60,36 @@ export default function PracticeHubScreen() {
       description: 'Nghe giọng bản xứ và tập nói lại chuẩn xác.',
       icon: '🗣️',
       route: '/voice/record',
-      color: '#10B981', // Emerald green
+      color: '#10B981',
     },
   ];
+
+  const renderCard = (item: PracticeItem) => (
+    <AnimatedPressable
+      key={item.id}
+      style={styles.card}
+      onPress={() => router.push(item.route as any)}
+      pressScale={0.97}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: item.color + '18' }]}>
+        <Text style={styles.itemIcon}>{item.icon}</Text>
+      </View>
+      <View style={styles.cardContent}>
+        <View style={styles.titleRow}>
+          <Text style={styles.itemTitle}>{item.title}</Text>
+          {item.badge ? (
+            <View style={[styles.badge, { backgroundColor: item.color }]}>
+              <Text style={styles.badgeText}>{item.badge}</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={styles.itemDesc}>{item.description}</Text>
+      </View>
+      <View style={styles.arrowContainer}>
+        <Text style={styles.arrowIcon}>›</Text>
+      </View>
+    </AnimatedPressable>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -69,7 +100,10 @@ export default function PracticeHubScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Intro Banner */}
-        <View style={styles.introBanner}>
+        <Animated.View
+          entering={FadeInDown.duration(400)}
+          style={styles.introBanner}
+        >
           <Text style={styles.introEmoji}>🏋️</Text>
           <View style={styles.introInfo}>
             <Text style={styles.introTitle}>Nâng cao phản xạ tiếng Nhật</Text>
@@ -77,58 +111,29 @@ export default function PracticeHubScreen() {
               Ôn luyện hằng ngày giúp bạn nhớ lâu hơn gấp 4 lần.
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Section 1 */}
-        <Text style={styles.sectionTitle}>Bài học tập trung</Text>
-        <View style={styles.itemsList}>
-          {primaryItems.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.card}
-              onPress={() => router.push(item.route as any)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
-                <Text style={[styles.itemIcon, { color: item.color }]}>{item.icon}</Text>
-              </View>
-              <View style={styles.cardContent}>
-                <View style={styles.titleRow}>
-                  <Text style={styles.itemTitle}>{item.title}</Text>
-                  {item.badge ? (
-                    <View style={[styles.badge, { backgroundColor: item.color }]}>
-                      <Text style={styles.badgeText}>{item.badge}</Text>
-                    </View>
-                  ) : null}
-                </View>
-                <Text style={styles.itemDesc}>{item.description}</Text>
-              </View>
-              <Text style={styles.arrowIcon}>→</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Animated.Text
+          entering={FadeInDown.delay(100).duration(400)}
+          style={styles.sectionTitle}
+        >
+          Bài học tập trung
+        </Animated.Text>
+        <StaggeredList staggerDelay={80} initialDelay={200}>
+          {primaryItems.map(renderCard)}
+        </StaggeredList>
 
         {/* Section 2 */}
-        <Text style={styles.sectionTitle}>Các hoạt động ôn tập</Text>
-        <View style={styles.itemsList}>
-          {additionalItems.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.card}
-              onPress={() => router.push(item.route as any)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
-                <Text style={[styles.itemIcon, { color: item.color }]}>{item.icon}</Text>
-              </View>
-              <View style={styles.cardContent}>
-                <Text style={styles.itemTitle}>{item.title}</Text>
-                <Text style={styles.itemDesc}>{item.description}</Text>
-              </View>
-              <Text style={styles.arrowIcon}>→</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Animated.Text
+          entering={FadeInDown.delay(300).duration(400)}
+          style={[styles.sectionTitle, { marginTop: Spacing.two }]}
+        >
+          Các hoạt động ôn tập
+        </Animated.Text>
+        <StaggeredList staggerDelay={80} initialDelay={400}>
+          {additionalItems.map(renderCard)}
+        </StaggeredList>
       </ScrollView>
     </SafeAreaView>
   );
@@ -143,77 +148,72 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingVertical: Spacing.four,
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.lockedBg,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    ...Shadows.sm,
   },
   headerTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.six,
-    paddingVertical: Spacing.six,
+    paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.five,
     paddingBottom: 100,
   },
   introBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.xxl,
     padding: Spacing.five,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
     marginBottom: Spacing.six,
     gap: Spacing.four,
+    ...Shadows.md,
   },
   introEmoji: {
-    fontSize: 48,
+    fontSize: 52,
   },
   introInfo: {
     flex: 1,
   },
   introTitle: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
   introDesc: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 18,
+    marginTop: 4,
+    lineHeight: 20,
   },
   sectionTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
     marginBottom: Spacing.four,
-    marginTop: Spacing.two,
-  },
-  itemsList: {
-    gap: Spacing.four,
-    marginBottom: Spacing.six,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.four,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.five,
     gap: Spacing.four,
+    marginBottom: Spacing.three,
+    ...Shadows.sm,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.md,
+    width: 60,
+    height: 60,
+    borderRadius: BorderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
   itemIcon: {
-    fontSize: 24,
+    fontSize: 32,
   },
   cardContent: {
     flex: 1,
@@ -222,31 +222,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexWrap: 'wrap',
   },
   itemTitle: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
   },
   badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
   badgeText: {
     color: '#FFFFFF',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: FontWeights.extrabold,
+    letterSpacing: 0.3,
   },
   itemDesc: {
-    fontSize: FontSizes.xs,
+    fontSize: FontSizes.sm,
     color: Colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 16,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  arrowContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.cream,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   arrowIcon: {
-    fontSize: FontSizes.lg,
+    fontSize: 22,
     color: Colors.textSecondary,
     fontWeight: 'bold',
+    marginTop: -2,
   },
 });
+

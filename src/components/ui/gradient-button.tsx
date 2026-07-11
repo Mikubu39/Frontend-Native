@@ -1,11 +1,10 @@
 /**
  * GradientButton - Primary action button with gradient or solid color.
- * Used across all screens (Sign up, NEXT, READY, etc.)
+ * Enhanced with animated press scale effect for premium feel.
  */
 
 import React from 'react';
 import {
-  TouchableOpacity,
   Text,
   StyleSheet,
   type ViewStyle,
@@ -13,7 +12,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows } from '@/constants/theme';
 
 interface GradientButtonProps {
   title: string;
@@ -36,18 +36,18 @@ export function GradientButton({
 }: GradientButtonProps) {
   if (variant === 'outline') {
     return (
-      <TouchableOpacity
+      <AnimatedPressable
         style={[styles.outlineButton, disabled && styles.disabled, style]}
         onPress={onPress}
         disabled={disabled || loading}
-        activeOpacity={0.7}
+        pressScale={0.96}
       >
         {loading ? (
           <ActivityIndicator color={Colors.primary} />
         ) : (
           <Text style={[styles.outlineText, textStyle]}>{title}</Text>
         )}
-      </TouchableOpacity>
+      </AnimatedPressable>
     );
   }
 
@@ -58,17 +58,17 @@ export function GradientButton({
     : [Colors.primary, Colors.primaryLight];
 
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.8}
+      pressScale={0.96}
       style={[disabled && styles.disabled, style]}
     >
       <LinearGradient
         colors={gradientColors}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.gradient}
+        end={{ x: 1, y: 1 }}
+        style={[styles.gradient, Shadows.glow(gradientColors[0])]}
       >
         {loading ? (
           <ActivityIndicator color={Colors.textOnDark} />
@@ -76,7 +76,7 @@ export function GradientButton({
           <Text style={[styles.gradientText, textStyle]}>{title}</Text>
         )}
       </LinearGradient>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 52,
+    minHeight: 54,
   },
   gradientText: {
     color: Colors.textOnDark,
@@ -103,8 +103,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 52,
+    minHeight: 54,
     backgroundColor: Colors.surface,
+    ...Shadows.sm,
   },
   outlineText: {
     color: Colors.primary,

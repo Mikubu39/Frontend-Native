@@ -9,8 +9,43 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
-import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import { Alert } from "react-native";
+
+let GoogleSignin: any;
+let statusCodes: any = {
+  SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
+};
+
+try {
+  const GoogleSignInModule = require("@react-native-google-signin/google-signin");
+  GoogleSignin = GoogleSignInModule.GoogleSignin;
+  if (GoogleSignInModule.statusCodes) {
+    statusCodes = GoogleSignInModule.statusCodes;
+  }
+} catch (e) {
+  console.warn("Google Sign-In native module is not available. Falling back to mock (Expo Go support).");
+  GoogleSignin = {
+    configure: () => {},
+    hasPlayServices: async () => true,
+    signIn: async () => {
+      return {
+        type: "success",
+        data: {
+          idToken: "mock-google-id-token",
+          user: {
+            id: "google-mock-id",
+            email: "mock-expo-go-user@example.com",
+            name: "Expo Go Mock User",
+            photo: "https://lh3.googleusercontent.com/a/mock-photo",
+          }
+        }
+      };
+    },
+    signOut: async () => {},
+  };
+}
 
 import { GOOGLE_WEB_CLIENT_ID } from "@/config/google-auth";
 

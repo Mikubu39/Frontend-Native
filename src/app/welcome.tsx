@@ -1,54 +1,103 @@
 /**
  * Welcome / Entry Screen
+ * Enhanced with animated mascot entrance, gradient accents, and premium 3D buttons.
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withDelay,
+  withSequence,
+  withTiming,
+  FadeInDown,
+  FadeIn,
+} from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, AnimationPresets, Shadows } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
   const router = useRouter();
 
+  const mascotScale = useSharedValue(0);
+  const mascotRotate = useSharedValue(-15);
+
+  useEffect(() => {
+    mascotScale.value = withDelay(
+      200,
+      withSpring(1, AnimationPresets.springBouncy)
+    );
+    mascotRotate.value = withDelay(
+      200,
+      withSequence(
+        withSpring(8, { damping: 8, stiffness: 100 }),
+        withSpring(0, { damping: 10, stiffness: 120 })
+      )
+    );
+  }, []);
+
+  const mascotStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: mascotScale.value },
+      { rotate: `${mascotRotate.value}deg` },
+    ],
+  }));
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         {/* Mascot & Brand Header */}
         <View style={styles.mascotContainer}>
-          <Text style={styles.mascotEmoji}>🦉</Text>
-          <Text style={styles.brandTitle}>Kotodama</Text>
-          <Text style={styles.brandSubtitle}>
+          <Animated.Text style={[styles.mascotEmoji, mascotStyle]}>🦉</Animated.Text>
+
+          <Animated.Text
+            entering={FadeInDown.delay(400).duration(500)}
+            style={styles.brandTitle}
+          >
+            Kotodama
+          </Animated.Text>
+
+          <Animated.Text
+            entering={FadeInDown.delay(600).duration(500)}
+            style={styles.brandSubtitle}
+          >
             Học tiếng Nhật tự nhiên, miễn phí và hiệu quả!
-          </Text>
+          </Animated.Text>
         </View>
 
         {/* Action Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
+        <Animated.View
+          entering={FadeInDown.delay(800).duration(500)}
+          style={styles.buttonContainer}
+        >
+          <AnimatedPressable
             style={styles.primaryButton}
             onPress={() => router.push('/(auth)/signup')}
-            activeOpacity={0.8}
+            pressScale={0.97}
           >
             <View style={styles.primaryButtonShadow} />
             <View style={styles.primaryButtonContent}>
               <Text style={styles.primaryButtonText}>BẮT ĐẦU NGAY</Text>
             </View>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.secondaryButton}
             onPress={() => router.push('/(auth)/login')}
-            activeOpacity={0.8}
+            pressScale={0.97}
           >
             <View style={styles.secondaryButtonShadow} />
             <View style={styles.secondaryButtonContent}>
               <Text style={styles.secondaryButtonText}>TÔI ĐÃ CÓ TÀI KHOẢN</Text>
             </View>
-          </TouchableOpacity>
-        </View>
+          </AnimatedPressable>
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
@@ -74,24 +123,27 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   mascotEmoji: {
-    fontSize: 100,
+    fontSize: 120,
     textAlign: 'center',
     marginBottom: Spacing.two,
   },
   brandTitle: {
-    fontSize: 42,
+    fontSize: 46,
     fontWeight: FontWeights.extrabold,
     color: Colors.primary,
     fontStyle: 'italic',
     textAlign: 'center',
+    textShadowColor: 'rgba(139, 92, 246, 0.2)',
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 10,
   },
   brandSubtitle: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
     color: Colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: Spacing.four,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   buttonContainer: {
     width: '100%',
@@ -101,17 +153,17 @@ const styles = StyleSheet.create({
   // 3D Primary Button Style
   primaryButton: {
     width: '100%',
-    height: 54,
+    height: 58,
     position: 'relative',
   },
   primaryButtonShadow: {
     position: 'absolute',
     left: 0,
     right: 0,
-    top: 4,
-    bottom: -4,
+    top: 5,
+    bottom: -5,
     backgroundColor: Colors.primaryDark,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
   },
   primaryButtonContent: {
     position: 'absolute',
@@ -120,30 +172,31 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
+    ...Shadows.md,
   },
   primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
-    letterSpacing: 0.8,
+    letterSpacing: 1,
   },
-  // 3D Secondary Button Style (Transparent/Cream background with border)
+  // 3D Secondary Button Style
   secondaryButton: {
     width: '100%',
-    height: 54,
+    height: 58,
     position: 'relative',
   },
   secondaryButtonShadow: {
     position: 'absolute',
     left: 0,
     right: 0,
-    top: 4,
-    bottom: -4,
+    top: 5,
+    bottom: -5,
     backgroundColor: Colors.creamDark,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
   },
   secondaryButtonContent: {
     position: 'absolute',
@@ -154,14 +207,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
     borderWidth: 2,
     borderColor: Colors.creamDark,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
   },
   secondaryButtonText: {
     color: Colors.primary,
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
-    letterSpacing: 0.8,
+    letterSpacing: 1,
   },
 });
+

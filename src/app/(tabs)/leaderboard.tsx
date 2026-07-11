@@ -1,11 +1,16 @@
 /**
- * Leaderboard / League Screen - Redesigned to match Duolingo League
+ * Leaderboard / League Screen - Enhanced with staggered animations,
+ * gradient league banner, animated medals, and glowing current user row.
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { AnimatedScreen } from '@/components/ui/animated-screen';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
 
 interface LeaderboardUser {
   rank: number;
@@ -30,39 +35,55 @@ const LEAGUE_USERS: LeaderboardUser[] = [
 ];
 
 export default function LeaderboardScreen() {
-  const renderItem = ({ item }: { item: LeaderboardUser }) => {
+  const renderItem = ({ item, index }: { item: LeaderboardUser; index: number }) => {
     const isTop3 = item.rank <= 3;
     const rankColors = ['#FFD700', '#C0C0C0', '#CD7F32']; // Gold, Silver, Bronze
+    const changeIcon = item.change === 'up' ? '↑' : item.change === 'down' ? '↓' : '—';
+    const changeColor = item.change === 'up' ? Colors.success : item.change === 'down' ? Colors.error : Colors.textSecondary;
 
     return (
-      <View style={[styles.userRow, item.isCurrentUser && styles.currentUserRow]}>
-        {/* Rank Number / Badge */}
-        <View style={styles.rankContainer}>
-          {isTop3 ? (
-            <View style={[styles.rankBadge, { backgroundColor: rankColors[item.rank - 1] }]}>
-              <Text style={styles.rankBadgeText}>{item.rank}</Text>
-            </View>
-          ) : (
-            <Text style={styles.rankText}>{item.rank}</Text>
-          )}
-        </View>
+      <Animated.View
+        entering={FadeInDown.delay(index * AnimationPresets.staggerDelay).duration(400)}
+      >
+        <AnimatedPressable
+          style={[styles.userRow, item.isCurrentUser && styles.currentUserRow]}
+          onPress={() => {}}
+          pressScale={0.98}
+        >
+          {/* Rank Number / Badge */}
+          <View style={styles.rankContainer}>
+            {isTop3 ? (
+              <View style={[styles.rankBadge, { backgroundColor: rankColors[item.rank - 1] }]}>
+                <Text style={styles.rankBadgeText}>{item.rank}</Text>
+              </View>
+            ) : (
+              <Text style={styles.rankText}>{item.rank}</Text>
+            )}
+          </View>
 
-        {/* User Info */}
-        <Text style={styles.avatar}>{item.avatarEmoji}</Text>
-        <View style={styles.userInfo}>
-          <Text style={[styles.userName, item.isCurrentUser && styles.currentUserText]}>
-            {item.name}
-          </Text>
-          {item.isCurrentUser && <Text style={styles.youBadge}>Bạn</Text>}
-        </View>
+          {/* User Info */}
+          <View style={styles.avatarContainer}>
+            <Text style={styles.avatar}>{item.avatarEmoji}</Text>
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={[styles.userName, item.isCurrentUser && styles.currentUserText]}>
+              {item.name}
+            </Text>
+            {item.isCurrentUser && <View style={styles.youBadge}><Text style={styles.youBadgeText}>Bạn</Text></View>}
+          </View>
 
-        {/* XP Status */}
-        <Text style={styles.xpText}>{item.xp} XP</Text>
-      </View>
+          {/* Change indicator + XP */}
+          <View style={styles.xpContainer}>
+            <Text style={[styles.changeIcon, { color: changeColor }]}>{changeIcon}</Text>
+            <Text style={styles.xpText}>{item.xp} XP</Text>
+          </View>
+        </AnimatedPressable>
+      </Animated.View>
     );
   };
 
   return (
+    <AnimatedScreen>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* League Header */}
       <View style={styles.header}>
@@ -76,21 +97,29 @@ export default function LeaderboardScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <View style={styles.leagueBanner}>
-            <Text style={styles.leagueEmoji}>🛡️</Text>
-            <Text style={styles.leagueName}>Giải đấu Ngọc Lục Bảo</Text>
-            <Text style={styles.leagueTimer}>Thời gian còn lại: 2 ngày 5 giờ</Text>
-            
-            {/* Promo card */}
-            <View style={styles.promoCard}>
-              <Text style={styles.promoText}>
-                Top 10 người đứng đầu sẽ được thăng cấp lên Giải đấu Hồng Ngọc!
-              </Text>
-            </View>
-          </View>
+          <Animated.View entering={FadeInDown.duration(500)}>
+            <LinearGradient
+              colors={[Colors.primary, Colors.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.leagueBanner}
+            >
+              <Text style={styles.leagueEmoji}>🛡️</Text>
+              <Text style={styles.leagueName}>Giải đấu Ngọc Lục Bảo</Text>
+              <Text style={styles.leagueTimer}>Thời gian còn lại: 2 ngày 5 giờ</Text>
+              
+              {/* Promo card */}
+              <View style={styles.promoCard}>
+                <Text style={styles.promoText}>
+                  Top 10 người đứng đầu sẽ được thăng cấp lên Giải đấu Hồng Ngọc! 🏆
+                </Text>
+              </View>
+            </LinearGradient>
+          </Animated.View>
         }
       />
     </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 
@@ -103,57 +132,59 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingVertical: Spacing.four,
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.lockedBg,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    ...Shadows.sm,
   },
   headerTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
   listContent: {
-    paddingHorizontal: Spacing.six,
-    paddingVertical: Spacing.six,
+    paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.five,
     paddingBottom: 100,
   },
   leagueBanner: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.six,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.seven,
     marginBottom: Spacing.six,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    ...Shadows.lg,
   },
   leagueEmoji: {
-    fontSize: 64,
-    marginBottom: Spacing.two,
+    fontSize: 72,
+    marginBottom: Spacing.three,
   },
   leagueName: {
-    fontSize: FontSizes.xl,
+    fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
-    color: Colors.primaryDark,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
   },
   leagueTimer: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    marginTop: 4,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 6,
     fontWeight: FontWeights.bold,
   },
   promoCard: {
-    backgroundColor: Colors.cream,
-    borderColor: Colors.inputBorder,
-    borderWidth: 1.5,
-    borderRadius: BorderRadius.md,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 1,
+    borderRadius: BorderRadius.lg,
     padding: Spacing.four,
     marginTop: Spacing.five,
     width: '100%',
   },
   promoText: {
     fontSize: FontSizes.sm,
-    color: Colors.textPrimary,
+    color: '#FFFFFF',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 20,
     fontWeight: FontWeights.bold,
   },
   userRow: {
@@ -162,15 +193,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.four,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     marginBottom: Spacing.three,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
-    gap: Spacing.four,
+    gap: Spacing.three,
+    ...Shadows.sm,
   },
   currentUserRow: {
+    borderWidth: 2,
     borderColor: Colors.primary,
-    backgroundColor: '#F5F3FF', // Light purple tint
+    backgroundColor: '#F5F3FF',
+    ...Shadows.glow(Colors.primary),
   },
   rankContainer: {
     width: 36,
@@ -178,24 +210,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rankBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    ...Shadows.sm,
   },
   rankBadgeText: {
     color: '#FFFFFF',
     fontWeight: FontWeights.extrabold,
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.md,
   },
   rankText: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     color: Colors.textSecondary,
   },
+  avatarContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.cream,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.lockedBg,
+  },
   avatar: {
-    fontSize: 28,
+    fontSize: 24,
   },
   userInfo: {
     flex: 1,
@@ -214,12 +257,22 @@ const styles = StyleSheet.create({
   },
   youBadge: {
     backgroundColor: Colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  youBadgeText: {
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: FontWeights.extrabold,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
+  },
+  xpContainer: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  changeIcon: {
+    fontSize: 12,
+    fontWeight: FontWeights.extrabold,
   },
   xpText: {
     fontSize: FontSizes.md,
@@ -227,3 +280,4 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 });
+

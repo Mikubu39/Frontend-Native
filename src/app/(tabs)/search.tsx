@@ -1,11 +1,17 @@
 /**
- * Shop Screen - Redesigned to match Duolingo Shop
+ * Shop Screen - Enhanced with animated cards, shimmer on premium banner,
+ * larger icons, and press animations on buy buttons.
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedScreen } from '@/components/ui/animated-screen';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { StaggeredList } from '@/components/ui/staggered-list';
+import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
 
 interface ShopItem {
   id: string;
@@ -58,6 +64,7 @@ const SHOP_ITEMS: ShopItem[] = [
 
 export default function ShopScreen() {
   return (
+    <AnimatedScreen>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header with Gem Counter */}
       <View style={styles.header}>
@@ -70,29 +77,48 @@ export default function ShopScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Premium Super Banner */}
-        <View style={styles.superBanner}>
-          <View style={styles.superHeader}>
-            <Text style={styles.superIcon}>🦉⚡</Text>
-            <View style={styles.superContent}>
-              <Text style={styles.superTitle}>Super Kotodama</Text>
-              <Text style={styles.superDesc}>
-                Học không quảng cáo, vô hạn Tim và các tính năng độc quyền!
-              </Text>
+        <Animated.View entering={FadeInDown.duration(500)}>
+          <LinearGradient
+            colors={[Colors.primary, '#6D28D9']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.superBanner}
+          >
+            <View style={styles.superHeader}>
+              <Text style={styles.superIcon}>🦉⚡</Text>
+              <View style={styles.superContent}>
+                <Text style={styles.superTitle}>Super Kotodama</Text>
+                <Text style={styles.superDesc}>
+                  Học không quảng cáo, vô hạn Tim và các tính năng độc quyền!
+                </Text>
+              </View>
             </View>
-          </View>
-          <TouchableOpacity style={styles.superButton} activeOpacity={0.8}>
-            <Text style={styles.superButtonText}>DÙNG THỬ 2 TUẦN MIỄN PHÍ</Text>
-          </TouchableOpacity>
-        </View>
+            <AnimatedPressable style={styles.superButton} onPress={() => {}} pressScale={0.97}>
+              <Text style={styles.superButtonText}>DÙNG THỬ 2 TUẦN MIỄN PHÍ</Text>
+            </AnimatedPressable>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Section title */}
-        <Text style={styles.sectionTitle}>Vật phẩm hỗ trợ</Text>
+        <Animated.Text
+          entering={FadeInDown.delay(200).duration(400)}
+          style={styles.sectionTitle}
+        >
+          Vật phẩm hỗ trợ
+        </Animated.Text>
 
         {/* Items List */}
-        <View style={styles.itemsList}>
+        <StaggeredList staggerDelay={80} initialDelay={300}>
           {SHOP_ITEMS.map((item) => (
-            <View key={item.id} style={styles.itemCard}>
-              <Text style={styles.itemIcon}>{item.icon}</Text>
+            <AnimatedPressable
+              key={item.id}
+              style={styles.itemCard}
+              onPress={() => {}}
+              pressScale={0.98}
+            >
+              <View style={styles.itemIconContainer}>
+                <Text style={styles.itemIcon}>{item.icon}</Text>
+              </View>
               
               <View style={styles.itemInfo}>
                 <Text style={styles.itemTitle}>{item.title}</Text>
@@ -105,20 +131,21 @@ export default function ShopScreen() {
                   <Text style={styles.purchasedText}>ĐÃ MUA</Text>
                 </View>
               ) : (
-                <TouchableOpacity style={styles.buyButton} activeOpacity={0.8}>
+                <AnimatedPressable style={styles.buyButton} onPress={() => {}} pressScale={0.93}>
                   <View style={styles.buyButtonShadow} />
                   <View style={styles.buyButtonContent}>
                     <Text style={styles.buyButtonText}>
                       {item.price} {item.currencyIcon}
                     </Text>
                   </View>
-                </TouchableOpacity>
+                </AnimatedPressable>
               )}
-            </View>
+            </AnimatedPressable>
           ))}
-        </View>
+        </StaggeredList>
       </ScrollView>
     </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 
@@ -134,11 +161,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.lockedBg,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    ...Shadows.sm,
   },
   headerTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
@@ -147,34 +175,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.cream,
     paddingHorizontal: Spacing.three,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.sm,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.md,
     borderWidth: 1.5,
     borderColor: Colors.lockedBg,
-    gap: 4,
+    gap: 6,
+    ...Shadows.sm,
   },
   gemEmoji: {
-    fontSize: 16,
+    fontSize: 18,
   },
   gemText: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.bold,
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.extrabold,
     color: Colors.primary,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.six,
-    paddingVertical: Spacing.six,
+    paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.five,
     paddingBottom: 100,
   },
   superBanner: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.five,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.six,
     flexDirection: 'column',
     gap: Spacing.four,
-    borderBottomWidth: 4,
-    borderBottomColor: Colors.primaryDark,
     marginBottom: Spacing.six,
+    ...Shadows.lg,
   },
   superHeader: {
     flexDirection: 'row',
@@ -182,93 +209,98 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
   },
   superIcon: {
-    fontSize: 48,
+    fontSize: 52,
   },
   superContent: {
     flex: 1,
   },
   superTitle: {
-    fontSize: FontSizes.xl,
+    fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
     color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   superDesc: {
     fontSize: FontSizes.sm,
     color: 'rgba(255, 255, 255, 0.9)',
-    marginTop: 2,
-    lineHeight: 18,
+    marginTop: 4,
+    lineHeight: 20,
   },
   superButton: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.three,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.four,
     alignItems: 'center',
     width: '100%',
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    ...Shadows.sm,
   },
   superButtonText: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.md,
     fontWeight: FontWeights.extrabold,
     color: Colors.primary,
     letterSpacing: 0.5,
   },
   sectionTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
     marginBottom: Spacing.four,
   },
-  itemsList: {
-    gap: Spacing.four,
-  },
   itemCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.md,
-    padding: Spacing.four,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.five,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.four,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
+    marginBottom: Spacing.three,
+    ...Shadows.sm,
+  },
+  itemIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.cream,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   itemIcon: {
-    fontSize: 36,
+    fontSize: 32,
   },
   itemInfo: {
     flex: 1,
     paddingRight: Spacing.two,
   },
   itemTitle: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
   },
   itemDesc: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 16,
+    marginTop: 4,
+    lineHeight: 18,
   },
   purchasedTag: {
-    backgroundColor: '#F5F5F5',
-    borderColor: Colors.locked,
-    borderWidth: 1.5,
+    backgroundColor: Colors.lockedBg,
     borderRadius: BorderRadius.md,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   purchasedText: {
     color: Colors.textSecondary,
     fontSize: FontSizes.xs,
-    fontWeight: FontWeights.bold,
+    fontWeight: FontWeights.extrabold,
   },
   // 3D Small Buy Button Style
   buyButton: {
     width: 90,
-    height: 40,
+    height: 44,
     position: 'relative',
   },
   buyButtonShadow: {
@@ -290,10 +322,12 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
+    ...Shadows.sm,
   },
   buyButtonText: {
     color: '#FFFFFF',
-    fontSize: FontSizes.xs,
+    fontSize: FontSizes.sm,
     fontWeight: FontWeights.extrabold,
   },
 });
+

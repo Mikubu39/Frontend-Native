@@ -1,20 +1,16 @@
 /**
- * Tab Layout - Redesigned to support Duolingo's 6 bottom tabs
- * Order: Học, Leaderboard, Nhiệm vụ hàng ngày, Cửa hàng, Bảng tin, Profile
+ * Tab Layout - Redesigned with larger kawaii icons, active labels,
+ * refined tab bar styling with rounded corners and better shadows.
  */
 
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { AnimatedTabIcon } from '@/components/ui/animated-tab-icon';
+import { Colors, FontWeights, Shadows } from '@/constants/theme';
 
-function TabIcon({ icon, color, active }: { icon: string; color: string; active: boolean }) {
-  return (
-    <Text style={[styles.icon, { color }, active && styles.activeIcon]}>
-      {icon}
-    </Text>
-  );
-}
+// Tab icon sizes
+const ICON_SIZE = 28;
 
 export default function TabLayout() {
   return (
@@ -23,7 +19,8 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: Colors.tabActive,
         tabBarInactiveTintColor: Colors.tabInactive,
-        tabBarShowLabel: false, // Hide labels like in Duolingo
+        tabBarShowLabel: true,
+        tabBarLabelStyle: styles.tabLabel,
         tabBarStyle: styles.tabBar,
       }}
     >
@@ -31,35 +28,65 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Học',
-          tabBarIcon: ({ color, focused }) => <TabIcon icon="🏠" color={color} active={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon
+              iconName="home"
+              focused={focused}
+              size={ICON_SIZE}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="leaderboard"
         options={{
-          title: 'Leaderboard',
-          tabBarIcon: ({ color, focused }) => <TabIcon icon="🛡️" color={color} active={focused} />,
+          title: 'Xếp hạng',
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon
+              iconName="shield-alt"
+              focused={focused}
+              size={ICON_SIZE}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
           title: 'Cửa hàng',
-          tabBarIcon: ({ color, focused }) => <TabIcon icon="🛒" color={color} active={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon
+              iconName="store"
+              focused={focused}
+              size={ICON_SIZE}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="feed"
         options={{
           title: 'Bảng tin',
-          tabBarIcon: ({ color, focused }) => <TabIcon icon="💟" color={color} active={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon
+              iconName="user-friends"
+              focused={focused}
+              size={ICON_SIZE}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
           title: 'Khác',
-          tabBarIcon: ({ color, focused }) => <TabIcon icon="⋯" color={color} active={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon
+              iconName="ellipsis-h"
+              focused={focused}
+              size={ICON_SIZE}
+            />
+          ),
         }}
       />
       {/* Hide internal screens from bottom tab bar */}
@@ -94,16 +121,17 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: Colors.surface,
-    borderTopColor: Colors.lockedBg,
-    borderTopWidth: 2,
-    height: 70,
-    paddingTop: 8,
-    paddingBottom: 8,
+    borderTopWidth: 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: 82,
+    paddingTop: 6,
+    paddingBottom: Platform.select({ ios: 22, android: 10 }),
+    ...Shadows.lg,
   },
-  icon: {
-    fontSize: 24,
-  },
-  activeIcon: {
-    transform: [{ scale: 1.15 }],
+  tabLabel: {
+    fontSize: 10,
+    fontWeight: FontWeights.bold,
+    marginTop: -2,
   },
 });

@@ -7,6 +7,8 @@ export default function LessonLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: Colors.cream },
+        animation: 'slide_from_right',
+        animationDuration: 300,
       }}
     />
   );

@@ -1,10 +1,17 @@
 /**
- * ProgressBar - Stepped progress indicator for onboarding/quiz.
+ * ProgressBar - Animated stepped progress indicator for onboarding/quiz.
+ * Fill width animates smoothly from 0 to target value on mount.
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Colors, BorderRadius, Spacing } from '@/constants/theme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
+import { Colors, BorderRadius } from '@/constants/theme';
 
 interface ProgressBarProps {
   progress: number; // 0 to 1
@@ -19,16 +26,30 @@ export function ProgressBar({
   trackColor = Colors.lockedBg,
   height = 10,
 }: ProgressBarProps) {
+  const animatedProgress = useSharedValue(0);
+
+  useEffect(() => {
+    animatedProgress.value = withTiming(
+      Math.min(Math.max(progress, 0), 1),
+      { duration: 600, easing: Easing.out(Easing.cubic) }
+    );
+  }, [progress]);
+
+  const fillStyle = useAnimatedStyle(() => ({
+    width: `${animatedProgress.value * 100}%` as any,
+  }));
+
   return (
-    <View style={[styles.track, { backgroundColor: trackColor, height }]}>
-      <View
+    <View style={[styles.track, { backgroundColor: trackColor, height, borderRadius: height / 2 }]}>
+      <Animated.View
         style={[
           styles.fill,
           {
             backgroundColor: color,
-            width: `${Math.min(Math.max(progress, 0), 1) * 100}%`,
             height,
+            borderRadius: height / 2,
           },
+          fillStyle,
         ]}
       />
     </View>
@@ -38,10 +59,11 @@ export function ProgressBar({
 const styles = StyleSheet.create({
   track: {
     width: '100%',
-    borderRadius: BorderRadius.full,
     overflow: 'hidden',
   },
   fill: {
-    borderRadius: BorderRadius.full,
+    position: 'absolute',
+    left: 0,
+    top: 0,
   },
 });

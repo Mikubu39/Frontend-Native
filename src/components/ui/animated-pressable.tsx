@@ -1,0 +1,68 @@
+/**
+ * AnimatedPressable - A Pressable wrapper that provides a satisfying
+ * scale-down spring animation on press + bounce back on release.
+ * Replaces TouchableOpacity for a more premium, app-wide feel.
+ */
+
+import React from 'react';
+import { Pressable, type ViewStyle, type PressableProps, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
+import { AnimationPresets } from '@/constants/theme';
+
+const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
+
+interface AnimatedPressableComponentProps extends Omit<PressableProps, 'style'> {
+  children: React.ReactNode;
+  style?: ViewStyle | ViewStyle[];
+  /** Scale factor when pressed (default: 0.97) */
+  pressScale?: number;
+  /** Disable the scale animation */
+  disableAnimation?: boolean;
+}
+
+export function AnimatedPressable({
+  children,
+  style,
+  pressScale = 0.97,
+  disableAnimation = false,
+  disabled,
+  onPressIn,
+  onPressOut,
+  ...props
+}: AnimatedPressableComponentProps) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = (e: any) => {
+    if (!disableAnimation && !disabled) {
+      scale.value = withTiming(pressScale, { duration: 100 });
+    }
+    onPressIn?.(e);
+  };
+
+  const handlePressOut = (e: any) => {
+    if (!disableAnimation && !disabled) {
+      scale.value = withTiming(1, { duration: 100 });
+    }
+    onPressOut?.(e);
+  };
+
+  return (
+    <AnimatedPressableBase
+      style={[animatedStyle, style]}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={disabled}
+      {...props}
+    >
+      {children}
+    </AnimatedPressableBase>
+  );
+}

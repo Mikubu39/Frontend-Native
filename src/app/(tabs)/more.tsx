@@ -1,12 +1,16 @@
 /**
- * More / Menu Screen - Displays vertical tabs for Profile, Characters, and Practice Hub
+ * More / Menu Screen - Enhanced with larger icons, press animations,
+ * animated chevrons, and staggered entrance.
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import { AnimatedScreen } from '@/components/ui/animated-screen';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { StaggeredList } from '@/components/ui/staggered-list';
+import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 
 interface MenuItem {
   id: string;
@@ -48,6 +52,7 @@ export default function MoreMenuScreen() {
   const router = useRouter();
 
   return (
+    <AnimatedScreen>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
@@ -55,27 +60,30 @@ export default function MoreMenuScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.menuList}>
+        <StaggeredList staggerDelay={80}>
           {MENU_ITEMS.map((item) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={item.id}
               style={styles.card}
               onPress={() => router.push(item.route as any)}
-              activeOpacity={0.8}
+              pressScale={0.97}
             >
-              <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
-                <Text style={[styles.itemIcon, { color: item.color }]}>{item.icon}</Text>
+              <View style={[styles.iconContainer, { backgroundColor: item.color + '18' }]}>
+                <Text style={styles.itemIcon}>{item.icon}</Text>
               </View>
               <View style={styles.cardContent}>
                 <Text style={styles.itemTitle}>{item.title}</Text>
                 <Text style={styles.itemDesc}>{item.subtitle}</Text>
               </View>
-              <Text style={styles.arrowIcon}>→</Text>
-            </TouchableOpacity>
+              <View style={styles.arrowContainer}>
+                <Text style={styles.arrowIcon}>›</Text>
+              </View>
+            </AnimatedPressable>
           ))}
-        </View>
+        </StaggeredList>
       </ScrollView>
     </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 
@@ -88,58 +96,65 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingVertical: Spacing.four,
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.lockedBg,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    ...Shadows.sm,
   },
   headerTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.six,
+    paddingHorizontal: Spacing.five,
     paddingVertical: Spacing.six,
-  },
-  menuList: {
-    gap: Spacing.four,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xxl,
     padding: Spacing.five,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
     gap: Spacing.four,
+    marginBottom: Spacing.four,
+    ...Shadows.md,
   },
   iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: BorderRadius.md,
+    width: 64,
+    height: 64,
+    borderRadius: BorderRadius.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
   itemIcon: {
-    fontSize: 28,
+    fontSize: 36,
   },
   cardContent: {
     flex: 1,
   },
   itemTitle: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
   },
   itemDesc: {
-    fontSize: FontSizes.xs,
+    fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     marginTop: 4,
-    lineHeight: 16,
+    lineHeight: 18,
+  },
+  arrowContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.cream,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   arrowIcon: {
-    fontSize: FontSizes.lg,
+    fontSize: 24,
     color: Colors.textSecondary,
     fontWeight: 'bold',
+    marginTop: -2,
   },
 });
