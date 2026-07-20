@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     height: 3,
     width: '100%',
     backgroundColor: Colors.secondary,
-    borderRadius: 2,
+    borderRadius: 14,
   },
   list: {
     gap: Spacing.four,

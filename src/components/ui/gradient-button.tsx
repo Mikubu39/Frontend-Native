@@ -10,6 +10,7 @@ import {
   type ViewStyle,
   type TextStyle,
   ActivityIndicator,
+  type StyleProp,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
@@ -21,8 +22,8 @@ interface GradientButtonProps {
   variant?: 'primary' | 'secondary' | 'outline' | 'accent';
   disabled?: boolean;
   loading?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 }
 
 export function GradientButton({
@@ -84,7 +85,7 @@ const styles = StyleSheet.create({
   gradient: {
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.seven,
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 54,
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
   outlineButton: {
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.seven,
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.full,
     borderWidth: 2,
     borderColor: Colors.primary,
     alignItems: 'center',

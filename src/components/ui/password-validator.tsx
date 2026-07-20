@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
   checkCircle: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 26,
     borderWidth: 2,
     borderColor: Colors.lockedBg,
     alignItems: 'center',

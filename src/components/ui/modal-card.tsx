@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 18,
+    borderRadius: 26,
     backgroundColor: Colors.lockedBg,
   },
   closeIcon: {

@@ -20,3 +20,26 @@ export interface ApiError {
   message: string;
   details?: Record<string, string>;
 }
+
+export interface AuthResponse {
+  accessToken: string;
+  tokenType: string;
+  user: {
+    id: number;
+    email: string;
+    displayName: string;
+    username: string;
+    role: string;
+  };
+}
+
+export interface LoginRequest {
+  email: string;
+  password?: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password?: string;
+  displayName?: string;
+}

@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 28,
     backgroundColor: Colors.cream,
   },
   closeButtonText: {

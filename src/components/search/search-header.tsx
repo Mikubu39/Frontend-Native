@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   filterChip: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 30,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
     borderColor: Colors.inputBorder,

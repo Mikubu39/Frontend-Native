@@ -16,6 +16,7 @@ export default function OnboardingLayout() {
       <Stack.Screen name="goal" />
       <Stack.Screen name="interests" />
       <Stack.Screen name="level" />
+      <Stack.Screen name="placement" />
     </Stack>
   );
 }

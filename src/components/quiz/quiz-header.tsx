@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   flag: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: Colors.lockedBg,
     alignItems: 'center',

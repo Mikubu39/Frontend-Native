@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     right: Spacing.two,
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: 24,
     backgroundColor: Colors.checkmark,
     justifyContent: 'center',
     alignItems: 'center',

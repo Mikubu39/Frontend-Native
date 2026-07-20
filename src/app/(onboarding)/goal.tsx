@@ -21,12 +21,12 @@ export default function GoalScreen() {
       <ProgressBar progress={0.33} />
 
       <View style={styles.content}>
-        <Text style={styles.title}>What is your goal?</Text>
+        <Text style={styles.title}>Mục tiêu của bạn là gì?</Text>
         <GoalSelector selectedGoal={state.selectedGoal} onSelect={setGoal} />
       </View>
 
       <GradientButton
-        title="NEXT"
+        title="TIẾP TỤC"
         onPress={() => router.push('/(onboarding)/interests')}
         disabled={!state.selectedGoal}
         style={styles.button}

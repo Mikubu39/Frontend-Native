@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     left: Spacing.six,
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 32,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   flag: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 36,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   speakerBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 28,
     backgroundColor: Colors.accent,
     alignItems: 'center',
     justifyContent: 'center',

@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   closeCircle: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 26,
     backgroundColor: Colors.lockedBg,
     alignItems: 'center',
     justifyContent: 'center',
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   bigCharContainer: {
     width: 80,
     height: 80,
-    borderRadius: 20,
+    borderRadius: 28,
     backgroundColor: Colors.cream,
     alignItems: 'center',
     justifyContent: 'center',

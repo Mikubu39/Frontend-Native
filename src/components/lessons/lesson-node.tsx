@@ -42,7 +42,7 @@ const checkmarkStyles = StyleSheet.create({
     width: 12,
     height: 3,
     backgroundColor: '#FFFFFF',
-    borderRadius: 1.5,
+    borderRadius: 13.5,
     transform: [{ rotate: '-45deg' }, { translateX: 2 }, { translateY: 1 }],
   },
   shortArm: {
@@ -50,7 +50,7 @@ const checkmarkStyles = StyleSheet.create({
     width: 7,
     height: 3,
     backgroundColor: '#FFFFFF',
-    borderRadius: 1.5,
+    borderRadius: 13.5,
     transform: [{ rotate: '45deg' }, { translateX: -3.5 }, { translateY: 2.5 }],
   },
 });

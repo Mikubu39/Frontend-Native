@@ -27,7 +27,7 @@ const MENU_ITEMS: MenuItem[] = [
     title: 'Hồ sơ cá nhân',
     subtitle: 'Xem thành tích, cấp độ và thông tin tài khoản',
     icon: '👤',
-    route: '/profile',
+    route: '/(tabs)/profile',
     color: Colors.primary,
   },
   {
@@ -45,6 +45,14 @@ const MENU_ITEMS: MenuItem[] = [
     icon: '🏋️',
     route: '/review',
     color: '#10B981', // Emerald green
+  },
+  {
+    id: 'm4',
+    title: 'Bạn bè & Theo dõi',
+    subtitle: 'Tìm kiếm bạn học, xem thông tin và đồng bộ danh bạ',
+    icon: '👥',
+    route: '/friends',
+    color: '#3B82F6', // Blue
   },
 ];
 
@@ -146,7 +154,7 @@ const styles = StyleSheet.create({
   arrowContainer: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 26,
     backgroundColor: Colors.cream,
     alignItems: 'center',
     justifyContent: 'center',

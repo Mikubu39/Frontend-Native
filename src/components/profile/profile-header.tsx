@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: 48,
     backgroundColor: 'rgba(255,255,255,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.25)',
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.one,
-    borderRadius: 20,
+    borderRadius: 28,
   },
   levelText: {
     color: Colors.textOnDark,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
-    borderRadius: 20,
+    borderRadius: 28,
   },
   flagEmoji: {
     fontSize: 18,

@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 5,
     height: 5,
-    borderRadius: 2.5,
+    borderRadius: 14.5,
     backgroundColor: LOCKED_GRAY,
     opacity: 0.5,
   },

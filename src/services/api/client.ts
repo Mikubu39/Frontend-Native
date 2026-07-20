@@ -5,7 +5,10 @@
  * Customize base URL, headers, interceptors, and error handling here.
  */
 
+import { storage } from '@/services/storage/async-storage';
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.example.com";
+export const TOKEN_KEY = 'auth_token';
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, string>;
@@ -32,20 +35,42 @@ class ApiClient {
     const { params, ...fetchConfig } = config;
     const url = this.buildUrl(endpoint, params);
 
-    const response = await fetch(url, {
-      ...fetchConfig,
-      headers: {
-        "Content-Type": "application/json",
-        ...fetchConfig.headers,
-      },
-    });
+    const token = await storage.get(TOKEN_KEY);
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...((fetchConfig.headers as Record<string, string>) || {}),
+    };
 
-    if (!response.ok) {
-      // TODO: Customize error handling based on your API
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
     }
 
-    return response.json() as Promise<T>;
+    const response = await fetch(url, {
+      ...fetchConfig,
+      headers,
+    });
+
+    if (response.status === 401) {
+      await storage.remove(TOKEN_KEY);
+      // Optional: trigger event to force re-login
+      throw new Error('Unauthorized');
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.message) errorMessage = errorJson.message;
+      } catch (e) {
+        // Not JSON
+      }
+      throw new Error(errorMessage);
+    }
+
+    // Xử lý trường hợp endpoint trả về rỗng (như 204 No Content)
+    const text = await response.text();
+    return text ? JSON.parse(text) : undefined as any;
   }
 
   async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {

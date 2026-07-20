@@ -21,7 +21,7 @@ export default function InterestsScreen() {
       <ProgressBar progress={0.66} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>What are your interests?</Text>
+        <Text style={styles.title}>Sở thích của bạn là gì?</Text>
         <InterestGrid
           selectedInterests={state.selectedInterests}
           onToggle={toggleInterest}
@@ -29,7 +29,7 @@ export default function InterestsScreen() {
       </ScrollView>
 
       <GradientButton
-        title="NEXT"
+        title="TIẾP TỤC"
         onPress={() => router.push('/(onboarding)/level')}
         disabled={state.selectedInterests.length === 0}
         style={styles.button}

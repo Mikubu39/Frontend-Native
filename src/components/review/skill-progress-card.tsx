@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },

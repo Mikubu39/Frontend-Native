@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   button: {
     width: Spacing.four,
     height: Spacing.four,
-    borderRadius: 12,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },

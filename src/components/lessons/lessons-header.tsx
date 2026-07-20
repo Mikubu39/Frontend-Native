@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   redDot: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: 24,
     backgroundColor: '#E53935',
   },
   levelPill: {
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 1.5,
     borderColor: '#D5D5D5',
-    borderRadius: 20,
+    borderRadius: 28,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 26,
     backgroundColor: '#9E9E9E',
     alignItems: 'center',
     justifyContent: 'center',

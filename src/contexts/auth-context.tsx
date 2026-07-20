@@ -49,11 +49,17 @@ try {
 
 import { GOOGLE_WEB_CLIENT_ID } from "@/config/google-auth";
 
+import { apiClient, TOKEN_KEY } from "@/services/api/client";
+import { authService } from "@/services/api/auth";
+import { AuthResponse } from "@/types/api";
+import { storage } from "@/services/storage/async-storage";
+
 interface User {
   id: string;
   email: string;
   displayName: string;
   avatarUrl?: string;
+  roles?: string[];
 }
 
 interface AuthContextType {
@@ -78,29 +84,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       webClientId: GOOGLE_WEB_CLIENT_ID,
       offlineAccess: false,
     });
+
+    const loadSession = async () => {
+      try {
+        const token = await storage.get(TOKEN_KEY);
+        const userDataStr = await storage.get('user_data');
+        if (token && userDataStr) {
+          setUser(JSON.parse(userDataStr));
+        }
+      } catch (e) {
+        console.error("Failed to load session", e);
+      }
+    };
+    loadSession();
   }, []);
 
-  const signIn = useCallback(async (email: string, _password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      setUser({
-        id: "1",
-        email: email || "user@example.com",
-        displayName: email ? email.split('@')[0] : "User",
+      const response = await authService.login({
+        email: email,
+        password: password,
       });
+      await storage.set(TOKEN_KEY, response.accessToken);
+      const userData = {
+        id: response.user.id.toString(),
+        email: response.user.email,
+        displayName: response.user.displayName || response.user.username,
+        roles: [response.user.role],
+      };
+      await storage.set('user_data', JSON.stringify(userData));
+      setUser(userData);
+    } catch (e: any) {
+      Alert.alert("Lỗi Đăng nhập", e.message || "Tài khoản hoặc mật khẩu không đúng.");
+      throw e;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const signUp = useCallback(async (email: string, _password: string, displayName: string) => {
+  const signUp = useCallback(async (email: string, password: string, displayName: string) => {
     setIsLoading(true);
     try {
-      setUser({
-        id: "1",
-        email: email || "user@example.com",
-        displayName: displayName || "User",
+      const response = await authService.register({
+        email: email,
+        password: password,
+        displayName: displayName,
       });
+      await storage.set(TOKEN_KEY, response.accessToken);
+      const userData = {
+        id: response.user.id.toString(),
+        email: response.user.email,
+        displayName: response.user.displayName || response.user.username,
+        roles: [response.user.role],
+      };
+      await storage.set('user_data', JSON.stringify(userData));
+      setUser(userData);
+    } catch (e: any) {
+      Alert.alert("Lỗi Đăng ký", e.message || "Không thể tạo tài khoản.");
+      throw e;
     } finally {
       setIsLoading(false);
     }
@@ -173,6 +215,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         // Ignore errors if user wasn't signed in with Google
       }
+      await storage.remove(TOKEN_KEY);
+      await storage.remove('user_data');
       setUser(null);
     } finally {
       setIsLoading(false);

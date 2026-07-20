@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 10,
+    borderRadius: 22,
   },
   badgeText: {
     color: '#FFFFFF',
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   arrowContainer: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 24,
     backgroundColor: Colors.cream,
     alignItems: 'center',
     justifyContent: 'center',

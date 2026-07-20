@@ -11,29 +11,24 @@
  *   const token = await storage.get('token');
  */
 
-// TODO: Install and configure your preferred storage solution:
-// - expo-secure-store: for sensitive data (tokens, credentials)
-// - @react-native-async-storage/async-storage: for general key-value storage
+// Sử dụng bộ nhớ tạm (In-memory) để vượt qua lỗi NativeModule của Expo Go
+// Lưu ý: Khi đóng app mở lại sẽ bị đăng xuất. Khi nào build app thật sẽ dùng lại SecureStore.
+const memoryStore = new Map<string, string>();
 
 export const storage = {
   async get(key: string): Promise<string | null> {
-    // TODO: implement with your chosen storage library
-    console.warn(`storage.get('${key}') not implemented`);
-    return null;
+    return memoryStore.get(key) || null;
   },
 
   async set(key: string, value: string): Promise<void> {
-    // TODO: implement
-    console.warn(`storage.set('${key}') not implemented`);
+    memoryStore.set(key, value);
   },
 
   async remove(key: string): Promise<void> {
-    // TODO: implement
-    console.warn(`storage.remove('${key}') not implemented`);
+    memoryStore.delete(key);
   },
 
   async clear(): Promise<void> {
-    // TODO: implement
-    console.warn("storage.clear() not implemented");
+    memoryStore.clear();
   },
 };

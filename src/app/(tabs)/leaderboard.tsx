@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   rankBadge: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadows.sm,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   avatarContainer: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 30,
     backgroundColor: Colors.cream,
     alignItems: 'center',
     justifyContent: 'center',
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 10,
+    borderRadius: 22,
   },
   youBadgeText: {
     color: '#FFFFFF',

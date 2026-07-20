@@ -36,7 +36,7 @@ export function LevelSelector({ selectedLevel, onSelect }: LevelSelectorProps) {
         onPress={() => onSelect('jlpt')}
         activeOpacity={0.7}
       >
-        <Text style={styles.dropdownText}>Choose your current level</Text>
+        <Text style={styles.dropdownText}>Chọn trình độ hiện tại của bạn</Text>
         <Text style={styles.dropdownArrow}>▼</Text>
       </TouchableOpacity>
     </View>

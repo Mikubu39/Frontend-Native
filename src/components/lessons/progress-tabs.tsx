@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     width: '100%',
     height: 3,
-    borderRadius: 1.5,
+    borderRadius: 13.5,
     backgroundColor: TAB_ACTIVE,
   },
 });

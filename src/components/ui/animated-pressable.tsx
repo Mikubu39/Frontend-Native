@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Pressable, type ViewStyle, type PressableProps, StyleSheet } from 'react-native';
+import { Pressable, type ViewStyle, type PressableProps, StyleSheet, type StyleProp } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -17,7 +17,7 @@ const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
 
 interface AnimatedPressableComponentProps extends Omit<PressableProps, 'style'> {
   children: React.ReactNode;
-  style?: ViewStyle | ViewStyle[];
+  style?: StyleProp<ViewStyle>;
   /** Scale factor when pressed (default: 0.97) */
   pressScale?: number;
   /** Disable the scale animation */

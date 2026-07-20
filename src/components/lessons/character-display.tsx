@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   actionIconButton: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 32,
     backgroundColor: Colors.cream,
     borderWidth: 1.5,
     borderColor: Colors.inputBorder,

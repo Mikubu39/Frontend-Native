@@ -127,6 +127,9 @@ export default function ProfileTabScreen() {
               <Text style={styles.userName}>@{user?.email?.split('@')[0] || 'kotodama_user'}</Text>
               <Text style={styles.joinDate}>Tham gia từ tháng 6 năm 2026</Text>
             </View>
+            <AnimatedPressable onPress={() => router.push('/profile/edit')} pressScale={0.9} style={styles.editProfileBtn}>
+              <Text style={styles.editProfileText}>Sửa</Text>
+            </AnimatedPressable>
           </View>
         </Animated.View>
 
@@ -237,7 +240,7 @@ const styles = StyleSheet.create({
   avatarBg: {
     width: 76,
     height: 76,
-    borderRadius: 38,
+    borderRadius: 46,
     backgroundColor: Colors.cream,
     borderWidth: 3,
     borderColor: Colors.accent,
@@ -265,6 +268,17 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     color: Colors.textSecondary,
     marginTop: 4,
+  },
+  editProfileBtn: {
+    backgroundColor: Colors.lockedBg,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+    borderRadius: BorderRadius.md,
+  },
+  editProfileText: {
+    color: Colors.textPrimary,
+    fontWeight: FontWeights.bold,
+    fontSize: FontSizes.sm,
   },
   sectionTitle: {
     fontSize: FontSizes.xl,
@@ -316,7 +330,7 @@ const styles = StyleSheet.create({
   achievementIconBg: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 36,
     backgroundColor: Colors.cream,
     alignItems: 'center',
     justifyContent: 'center',
@@ -347,12 +361,12 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 8,
     backgroundColor: Colors.lockedBg,
-    borderRadius: 4,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 16,
   },
   progressText: {
     fontSize: FontSizes.xs,

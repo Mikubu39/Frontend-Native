@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   checkmark: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 26,
     backgroundColor: 'rgba(255,255,255,0.3)',
     alignItems: 'center',
     justifyContent: 'center',

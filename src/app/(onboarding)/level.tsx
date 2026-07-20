@@ -16,18 +16,26 @@ export default function LevelScreen() {
   const router = useRouter();
   const { state, setLevel } = useOnboarding();
 
+  const handleContinue = () => {
+    if (state.selectedLevel === 'starter') {
+      router.replace('/(tabs)');
+    } else {
+      router.push('/(onboarding)/placement');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <ProgressBar progress={1} />
+      <ProgressBar progress={0.8} />
 
       <View style={styles.content}>
-        <Text style={styles.title}>What is your level?</Text>
+        <Text style={styles.title}>Trình độ của bạn là gì?</Text>
         <LevelSelector selectedLevel={state.selectedLevel} onSelect={setLevel} />
       </View>
 
       <GradientButton
-        title="START LEARNING"
-        onPress={() => router.replace('/(tabs)')}
+        title={state.selectedLevel === 'starter' ? "BẮT ĐẦU HỌC" : "LÀM BÀI KIỂM TRA ĐẦU VÀO"}
+        onPress={handleContinue}
         disabled={!state.selectedLevel}
         style={styles.button}
       />
