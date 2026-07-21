@@ -157,40 +157,40 @@ export const BorderRadius = {
  */
 export const Shadows = {
   sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
   md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 5,
   },
   lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.15,
-    shadowRadius: 24,
+    shadowRadius: 32,
     elevation: 8,
   },
   xl: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 24 },
     shadowOpacity: 0.2,
-    shadowRadius: 32,
+    shadowRadius: 48,
     elevation: 12,
   },
   /** Colored shadow for accent elements */
   glow: (color: string) => ({
     shadowColor: color,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
   }),
 } as const;
 
@@ -201,35 +201,35 @@ export const AnimationPresets = {
   /** Gentle spring for most UI transitions */
   spring: {
     damping: 18,
-    stiffness: 140,
+    stiffness: 150,
     mass: 0.8,
   },
-  /** Snappy spring for button presses and quick actions */
+  /** Snappy spring for button presses (best with haptics) */
   springSnappy: {
-    damping: 22,
-    stiffness: 300,
-    mass: 0.6,
+    damping: 15,
+    stiffness: 350,
+    mass: 0.5,
   },
   /** Bouncy spring for playful elements (mascot, rewards) */
   springBouncy: {
     damping: 12,
-    stiffness: 120,
-    mass: 0.7,
+    stiffness: 150,
+    mass: 0.8,
   },
   /** Tab icon spring */
   springTab: {
     damping: 14,
-    stiffness: 180,
+    stiffness: 220,
     mass: 0.6,
   },
   /** Duration presets in ms */
   duration: {
-    fast: 200,
-    normal: 300,
-    slow: 500,
+    fast: 150,
+    normal: 250,
+    slow: 400,
   },
   /** Stagger delay between list items */
-  staggerDelay: 60,
+  staggerDelay: 50,
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;

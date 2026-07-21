@@ -38,15 +38,9 @@ export function AnimatedScreen({
           .damping(damping)
           .stiffness(stiffness);
       case 'fadeDown':
-        return FadeInDown.duration(duration)
-          .springify()
-          .damping(damping)
-          .stiffness(stiffness);
+        return FadeIn.duration(duration); // Changed from FadeInDown to FadeIn for snappier load
       case 'fadeSlide':
-        return FadeInDown.duration(duration)
-          .springify()
-          .damping(damping + 2)
-          .stiffness(stiffness);
+        return FadeIn.duration(duration); // Changed from FadeInDown to FadeIn for snappier load
       case 'fade':
       default:
         return FadeIn.duration(duration);

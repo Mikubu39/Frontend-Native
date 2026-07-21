@@ -1,22 +1,18 @@
-/**
- * Practice Hub / Trung Tâm Luyện Tập Screen - Enhanced with larger icons,
- * press animations, animated badges, and staggered entrance.
- */
-
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { StaggeredList } from '@/components/ui/staggered-list';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
+import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 
 interface PracticeItem {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
   route: string;
   badge?: string;
   color: string;
@@ -30,7 +26,7 @@ export default function PracticeHubScreen() {
       id: 'p1',
       title: 'Luyện tập Lỗi Sai',
       description: 'Xem lại và giải quyết các câu bạn từng làm sai.',
-      icon: '⚠️',
+      icon: 'warning-outline',
       route: '/quiz/ready?lessonId=lp5',
       badge: 'Cần thiết',
       color: Colors.error,
@@ -39,7 +35,7 @@ export default function PracticeHubScreen() {
       id: 'p2',
       title: 'Sổ tay Từ điển',
       description: 'Ôn tập và kiểm tra từ vựng bạn đã mở khóa.',
-      icon: '📓',
+      icon: 'book-outline',
       route: '/dictionary',
       color: Colors.primary,
     },
@@ -50,7 +46,7 @@ export default function PracticeHubScreen() {
       id: 'p3',
       title: 'Thử thách thời gian',
       description: 'Luyện phản xạ nhanh để giành thêm Đá quý.',
-      icon: '⚡',
+      icon: 'flash-outline',
       route: '/quiz/ready?lessonId=lp1',
       color: Colors.accent,
     },
@@ -58,7 +54,7 @@ export default function PracticeHubScreen() {
       id: 'p4',
       title: 'Luyện phát âm chuyên sâu',
       description: 'Nghe giọng bản xứ và tập nói lại chuẩn xác.',
-      icon: '🗣️',
+      icon: 'mic-outline',
       route: '/voice/record',
       color: '#10B981',
     },
@@ -71,8 +67,8 @@ export default function PracticeHubScreen() {
       onPress={() => router.push(item.route as any)}
       pressScale={0.97}
     >
-      <View style={[styles.iconContainer, { backgroundColor: item.color + '18' }]}>
-        <Text style={styles.itemIcon}>{item.icon}</Text>
+      <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
+        <Ionicons name={item.icon} size={28} color={item.color} />
       </View>
       <View style={styles.cardContent}>
         <View style={styles.titleRow}>
@@ -86,7 +82,7 @@ export default function PracticeHubScreen() {
         <Text style={styles.itemDesc}>{item.description}</Text>
       </View>
       <View style={styles.arrowContainer}>
-        <Text style={styles.arrowIcon}>›</Text>
+        <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
       </View>
     </AnimatedPressable>
   );
@@ -101,12 +97,14 @@ export default function PracticeHubScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Intro Banner */}
         <Animated.View
-          entering={FadeInDown.duration(400)}
+          entering={FadeIn.duration(400)}
           style={styles.introBanner}
         >
-          <Text style={styles.introEmoji}>🏋️</Text>
+          <View style={styles.introIconContainer}>
+             <Ionicons name="barbell" size={32} color={Colors.primary} />
+          </View>
           <View style={styles.introInfo}>
-            <Text style={styles.introTitle}>Nâng cao phản xạ tiếng Nhật</Text>
+            <Text style={styles.introTitle}>Nâng cao phản xạ</Text>
             <Text style={styles.introDesc}>
               Ôn luyện hằng ngày giúp bạn nhớ lâu hơn gấp 4 lần.
             </Text>
@@ -115,7 +113,7 @@ export default function PracticeHubScreen() {
 
         {/* Section 1 */}
         <Animated.Text
-          entering={FadeInDown.delay(100).duration(400)}
+          entering={FadeIn.delay(100).duration(400)}
           style={styles.sectionTitle}
         >
           Bài học tập trung
@@ -126,8 +124,8 @@ export default function PracticeHubScreen() {
 
         {/* Section 2 */}
         <Animated.Text
-          entering={FadeInDown.delay(300).duration(400)}
-          style={[styles.sectionTitle, { marginTop: Spacing.two }]}
+          entering={FadeIn.delay(300).duration(400)}
+          style={[styles.sectionTitle, { marginTop: Spacing.four }]}
         >
           Các hoạt động ôn tập
         </Animated.Text>
@@ -150,7 +148,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.05)',
-    ...Shadows.sm,
   },
   headerTitle: {
     fontSize: FontSizes.xl,
@@ -158,7 +155,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.five,
+    paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.five,
     paddingBottom: 100,
   },
@@ -167,13 +164,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.xxl,
-    padding: Spacing.five,
+    padding: Spacing.four,
     marginBottom: Spacing.six,
     gap: Spacing.four,
-    ...Shadows.md,
+    ...Shadows.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
   },
-  introEmoji: {
-    fontSize: 52,
+  introIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: BorderRadius.xl,
+    backgroundColor: Colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   introInfo: {
     flex: 1,
@@ -190,33 +194,36 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   sectionTitle: {
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.four,
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.bold,
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: Spacing.three,
+    marginLeft: Spacing.two,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.xl,
-    padding: Spacing.five,
-    gap: Spacing.four,
+    padding: Spacing.four,
     marginBottom: Spacing.three,
     ...Shadows.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
   },
   iconContainer: {
-    width: 60,
-    height: 60,
+    width: 50,
+    height: 50,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  itemIcon: {
-    fontSize: 32,
+    marginRight: Spacing.three,
   },
   cardContent: {
     flex: 1,
+    justifyContent: 'center',
   },
   titleRow: {
     flexDirection: 'row',
@@ -225,13 +232,13 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   itemTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
   },
   badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     borderRadius: 22,
   },
   badgeText: {
@@ -241,7 +248,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   itemDesc: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.xs,
     color: Colors.textSecondary,
     marginTop: 4,
     lineHeight: 18,
@@ -249,16 +256,10 @@ const styles = StyleSheet.create({
   arrowContainer: {
     width: 32,
     height: 32,
-    borderRadius: 24,
-    backgroundColor: Colors.cream,
+    borderRadius: 16,
+    backgroundColor: Colors.creamDark,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  arrowIcon: {
-    fontSize: 22,
-    color: Colors.textSecondary,
-    fontWeight: 'bold',
-    marginTop: -2,
   },
 });
 

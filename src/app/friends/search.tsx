@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, ActivityIndicator, Image } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import { BorderRadius, Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
 import { userService } from '@/services/api/user';
 import { UserSearchResponse } from '@/types/user-api';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FriendsSearchScreen() {
   const router = useRouter();
@@ -64,9 +64,19 @@ export default function FriendsSearchScreen() {
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
           renderItem={({ item, index }) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.userCard}
-              disabled={true}
+              disabled={false}
+              onPress={() => router.push({
+                pathname: '/friends/view-search-profile',
+                params: {
+                  id: item.id.toString(),
+                  displayName: item.displayName,
+                  avatarUrl: item.avatarUrl || 'null',
+                  level: item.level?.toString() || '1',
+                  isFollowing: item.isFollowing?.toString() || 'false',
+                }
+              })}
             >
               {item.avatarUrl ? (
                 <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
@@ -79,7 +89,7 @@ export default function FriendsSearchScreen() {
                 <Text style={styles.fullName}>{item.displayName}</Text>
                 <Text style={styles.username}>Lv {item.level}</Text>
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.followBtn, item.isFollowing && styles.followingBtn]}
                 onPress={() => handleToggleFollow(item.id, index)}
               >

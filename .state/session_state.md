@@ -21,7 +21,7 @@ Kết nối Frontend và Backend cho module Xác thực, Hồ sơ người dùng
 - Compiled TypeScript without errors.
 
 ## Progress
-- Done: Hoàn thiện kết nối API Frontend & Backend cho các module Đăng ký/Đăng nhập, Quản lý Profile, Tìm bạn và Theo dõi.
+- Done: Hoàn thiện kết nối API Frontend & Backend. Hoàn tất đợt nâng cấp toàn diện UI/UX (Premium Experience) với Glassmorphism, Haptic Feedback, Reanimated Springs, và Floating Tab Bar. Thiết kế lại hoàn toàn tab "Khám phá" (trước đây là "Khác") với giao diện chuyên nghiệp, nhóm chức năng và Profile Card. **Tiếp tục đồng bộ toàn diện thiết kế (Premium Design Sync) cho các tab con (Bạn bè, Trung tâm luyện tập, Học chữ cái) bằng cách xóa toàn bộ emoji, thêm vector icons, và chuẩn hóa tông màu Cream chủ đạo.**
 - In progress: N/A
 - Blocked: N/A
 

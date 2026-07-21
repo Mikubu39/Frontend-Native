@@ -23,11 +23,11 @@ function SplashAnimation({ onFinish }: { onFinish: () => void }) {
 
   useEffect(() => {
     Animated.sequence([
-      // Phase 1: Circle expands from bottom
-      Animated.timing(circleScale, {
+      // Phase 1: Circle expands from bottom with a spring
+      Animated.spring(circleScale, {
         toValue: 1,
-        duration: 800,
-        easing: Easing.out(Easing.cubic),
+        friction: 6,
+        tension: 40,
         useNativeDriver: true,
       }),
       // Phase 2: Title appears
@@ -47,15 +47,15 @@ function SplashAnimation({ onFinish }: { onFinish: () => void }) {
       // Phase 3: Subtitle fades in
       Animated.timing(subtitleOpacity, {
         toValue: 1,
-        duration: 400,
+        duration: 300,
         useNativeDriver: true,
       }),
       // Hold
-      Animated.delay(800),
+      Animated.delay(600),
       // Fade out
       Animated.timing(fadeOut, {
         toValue: 0,
-        duration: 500,
+        duration: 400,
         useNativeDriver: true,
       }),
     ]).start(() => {

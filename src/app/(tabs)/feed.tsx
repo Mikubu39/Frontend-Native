@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming } from 'react-native-reanimated';
 import { AnimatedScreen } from '@/components/ui/animated-screen';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
@@ -126,7 +126,7 @@ export default function FeedScreen() {
         {posts.map((post, index) => (
           <Animated.View
             key={post.id}
-            entering={FadeInDown.delay(index * AnimationPresets.staggerDelay).duration(400)}
+            entering={FadeIn.delay(index * AnimationPresets.staggerDelay).duration(400)}
           >
             <View style={styles.postCard}>
               {/* Post Author / Header */}

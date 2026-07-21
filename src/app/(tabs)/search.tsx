@@ -7,7 +7,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { AnimatedScreen } from '@/components/ui/animated-screen';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { StaggeredList } from '@/components/ui/staggered-list';
@@ -63,6 +63,20 @@ const SHOP_ITEMS: ShopItem[] = [
 ];
 
 export default function ShopScreen() {
+  const buttonPulse = useSharedValue(1);
+
+  React.useEffect(() => {
+    buttonPulse.value = withRepeat(
+      withTiming(1.05, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+  }, []);
+
+  const buttonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonPulse.value }]
+  }));
+
   return (
     <AnimatedScreen>
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -77,7 +91,7 @@ export default function ShopScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Premium Super Banner */}
-        <Animated.View entering={FadeInDown.duration(500)}>
+        <Animated.View entering={FadeIn.duration(300)}>
           <LinearGradient
             colors={[Colors.primary, '#6D28D9']}
             start={{ x: 0, y: 0 }}
@@ -93,15 +107,17 @@ export default function ShopScreen() {
                 </Text>
               </View>
             </View>
-            <AnimatedPressable style={styles.superButton} onPress={() => {}} pressScale={0.97}>
-              <Text style={styles.superButtonText}>DÙNG THỬ 2 TUẦN MIỄN PHÍ</Text>
-            </AnimatedPressable>
+            <Animated.View style={buttonStyle}>
+              <AnimatedPressable style={styles.superButton} onPress={() => {}} pressScale={0.97}>
+                <Text style={styles.superButtonText}>DÙNG THỬ 2 TUẦN MIỄN PHÍ</Text>
+              </AnimatedPressable>
+            </Animated.View>
           </LinearGradient>
         </Animated.View>
 
         {/* Section title */}
         <Animated.Text
-          entering={FadeInDown.delay(200).duration(400)}
+          entering={FadeIn.delay(100).duration(250)}
           style={styles.sectionTitle}
         >
           Vật phẩm hỗ trợ

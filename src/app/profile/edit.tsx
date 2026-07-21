@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useAuth } from '@/contexts/auth-context';
-import { StyledTextInput } from '@/components/ui/text-input';
 import { GradientButton } from '@/components/ui/gradient-button';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import { StyledTextInput } from '@/components/ui/text-input';
+import { Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
+import { useAuth } from '@/contexts/auth-context';
 import { userService } from '@/services/api/user';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [username, setUsername] = useState(user?.email?.split('@')[0] || '');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
@@ -21,13 +22,17 @@ export default function EditProfileScreen() {
       Alert.alert('Lỗi', 'Vui lòng điền đầy đủ tên hiển thị và username.');
       return;
     }
-    
+
     setLoading(true);
     try {
       await userService.updateProfile({
         displayName,
         username,
       });
+
+      if (phoneNumber.trim()) {
+        await userService.updatePhoneNumber({ phoneNumber: phoneNumber.trim() });
+      }
       Alert.alert('Thành công', 'Cập nhật hồ sơ thành công!', [
         { text: 'OK', onPress: () => router.back() }
       ]);
@@ -68,10 +73,21 @@ export default function EditProfileScreen() {
           <Text style={styles.hint}>Dùng để kết bạn và hiển thị trên mã QR.</Text>
         </View>
 
-        <GradientButton 
-          title={loading ? 'Đang cập nhật...' : 'Lưu thay đổi'} 
-          onPress={handleSave} 
-          disabled={loading} 
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Số điện thoại</Text>
+          <StyledTextInput
+            placeholder="Số điện thoại mới"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            keyboardType="phone-pad"
+          />
+          <Text style={styles.hint}>Nhập số nếu bạn muốn cập nhật.</Text>
+        </View>
+
+        <GradientButton
+          title={loading ? 'Đang cập nhật...' : 'Lưu thay đổi'}
+          onPress={handleSave}
+          disabled={loading}
         />
       </ScrollView>
     </SafeAreaView>

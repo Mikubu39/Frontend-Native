@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
-import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing } from 'react-native-reanimated';
+import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing } from 'react-native-reanimated';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { StaggeredList } from '@/components/ui/staggered-list';
 import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
@@ -117,7 +117,7 @@ export default function ProfileTabScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* User Card */}
-        <Animated.View entering={FadeInDown.duration(400)}>
+        <Animated.View entering={FadeIn.duration(400)}>
           <View style={styles.userCard}>
             <View style={styles.avatarBg}>
               <Text style={styles.avatarEmoji}>🦉</Text>
@@ -135,13 +135,13 @@ export default function ProfileTabScreen() {
 
         {/* Statistics Grid */}
         <Animated.Text
-          entering={FadeInDown.delay(100).duration(400)}
+          entering={FadeIn.delay(100).duration(400)}
           style={styles.sectionTitle}
         >
           Thống kê
         </Animated.Text>
         <Animated.View
-          entering={FadeInDown.delay(200).duration(400)}
+          entering={FadeIn.delay(200).duration(400)}
           style={styles.statsGrid}
         >
           <StatBox icon="🔥" label="Ngày Streak" value={7} accentColor="#F59E0B" />
@@ -152,7 +152,7 @@ export default function ProfileTabScreen() {
 
         {/* Achievements Section */}
         <Animated.Text
-          entering={FadeInDown.delay(300).duration(400)}
+          entering={FadeIn.delay(300).duration(400)}
           style={styles.sectionTitle}
         >
           Thành tích

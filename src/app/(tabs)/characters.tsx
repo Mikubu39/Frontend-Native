@@ -6,7 +6,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeIn, Layout } from 'react-native-reanimated';
+import Animated, { FadeIn, Layout } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
 
@@ -89,14 +90,14 @@ export default function CharactersScreen() {
         {/* Character Detail Preview Panel */}
         {selectedChar ? (
           <Animated.View
-            entering={FadeInDown.duration(300)}
+            entering={FadeIn.duration(300)}
             style={styles.previewPanel}
           >
             <View style={styles.previewHeader}>
               <Text style={styles.previewLabel}>KÝ TỰ ĐANG CHỌN</Text>
               <AnimatedPressable onPress={() => setSelectedChar(null)} pressScale={0.9}>
                 <View style={styles.closeCircle}>
-                  <Text style={styles.closeBtn}>×</Text>
+                  <Ionicons name="close" size={20} color={Colors.textSecondary} />
                 </View>
               </AnimatedPressable>
             </View>
@@ -107,7 +108,8 @@ export default function CharactersScreen() {
               <View style={styles.charInfo}>
                 <Text style={styles.romajiLabel}>Phiên âm: /{selectedChar.romaji}/</Text>
                 <AnimatedPressable style={styles.audioBtn} onPress={() => {}} pressScale={0.95}>
-                  <Text style={styles.audioEmoji}>🔊 Nghe phát âm</Text>
+                  <Ionicons name="volume-medium" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.audioEmoji}>Nghe phát âm</Text>
                 </AnimatedPressable>
               </View>
             </View>
@@ -117,7 +119,7 @@ export default function CharactersScreen() {
             entering={FadeIn.duration(300)}
             style={styles.infoBanner}
           >
-            <Text style={styles.infoEmoji}>💡</Text>
+            <Ionicons name="bulb" size={28} color={Colors.accent} />
             <Text style={styles.infoText}>
               Chạm vào bất kỳ chữ cái nào để xem chi tiết cách phiên âm, nghe phát âm mẫu và học viết!
             </Text>
@@ -211,9 +213,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.five,
     gap: Spacing.three,
     ...Shadows.sm,
-  },
-  infoEmoji: {
-    fontSize: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
   },
   infoText: {
     flex: 1,
@@ -253,12 +254,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeBtn: {
-    fontSize: 18,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-    fontWeight: 'bold',
-  },
   previewBody: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -287,6 +282,8 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   audioBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.lg,
     paddingVertical: 10,

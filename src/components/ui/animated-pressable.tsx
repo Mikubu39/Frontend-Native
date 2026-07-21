@@ -9,8 +9,9 @@ import { Pressable, type ViewStyle, type PressableProps, StyleSheet, type StyleP
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withTiming,
+  withSpring,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { AnimationPresets } from '@/constants/theme';
 
 const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
@@ -35,21 +36,27 @@ export function AnimatedPressable({
   ...props
 }: AnimatedPressableComponentProps) {
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+    opacity: opacity.value,
   }));
 
   const handlePressIn = (e: any) => {
     if (!disableAnimation && !disabled) {
-      scale.value = withTiming(pressScale, { duration: 100 });
+      scale.value = withSpring(pressScale, AnimationPresets.springSnappy);
+      opacity.value = withSpring(0.85, AnimationPresets.springSnappy);
+      // Trigger light haptic feedback on press
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
     onPressIn?.(e);
   };
 
   const handlePressOut = (e: any) => {
     if (!disableAnimation && !disabled) {
-      scale.value = withTiming(1, { duration: 100 });
+      scale.value = withSpring(1, AnimationPresets.springSnappy);
+      opacity.value = withSpring(1, AnimationPresets.springSnappy);
     }
     onPressOut?.(e);
   };

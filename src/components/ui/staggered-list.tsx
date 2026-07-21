@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { type ViewStyle } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { AnimationPresets } from '@/constants/theme';
 
 interface StaggeredListProps {
@@ -33,7 +33,7 @@ export function StaggeredList({
       {childArray.map((child, index) => (
         <Animated.View
           key={index}
-          entering={FadeInDown
+          entering={FadeIn
             .delay(initialDelay + index * staggerDelay)
             .duration(duration)
           }

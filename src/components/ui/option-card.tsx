@@ -42,6 +42,9 @@ export function OptionCard({
         withSpring(1.02, AnimationPresets.springTab),
         withSpring(1, { damping: 20, stiffness: 200 })
       );
+      import('expo-haptics').then(Haptics => {
+        Haptics.selectionAsync().catch(() => {});
+      });
     } else {
       selectionAnim.value = withSpring(0, AnimationPresets.springSnappy);
     }
@@ -62,7 +65,8 @@ export function OptionCard({
     return {
       borderColor,
       backgroundColor,
-      transform: [{ scale: bounceScale.value }],
+      borderBottomWidth: selected ? 2.5 : 4,
+      transform: [{ scale: bounceScale.value }, { translateY: selected ? 1.5 : 0 }],
     };
   });
 
@@ -92,12 +96,13 @@ export function OptionCard({
 
 const styles = StyleSheet.create({
   card: {
-    paddingVertical: Spacing.four,
+    paddingVertical: Spacing.five,
     paddingHorizontal: Spacing.six,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.accentPale,
-    borderWidth: 2.5,
-    borderColor: 'transparent',
+    borderRadius: BorderRadius.xl,
+    backgroundColor: Colors.surface,
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderColor: '#E5E7EB',
     flexDirection: 'row',
     alignItems: 'center',
     ...Shadows.sm,

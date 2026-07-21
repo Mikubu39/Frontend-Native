@@ -3,10 +3,13 @@
  * Figma screen 12, 13, 14, 31
  */
 
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import LottieView from 'lottie-react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming, withSpring } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { Colors, Spacing } from '@/constants/theme';
 import {
   QuizHeader,
@@ -33,6 +36,9 @@ export default function QuizScreen() {
   const progress = (currentIndex + 1) / questions.length;
   const isLastQuestion = currentIndex >= questions.length - 1;
 
+  const lottieRef = useRef<LottieView>(null);
+  const shakeOffset = useSharedValue(0);
+
   const handleNext = () => {
     if (isLastQuestion) {
       router.replace('/quiz/result');
@@ -44,6 +50,30 @@ export default function QuizScreen() {
     }
   };
 
+  const handleAnswerSelection = (isCorrect: boolean) => {
+    setCurrentIsCorrect(isCorrect);
+    setHasInteracted(true);
+    
+    if (isCorrect) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      lottieRef.current?.play();
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      lottieRef.current?.play();
+      shakeOffset.value = withSequence(
+        withTiming(-10, { duration: 50 }),
+        withTiming(10, { duration: 50 }),
+        withTiming(-10, { duration: 50 }),
+        withTiming(10, { duration: 50 }),
+        withTiming(0, { duration: 50 })
+      );
+    }
+  };
+
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeOffset.value }]
+  }));
+
   const renderQuestionCard = () => {
     switch (currentQuestion.type) {
       case 'vocab':
@@ -54,8 +84,7 @@ export default function QuizScreen() {
             onSelectAnswer={(answerId) => {
               setSelectedAnswerId(answerId);
               const answer = currentQuestion.answers.find((a) => a.id === answerId);
-              setCurrentIsCorrect(answer?.isCorrect ?? false);
-              setHasInteracted(true);
+              handleAnswerSelection(answer?.isCorrect ?? false);
             }}
           />
         );
@@ -64,8 +93,11 @@ export default function QuizScreen() {
           <KanaQuestionCard
             question={currentQuestion}
             onAnswerChange={(isCorrect, arrangedString) => {
-              setCurrentIsCorrect(isCorrect);
-              setHasInteracted(arrangedString.length > 0);
+              if (arrangedString.length > 0 && !hasInteracted) {
+                 handleAnswerSelection(isCorrect);
+              } else if (arrangedString.length === 0) {
+                 setHasInteracted(false);
+              }
             }}
           />
         );
@@ -76,8 +108,7 @@ export default function QuizScreen() {
             selectedAnswerId={selectedAnswerId}
             onSelectAnswer={(answerId, isCorrect) => {
               setSelectedAnswerId(answerId);
-              setCurrentIsCorrect(isCorrect);
-              setHasInteracted(true);
+              handleAnswerSelection(isCorrect);
             }}
           />
         );
@@ -104,17 +135,29 @@ export default function QuizScreen() {
       <QuizHeader progress={progress} onClose={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
+        <Animated.View style={[styles.content, shakeStyle]}>
           {renderQuestionCard()}
-        </View>
+        </Animated.View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
+        {hasInteracted && (
+          <View style={styles.lottieContainer}>
+            <LottieView
+              ref={lottieRef}
+              source={currentIsCorrect ? require('../../../assets/animations/happy_mascot.json') : require('../../../assets/animations/confuse_mascot.json')}
+              style={styles.lottie}
+              autoPlay={false}
+              loop={false}
+            />
+          </View>
+        )}
         <GradientButton
           title={isLastQuestion ? 'FINISH' : 'NEXT'}
           onPress={handleNext}
           disabled={!hasInteracted}
           style={styles.nextButton}
+          colors={hasInteracted ? (currentIsCorrect ? [Colors.success, '#388E3C'] : [Colors.error, '#D32F2F']) : undefined}
         />
       </View>
     </SafeAreaView>
@@ -145,4 +188,16 @@ const styles = StyleSheet.create({
   nextButton: {
     width: '100%',
   },
+  lottieContainer: {
+    position: 'absolute',
+    top: -120,
+    left: 20,
+    width: 100,
+    height: 100,
+    zIndex: 10,
+  },
+  lottie: {
+    width: '100%',
+    height: '100%',
+  }
 });

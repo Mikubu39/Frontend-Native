@@ -11,6 +11,7 @@ import {
   type TextStyle,
   ActivityIndicator,
   type StyleProp,
+  View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
@@ -71,6 +72,7 @@ export function GradientButton({
         end={{ x: 1, y: 1 }}
         style={[styles.gradient, Shadows.glow(gradientColors[0])]}
       >
+        <View style={styles.glassmorphismSheen} />
         {loading ? (
           <ActivityIndicator color={Colors.textOnDark} />
         ) : (
@@ -89,12 +91,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 54,
+    overflow: 'hidden',
+  },
+  glassmorphismSheen: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
   },
   gradientText: {
     color: Colors.textOnDark,
     fontSize: FontSizes.lg,
-    fontWeight: FontWeights.bold,
+    fontWeight: FontWeights.extrabold,
     letterSpacing: 0.5,
+    textShadowColor: 'rgba(0,0,0,0.1)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   outlineButton: {
     paddingVertical: Spacing.four,

@@ -6,6 +6,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, type ViewStyle } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
 import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows, AnimationPresets } from '@/constants/theme';
 
 interface ModalCardProps {
@@ -18,8 +19,9 @@ export function ModalCard({ children, onClose, style }: ModalCardProps) {
   return (
     <Animated.View
       entering={FadeIn.duration(AnimationPresets.duration.fast)}
-      style={styles.overlay}
+      style={styles.overlayContainer}
     >
+      <BlurView intensity={20} tint="dark" style={styles.overlay} />
       <Animated.View
         entering={FadeInDown.duration(AnimationPresets.duration.normal)
           .springify()
@@ -40,13 +42,16 @@ export function ModalCard({ children, onClose, style }: ModalCardProps) {
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  overlayContainer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: Colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.six,
     zIndex: 100,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   card: {
     backgroundColor: Colors.surface,
@@ -54,6 +59,8 @@ const styles = StyleSheet.create({
     padding: Spacing.six,
     width: '100%',
     maxWidth: 360,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.8)',
     ...Shadows.xl,
   },
   closeButton: {

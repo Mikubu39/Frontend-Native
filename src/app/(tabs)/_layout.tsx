@@ -6,8 +6,9 @@
 import React from 'react';
 import { StyleSheet, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { AnimatedTabIcon } from '@/components/ui/animated-tab-icon';
-import { Colors, FontWeights, Shadows } from '@/constants/theme';
+import { Colors, FontWeights, Shadows, BorderRadius, Spacing } from '@/constants/theme';
 
 // Tab icon sizes
 const ICON_SIZE = 28;
@@ -22,6 +23,13 @@ export default function TabLayout() {
         tabBarShowLabel: true,
         tabBarLabelStyle: styles.tabLabel,
         tabBarStyle: styles.tabBar,
+        tabBarBackground: () => (
+          <BlurView 
+            tint="light" 
+            intensity={60} 
+            style={styles.blurBackground} 
+          />
+        ),
       }}
     >
       <Tabs.Screen
@@ -120,18 +128,30 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: Colors.surface,
+    position: 'absolute',
+    bottom: Platform.select({ ios: Spacing.six, android: Spacing.four }),
+    left: Spacing.four,
+    right: Spacing.four,
+    height: 68,
+    borderRadius: BorderRadius.xl,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderTopWidth: 0,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    height: 82,
-    paddingTop: 6,
-    paddingBottom: Platform.select({ ios: 22, android: 10 }),
+    elevation: 0,
     ...Shadows.lg,
+    // Ensure shadow doesn't get cut off on Android
+    overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
+  },
+  blurBackground: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
   },
   tabLabel: {
     fontSize: 10,
     fontWeight: FontWeights.bold,
-    marginTop: -2,
+    marginTop: -4,
+    marginBottom: 6,
   },
 });

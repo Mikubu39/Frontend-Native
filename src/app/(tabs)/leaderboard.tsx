@@ -7,7 +7,7 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { AnimatedScreen } from '@/components/ui/animated-screen';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
@@ -43,7 +43,7 @@ export default function LeaderboardScreen() {
 
     return (
       <Animated.View
-        entering={FadeInDown.delay(index * AnimationPresets.staggerDelay).duration(400)}
+        entering={FadeIn.delay(index * AnimationPresets.staggerDelay).duration(400)}
       >
         <AnimatedPressable
           style={[styles.userRow, item.isCurrentUser && styles.currentUserRow]}
@@ -97,7 +97,7 @@ export default function LeaderboardScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <Animated.View entering={FadeInDown.duration(500)}>
+          <Animated.View entering={FadeIn.duration(500)}>
             <LinearGradient
               colors={[Colors.primary, Colors.primaryDark]}
               start={{ x: 0, y: 0 }}

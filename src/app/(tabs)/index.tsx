@@ -6,12 +6,13 @@
 import React, { useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import Svg, { Path } from 'react-native-svg';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Animated, {
-  FadeInDown,
+  FadeIn,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -64,21 +65,37 @@ function ActiveNodeGlow({ size }: { size: number }) {
   }));
 
   return (
-    <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          width: size + 16,
-          height: size + 16,
-          borderRadius: (size + 16) / 2,
-          borderWidth: 3,
-          borderColor: Colors.accent,
-          top: -8,
-          left: -8,
-        },
-        glowStyle,
-      ]}
-    />
+    <>
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            width: size + 24,
+            height: size + 24,
+            borderRadius: (size + 24) / 2,
+            backgroundColor: Colors.accent,
+            top: -12,
+            left: -12,
+          },
+          glowStyle,
+        ]}
+      />
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            width: size + 12,
+            height: size + 12,
+            borderRadius: (size + 12) / 2,
+            borderWidth: 4,
+            borderColor: Colors.accent,
+            top: -6,
+            left: -6,
+          },
+          glowStyle,
+        ]}
+      />
+    </>
   );
 }
 
@@ -116,14 +133,16 @@ export default function LearnScreen() {
   };
 
   const totalMapHeight = START_Y + LEARNING_PATH.length * NODE_SPACING + 60;
+  const insets = useSafeAreaInsets();
 
   return (
     <AnimatedScreen>
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Gradient Header Stats */}
-      <LinearGradient
-        colors={['#FFFFFF', '#FFF8E7']}
-        style={styles.header}
+    <View style={styles.container}>
+      {/* Glassmorphism Sticky Header */}
+      <BlurView
+        intensity={80}
+        tint="light"
+        style={[styles.header, { paddingTop: insets.top + Spacing.four }]}
       >
         <AnimatedPressable style={styles.flagButton} onPress={() => {}} pressScale={0.9}>
           <Text style={styles.flagEmoji}>🇯🇵</Text>
@@ -145,15 +164,15 @@ export default function LearnScreen() {
             <Text style={[styles.statText, { color: '#FF4B4B' }]}>5</Text>
           </View>
         </View>
-      </LinearGradient>
+      </BlurView>
 
       {/* Main Scroll Content */}
       <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 80 }]} 
         showsVerticalScrollIndicator={false}
       >
         {/* Unit Banner */}
-        <Animated.View entering={FadeInDown.delay(100).duration(300)}>
+        <Animated.View entering={FadeIn.delay(50).duration(200)}>
           <LinearGradient
             colors={[Colors.accent, '#E6A300']}
             start={{ x: 0, y: 0 }}
@@ -205,25 +224,42 @@ export default function LearnScreen() {
             const x = CENTER_X + getOffset(index);
             const y = START_Y + index * NODE_SPACING;
 
+            const floatOffset = useSharedValue(0);
+
+            useEffect(() => {
+              if (isActive) {
+                floatOffset.value = withRepeat(
+                  withTiming(-8, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                  -1,
+                  true
+                );
+              }
+            }, [isActive]);
+
+            const floatStyle = useAnimatedStyle(() => ({
+              transform: [{ translateY: floatOffset.value }]
+            }));
+
             return (
               <Animated.View 
                 key={node.id}
-                entering={FadeInDown
-                  .delay(200 + index * AnimationPresets.staggerDelay)
-                  .duration(300)
+                entering={FadeIn
+                  .delay(50 + index * 30)
+                  .duration(250)
                 }
                 style={[
                   styles.nodeAbsoluteWrapper,
                   {
                     left: x - NODE_SIZE / 2,
                     top: y,
-                  }
+                  },
+                  isActive && floatStyle
                 ]}
               >
                 {/* Speech Bubble Tooltip for Active Node */}
                 {isActive && (
                   <Animated.View
-                    entering={FadeInDown.delay(600).duration(300)}
+                    entering={FadeIn.delay(300).duration(200)}
                     style={styles.tooltipContainer}
                   >
                     <View style={styles.tooltipBody}>
@@ -270,7 +306,7 @@ export default function LearnScreen() {
           })}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
     </AnimatedScreen>
   );
 }
@@ -281,12 +317,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.five,
-    paddingVertical: Spacing.four,
-    backgroundColor: 'transparent',
+    paddingBottom: Spacing.four,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.5)',
   },
   flagButton: {
     width: 44,
