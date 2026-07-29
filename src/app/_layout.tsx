@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AuthProvider } from '@/contexts/auth-context';
 import { OnboardingProvider } from '@/contexts/onboarding-context';
 import { QuizProvider } from '@/contexts/quiz-context';
+import { GamificationProvider } from '@/contexts/gamification-context';
 import { Colors } from '@/constants/theme';
 
 const { width, height } = Dimensions.get('window');
@@ -122,32 +123,34 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <OnboardingProvider>
-        <QuizProvider>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: Colors.cream },
-                animation: 'fade', // Simplified transition
-                animationDuration: 250,
-                gestureEnabled: true,
-                fullScreenGestureEnabled: true,
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="welcome" />
-              <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
-              <Stack.Screen name="(onboarding)" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="lesson" />
-              <Stack.Screen name="quiz" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
-              <Stack.Screen name="voice" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
-              <Stack.Screen name="profile" />
-              <Stack.Screen name="friends" />
-              <Stack.Screen name="reward" options={{ presentation: 'transparentModal' }} />
-          </Stack>
-        </QuizProvider>
-      </OnboardingProvider>
+      <GamificationProvider>
+        <OnboardingProvider>
+          <QuizProvider>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: Colors.cream },
+                  animation: 'fade', // Simplified transition
+                  animationDuration: 250,
+                  gestureEnabled: true,
+                  fullScreenGestureEnabled: true,
+                }}
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="welcome" />
+                <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
+                <Stack.Screen name="(onboarding)" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="lesson" />
+                <Stack.Screen name="quiz" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
+                <Stack.Screen name="voice" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
+                <Stack.Screen name="profile" />
+                <Stack.Screen name="friends" />
+                <Stack.Screen name="reward" options={{ presentation: 'transparentModal' }} />
+            </Stack>
+          </QuizProvider>
+        </OnboardingProvider>
+      </GamificationProvider>
     </AuthProvider>
   );
 }

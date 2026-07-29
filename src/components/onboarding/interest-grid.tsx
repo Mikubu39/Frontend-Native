@@ -3,7 +3,9 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { ONBOARDING_INTERESTS } from '@/data';
 import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
 
@@ -18,22 +20,22 @@ export function InterestGrid({ selectedInterests, onToggle }: InterestGridProps)
       {ONBOARDING_INTERESTS.map((interest) => {
         const isSelected = selectedInterests.includes(interest.id);
         return (
-          <TouchableOpacity
+          <AnimatedPressable
             key={interest.id}
             style={[styles.card, isSelected && styles.cardSelected]}
             onPress={() => onToggle(interest.id)}
-            activeOpacity={0.8}
+            pressScale={0.96}
           >
             <Image source={{ uri: interest.imageUrl }} style={styles.image} />
             {isSelected && (
               <View style={styles.overlay}>
-                <View style={styles.checkCircle}>
+                <Animated.View entering={ZoomIn.duration(200).springify()} style={styles.checkCircle}>
                   <Text style={styles.checkMark}>✓</Text>
-                </View>
+                </Animated.View>
               </View>
             )}
             <Text style={styles.label}>{interest.label}</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         );
       })}
     </View>

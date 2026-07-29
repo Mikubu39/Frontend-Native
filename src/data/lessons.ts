@@ -61,14 +61,14 @@ export const LESSON_SECTIONS: LessonSection[] = [
 ];
 
 export const LEARNING_PATH: LearningPathNode[] = [
-  { id: 'lp1', title: 'Hiragana: Mặt chữ', category: 'hiragana', progress: 8, total: 8, isLocked: false, icon: '📖' },
-  { id: 'lp2', title: 'Hiragana: Tập viết', category: 'hiragana', progress: 2, total: 5, isLocked: false, icon: '✍️' },
-  { id: 'lp3', title: 'Hiragana: Luyện nghe', category: 'hiragana', progress: 0, total: 5, isLocked: true, icon: '🔊' },
-  { id: 'lp4', title: 'Hiragana: Luyện nói', category: 'hiragana', progress: 0, total: 5, isLocked: true, icon: '🗣️' },
-  { id: 'lp5', title: 'Hiragana: Tổng ôn', category: 'hiragana', progress: 0, total: 5, isLocked: true, icon: '🏆' },
-  { id: 'lp6', title: 'Katakana: Mặt chữ', category: 'katakana', progress: 0, total: 8, isLocked: true, icon: '📖' },
-  { id: 'lp7', title: 'Katakana: Tập viết', category: 'katakana', progress: 0, total: 5, isLocked: true, icon: '✍️' },
-  { id: 'lp8', title: 'Ngữ pháp N5: Khẳng định', category: 'grammar', progress: 0, total: 6, isLocked: true, icon: '💡' },
+  { id: 'lp1', title: 'Nhập môn Hiragana', category: 'hiragana', progress: 8, total: 8, isLocked: false, icon: '📖', nodeType: 'theory' },
+  { id: 'lp2', title: 'Luyện tập 1', category: 'hiragana', progress: 2, total: 5, isLocked: false, icon: '💪', nodeType: 'practice' },
+  { id: 'lp3', title: 'Luyện tập 2', category: 'hiragana', progress: 0, total: 5, isLocked: true, icon: '💪', nodeType: 'practice' },
+  { id: 'lp4', title: 'Luyện tập 3', category: 'hiragana', progress: 0, total: 5, isLocked: true, icon: '💪', nodeType: 'practice' },
+  { id: 'lp5', title: 'Kiểm tra chương 1', category: 'hiragana', progress: 0, total: 5, isLocked: true, icon: '🏆', nodeType: 'boss' },
+  { id: 'lp6', title: 'Nhập môn Katakana', category: 'katakana', progress: 0, total: 8, isLocked: true, icon: '📖', nodeType: 'theory' },
+  { id: 'lp7', title: 'Luyện tập 1', category: 'katakana', progress: 0, total: 5, isLocked: true, icon: '💪', nodeType: 'practice' },
+  { id: 'lp8', title: 'Ngữ pháp N5: Khẳng định', category: 'grammar', progress: 0, total: 6, isLocked: true, icon: '💡', nodeType: 'theory' },
 ];
 
 export const HIRAGANA_LESSON_DETAIL: LessonDetail = {

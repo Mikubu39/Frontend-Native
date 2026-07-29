@@ -2,20 +2,20 @@
  * Signup Screen - Redesigned to match Duolingo style
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '@/contexts/auth-context';
-import { StyledTextInput } from '@/components/ui/text-input';
 import { SocialAuthSection } from '@/components/auth/social-auth-section';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius } from '@/constants/theme';
+import { StyledTextInput } from '@/components/ui/text-input';
+import { BorderRadius, Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
+import { useAuth } from '@/contexts/auth-context';
+import { useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
+import React, { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SignupScreen() {
   const router = useRouter();
   const { signUp } = useAuth();
-  
+
   const [age, setAge] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

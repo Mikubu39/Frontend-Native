@@ -3,19 +3,19 @@
  * Enhanced with animated press scale effect for premium feel.
  */
 
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { BorderRadius, Colors, FontSizes, FontWeights, Shadows, Spacing } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-  Text,
-  StyleSheet,
-  type ViewStyle,
-  type TextStyle,
   ActivityIndicator,
   type StyleProp,
+  StyleSheet,
+  Text,
+  type TextStyle,
   View,
+  type ViewStyle,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows } from '@/constants/theme';
 
 interface GradientButtonProps {
   title: string;
@@ -25,6 +25,7 @@ interface GradientButtonProps {
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
+  customColors?: [string, string];
 }
 
 export function GradientButton({
@@ -35,6 +36,7 @@ export function GradientButton({
   loading = false,
   style,
   textStyle,
+  customColors,
 }: GradientButtonProps) {
   if (variant === 'outline') {
     return (
@@ -53,11 +55,11 @@ export function GradientButton({
     );
   }
 
-  const gradientColors: [string, string] = variant === 'accent'
+  const gradientColors: [string, string] = customColors || (variant === 'accent'
     ? [Colors.accent, Colors.accentLight]
     : variant === 'secondary'
-    ? [Colors.secondary, Colors.secondaryLight]
-    : [Colors.primary, Colors.primaryLight];
+      ? [Colors.secondary, Colors.secondaryLight]
+      : [Colors.primary, Colors.primaryLight]);
 
   return (
     <AnimatedPressable

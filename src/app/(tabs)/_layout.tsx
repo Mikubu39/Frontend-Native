@@ -136,7 +136,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderTopWidth: 0,
-    elevation: 0,
     ...Shadows.lg,
     // Ensure shadow doesn't get cut off on Android
     overflow: Platform.OS === 'android' ? 'hidden' : 'visible',

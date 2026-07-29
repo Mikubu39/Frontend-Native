@@ -136,7 +136,7 @@ export default function MoreMenuScreen() {
                 </View>
               </View>
               <View style={styles.arrowContainer}>
-                <Ionicons name="chevron-forward" size={20} color={Colors.textTertiary} />
+                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
               </View>
             </AnimatedPressable>
 
@@ -165,7 +165,7 @@ export default function MoreMenuScreen() {
                             <Text style={styles.itemDesc}>{item.subtitle}</Text>
                           )}
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color={Colors.border} />
+                        <Ionicons name="chevron-forward" size={20} color={'rgba(0,0,0,0.1)'} />
                       </AnimatedPressable>
                     );
                   })}

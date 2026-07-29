@@ -3,37 +3,33 @@
  * gradient header, pulse effects on active node, and staggered entrance.
  */
 
-import React, { useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import Svg, { Path } from 'react-native-svg';
-import { FontAwesome5 } from '@expo/vector-icons';
-import Animated, {
-  FadeIn,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withDelay,
-  withSpring,
-  Easing,
-} from 'react-native-reanimated';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { CircleProgress } from '@/components/ui/circle-progress';
 import { AnimatedScreen } from '@/components/ui/animated-screen';
-import { LEARNING_PATH } from '@/data';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
-
-const { width } = Dimensions.get('window');
+import { CircleProgress } from '@/components/ui/circle-progress';
+import { BorderRadius, Colors, FontSizes, FontWeights, Shadows, Spacing } from '@/constants/theme';
+import { useGamification } from '@/contexts/gamification-context';
+import { roadmapApi } from '@/services/api/roadmap';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { G, Path } from 'react-native-svg';
 
 // Constants for deterministic node mapping
 const NODE_SIZE = 88;
-const NODE_SPACING = 155; // Vertical distance between nodes
+const NODE_SPACING = 135; // Vertical distance between nodes
 const START_Y = 40;       // Starting padding top of the map
-const CENTER_X = width / 2;
 
 // Function to calculate horizontal offset
 const getOffset = (index: number) => {
@@ -99,214 +95,327 @@ function ActiveNodeGlow({ size }: { size: number }) {
   );
 }
 
+function PathNodeItem({
+  node,
+  index,
+  isActive,
+  onPress,
+  centerX,
+}: {
+  node: { id: number | string; title: string; isLocked: boolean; progress: number; total: number; icon?: string };
+  index: number;
+  isActive: boolean;
+  onPress: () => void;
+  centerX: number;
+}) {
+  const isLocked = node.isLocked;
+  const progress = node.total > 0 ? node.progress / node.total : 0;
+  const x = centerX + getOffset(index);
+  const y = START_Y + index * NODE_SPACING;
+
+  const floatOffset = useSharedValue(0);
+
+  useEffect(() => {
+    if (isActive) {
+      floatOffset.value = withRepeat(
+        withTiming(-8, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+    }
+  }, [isActive]);
+
+  const floatStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatOffset.value }],
+  }));
+
+  return (
+    <Animated.View
+      key={node.id}
+      entering={FadeIn.delay(50 + index * 30).duration(250)}
+      style={[
+        styles.nodeAbsoluteWrapper,
+        {
+          left: x - NODE_SIZE / 2,
+          top: y,
+        },
+        isActive && floatStyle,
+      ]}
+    >
+      {/* Speech Bubble Tooltip for Active Node */}
+      {isActive && (
+        <Animated.View
+          entering={FadeIn.delay(300).duration(200)}
+          style={styles.tooltipContainer}
+        >
+          <View style={styles.tooltipBody}>
+            <Text style={styles.tooltipTitle}>BÀI TIẾP THEO</Text>
+            <AnimatedPressable
+              style={styles.tooltipButton}
+              onPress={onPress}
+              pressScale={0.95}
+            >
+              <Text style={styles.tooltipButtonText}>BẮT ĐẦU +10 XP</Text>
+            </AnimatedPressable>
+          </View>
+          <View style={styles.tooltipArrow} />
+        </Animated.View>
+      )}
+
+      {/* Circular Lesson Node */}
+      <AnimatedPressable
+        style={[
+          styles.nodeCircle,
+          isLocked ? styles.nodeCircleLocked : styles.nodeCircleActive,
+        ]}
+        onPress={onPress}
+        disabled={isLocked}
+        pressScale={isLocked ? 1 : 0.92}
+      >
+        {isActive && <ActiveNodeGlow size={NODE_SIZE} />}
+        <CircleProgress
+          progress={progress}
+          size={NODE_SIZE - 8}
+          strokeWidth={8}
+          color={isLocked ? Colors.locked : Colors.accent}
+          trackColor={isLocked ? Colors.lockedBg : 'rgba(255, 255, 255, 0.35)'}
+          label={isLocked ? '🔒' : (node.icon || '⭐')}
+        />
+      </AnimatedPressable>
+
+      {/* Node Title text below circle */}
+      <Text style={[styles.nodeTitle, isLocked && styles.nodeTitleLocked]} numberOfLines={1}>
+        {node.title}
+      </Text>
+    </Animated.View>
+  );
+}
+
 export default function LearnScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const CENTER_X = width / 2;
+  const { energy, exp, streak, coins, maxEnergy } = useGamification();
+
+  const [learningPath, setLearningPath] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchRoadmap = async () => {
+        try {
+          const data = await roadmapApi.getRoadmap();
+          const flattened = data.flatMap(topic => topic.lessons.map(lesson => ({
+            id: lesson.lessonId,
+            title: lesson.title,
+            isLocked: lesson.status === 'LOCKED',
+            progress: lesson.status === 'COMPLETED' ? 1 : 0,
+            total: 1,
+            icon: lesson.lessonType === 'GRAMMAR' ? '📚' : (lesson.lessonType === 'VOCABULARY' ? '📝' : '⭐')
+          })));
+          setLearningPath(flattened);
+        } catch (error) {
+          console.error("Failed to fetch roadmap:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchRoadmap();
+    }, [])
+  );
 
   // Find the active node index (first one that isn't locked)
-  const activeNodeIndex = LEARNING_PATH.findIndex(node => !node.isLocked);
+  const activeNodeIndex = learningPath.findIndex(node => !node.isLocked);
 
   // Generate SVG path command (smooth winding curve)
-  const generateSvgPath = () => {
-    if (LEARNING_PATH.length === 0) return '';
+  const generateSvgPath = (endIndex: number = learningPath.length - 1) => {
+    if (learningPath.length === 0) return '';
     let path = '';
-    
-    LEARNING_PATH.forEach((_, index) => {
+
+    // Safety check for empty or out-of-bounds index
+    const maxIndex = Math.min(endIndex, learningPath.length - 1);
+
+    learningPath.slice(0, maxIndex + 1).forEach((_, index) => {
       const x = CENTER_X + getOffset(index);
       const y = START_Y + index * NODE_SPACING + NODE_SIZE / 2;
-      
+
       if (index === 0) {
         path += `M ${x} ${y}`;
       } else {
-        // Use a quadratic bezier curve for a smoother winding look
+        // Use a cubic bezier curve for a perfectly smooth winding look
+        // Tangents at both start and end points will be strictly vertical
         const prevX = CENTER_X + getOffset(index - 1);
         const prevY = START_Y + (index - 1) * NODE_SPACING + NODE_SIZE / 2;
-        
-        // Control point is mid-way in Y, but follows the horizontal flow
-        const cpX = (prevX + x) / 2;
-        const cpY = (prevY + y) / 2;
-        
-        path += ` Q ${prevX} ${cpY}, ${x} ${y}`;
+
+        const cp1x = prevX;
+        const cp1y = (prevY + y) / 2;
+
+        const cp2x = x;
+        const cp2y = (prevY + y) / 2;
+
+        path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x} ${y}`;
       }
     });
-    
+
     return path;
   };
 
-  const totalMapHeight = START_Y + LEARNING_PATH.length * NODE_SPACING + 60;
+  const renderDecorations = () => {
+    return learningPath.map((_, index) => {
+      // Add decorations roughly every other node to prevent clutter
+      if (index % 2 !== 0 && index % 3 !== 0) return null;
+
+      const nodeOffset = getOffset(index);
+      // Place decoration on the opposite side of the node
+      const decX = nodeOffset > 0 ? 30 : width - 80;
+      const decY = START_Y + index * NODE_SPACING + 20 + (index % 2 === 0 ? 30 : -20);
+
+      const icons = ['☁️', '🌳', '🌸', '✨', '🗻', '🎈', '🕊️', '⛩️'];
+      const icon = icons[(index * 3) % icons.length]; // Deterministic randomness
+
+      return (
+        <Animated.View
+          key={`dec-${index}`}
+          entering={FadeIn.delay(index * 100).duration(500)}
+          style={{ position: 'absolute', left: decX, top: decY, zIndex: 1, opacity: 0.85 }}
+        >
+          <Text style={{ fontSize: 38, transform: [{ scaleX: nodeOffset > 0 ? -1 : 1 }] }}>
+            {icon}
+          </Text>
+        </Animated.View>
+      );
+    });
+  };
+
+  const totalMapHeight = START_Y + learningPath.length * NODE_SPACING + 60;
   const insets = useSafeAreaInsets();
 
   return (
     <AnimatedScreen>
-    <View style={styles.container}>
-      {/* Glassmorphism Sticky Header */}
-      <BlurView
-        intensity={80}
-        tint="light"
-        style={[styles.header, { paddingTop: insets.top + Spacing.four }]}
-      >
-        <AnimatedPressable style={styles.flagButton} onPress={() => {}} pressScale={0.9}>
-          <Text style={styles.flagEmoji}>🇯🇵</Text>
-        </AnimatedPressable>
-        
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <FontAwesome5 name="fire" size={20} color="#FF9600" solid />
-            <Text style={styles.statText}>7</Text>
-          </View>
-          
-          <View style={styles.statItem}>
-            <FontAwesome5 name="gem" size={20} color="#1CB0F6" solid />
-            <Text style={[styles.statText, { color: '#1CB0F6' }]}>520</Text>
-          </View>
-          
-          <View style={styles.statItem}>
-            <FontAwesome5 name="heart" size={20} color="#FF4B4B" solid />
-            <Text style={[styles.statText, { color: '#FF4B4B' }]}>5</Text>
-          </View>
-        </View>
-      </BlurView>
+      <View style={styles.container}>
+        {/* Glassmorphism Sticky Header */}
+        <BlurView
+          intensity={80}
+          tint="light"
+          style={[styles.header, { paddingTop: insets.top + Spacing.four }]}
+        >
+          <AnimatedPressable style={styles.flagButton} onPress={() => { }} pressScale={0.9}>
+            <Text style={styles.flagEmoji}>🇯🇵</Text>
+          </AnimatedPressable>
 
-      {/* Main Scroll Content */}
-      <ScrollView 
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 80 }]} 
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Unit Banner */}
-        <Animated.View entering={FadeIn.delay(50).duration(200)}>
-          <LinearGradient
-            colors={[Colors.accent, '#E6A300']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.unitBanner}
-          >
-            <View style={styles.unitTextContainer}>
-              <Text style={styles.unitSubtitle}>PHẦN 1: NHẬP MÔN</Text>
-              <Text style={styles.unitTitle}>Chào hỏi, giới thiệu bản thân</Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <FontAwesome5 name="fire" size={20} color="#FF9600" solid />
+              <Text style={styles.statText}>{streak}</Text>
             </View>
-            <AnimatedPressable style={styles.guidebookButton} onPress={() => {}} pressScale={0.95}>
-              <Text style={styles.guidebookIcon}>📖</Text>
-              <Text style={styles.guidebookText}>HƯỚNG DẪN</Text>
-            </AnimatedPressable>
-          </LinearGradient>
-        </Animated.View>
 
-        {/* Map Path Container */}
-        <View style={[styles.mapContainer, { height: totalMapHeight }]}>
-          {/* Background SVG Curve */}
-          <Svg style={StyleSheet.absoluteFillObject}>
-            <Path
-              d={generateSvgPath()}
-              fill="none"
-              stroke={Colors.lockedBg}
-              strokeWidth={8}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            {/* Draw active portion of the line up to the active node */}
-            {activeNodeIndex > 0 && (
-              <Path
-                d={generateSvgPath().split(' ').slice(0, (activeNodeIndex * 6) + 3).join(' ')}
-                fill="none"
-                stroke={Colors.accent}
-                strokeWidth={8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            )}
-          </Svg>
+            <View style={styles.statItem}>
+              <FontAwesome5 name="gem" size={20} color="#1CB0F6" solid />
+              <Text style={[styles.statText, { color: '#1CB0F6' }]}>{coins > 0 ? coins : exp}</Text>
+            </View>
 
-          {/* Render Nodes Absolutely */}
-          {LEARNING_PATH.map((node, index) => {
-            const isLocked = node.isLocked;
-            const isActive = index === activeNodeIndex;
-            const progress = node.total > 0 ? node.progress / node.total : 0;
-            
-            const x = CENTER_X + getOffset(index);
-            const y = START_Y + index * NODE_SPACING;
+            <View style={styles.statItem}>
+              <FontAwesome5 name="heart" size={20} color="#FF4B4B" solid />
+              <Text style={[styles.statText, { color: '#FF4B4B' }]}>{energy}</Text>
+            </View>
+          </View>
+        </BlurView>
 
-            const floatOffset = useSharedValue(0);
-
-            useEffect(() => {
-              if (isActive) {
-                floatOffset.value = withRepeat(
-                  withTiming(-8, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-                  -1,
-                  true
-                );
-              }
-            }, [isActive]);
-
-            const floatStyle = useAnimatedStyle(() => ({
-              transform: [{ translateY: floatOffset.value }]
-            }));
-
-            return (
-              <Animated.View 
-                key={node.id}
-                entering={FadeIn
-                  .delay(50 + index * 30)
-                  .duration(250)
-                }
-                style={[
-                  styles.nodeAbsoluteWrapper,
-                  {
-                    left: x - NODE_SIZE / 2,
-                    top: y,
-                  },
-                  isActive && floatStyle
-                ]}
+        {/* Main Scroll Content */}
+        {isLoading ? (
+          <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <ActivityIndicator size="large" color={Colors.accent} />
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 80 }]}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Unit Banner */}
+            <Animated.View entering={FadeIn.delay(50).duration(200)}>
+              <LinearGradient
+                colors={[Colors.accent, '#E6A300']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.unitBanner}
               >
-                {/* Speech Bubble Tooltip for Active Node */}
-                {isActive && (
-                  <Animated.View
-                    entering={FadeIn.delay(300).duration(200)}
-                    style={styles.tooltipContainer}
-                  >
-                    <View style={styles.tooltipBody}>
-                      <Text style={styles.tooltipTitle}>BÀI TIẾP THEO</Text>
-                      <AnimatedPressable
-                        style={styles.tooltipButton}
-                        onPress={() => router.push(`/quiz/ready?lessonId=${node.id}`)}
-                        pressScale={0.95}
-                      >
-                        <Text style={styles.tooltipButtonText}>BẮT ĐẦU +10 XP</Text>
-                      </AnimatedPressable>
-                    </View>
-                    <View style={styles.tooltipArrow} />
-                  </Animated.View>
-                )}
-
-                {/* Circular Lesson Node */}
-                <AnimatedPressable
-                  style={[
-                    styles.nodeCircle, 
-                    isLocked ? styles.nodeCircleLocked : styles.nodeCircleActive
-                  ]}
-                  onPress={() => !isLocked && router.push(`/quiz/ready?lessonId=${node.id}`)}
-                  disabled={isLocked}
-                  pressScale={isLocked ? 1 : 0.92}
-                >
-                  {isActive && <ActiveNodeGlow size={NODE_SIZE} />}
-                  <CircleProgress
-                    progress={progress}
-                    size={NODE_SIZE - 8}
-                    strokeWidth={8}
-                    color={isLocked ? Colors.locked : Colors.accent}
-                    trackColor={isLocked ? Colors.lockedBg : 'rgba(255, 255, 255, 0.35)'}
-                    label={isLocked ? '🔒' : (node.icon || '⭐')}
-                  />
+                <View style={styles.unitTextContainer}>
+                  <Text style={styles.unitSubtitle}>PHẦN 1: NHẬP MÔN</Text>
+                  <Text style={styles.unitTitle}>Chào hỏi, giới thiệu bản thân</Text>
+                </View>
+                <AnimatedPressable style={styles.guidebookButton} onPress={() => { }} pressScale={0.95}>
+                  <Text style={styles.guidebookIcon}>📖</Text>
+                  <Text style={styles.guidebookText}>HƯỚNG DẪN</Text>
                 </AnimatedPressable>
+              </LinearGradient>
+            </Animated.View>
 
-                {/* Node Title text below circle */}
-                <Text style={[styles.nodeTitle, isLocked && styles.nodeTitleLocked]} numberOfLines={1}>
-                  {node.title}
-                </Text>
-              </Animated.View>
-            );
-          })}
-        </View>
-      </ScrollView>
-    </View>
+            {/* Map Path Container */}
+            <View style={[styles.mapContainer, { height: totalMapHeight }]}>
+              {/* Gamified Background Decorations */}
+              {renderDecorations()}
+
+              {/* Background SVG Curve - Gamified 3D Road */}
+              <Svg style={StyleSheet.absoluteFillObject}>
+                {/* 3D Road Shadow / Base */}
+                <G y={6}>
+                  <Path
+                    d={generateSvgPath()}
+                    fill="none"
+                    stroke="#D4D4D4"
+                    strokeWidth={22}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  {activeNodeIndex > 0 && (
+                    <Path
+                      d={generateSvgPath(activeNodeIndex)}
+                      fill="none"
+                      stroke="#C28A00"
+                      strokeWidth={22}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
+                </G>
+
+                {/* Road Top Surface */}
+                <Path
+                  d={generateSvgPath()}
+                  fill="none"
+                  stroke="#F0F0F0"
+                  strokeWidth={22}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                {activeNodeIndex > 0 && (
+                  <Path
+                    d={generateSvgPath(activeNodeIndex)}
+                    fill="none"
+                    stroke={Colors.accent}
+                    strokeWidth={22}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+              </Svg>
+
+              {/* Render Nodes Absolutely */}
+              {learningPath.map((node, index) => (
+                <PathNodeItem
+                  key={node.id}
+                  node={node}
+                  index={index}
+                  centerX={CENTER_X}
+                  isActive={index === activeNodeIndex}
+                  onPress={() => !node.isLocked && router.push(`/quiz/ready?lessonId=${node.id}`)}
+                />
+              ))}
+            </View>
+          </ScrollView>
+        )}
+      </View>
     </AnimatedScreen>
   );
 }

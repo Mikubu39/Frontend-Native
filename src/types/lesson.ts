@@ -46,4 +46,5 @@ export interface LearningPathNode {
   total: number;
   isLocked: boolean;
   icon?: string;
+  nodeType?: 'theory' | 'practice' | 'boss';
 }

@@ -1,45 +1,39 @@
-/**
- * VocabQuestion - Image + multiple choice answers.
- */
-
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AudioButton } from '@/components/ui/audio-button';
-import type { VocabQuestion as VocabQuestionType } from '@/types';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import type { ListeningQuestion } from '@/types';
+import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows } from '@/constants/theme';
 
-interface VocabQuestionProps {
-  question: VocabQuestionType;
+interface ListeningQuestionProps {
+  question: ListeningQuestion;
   selectedAnswer: string | null;
   onSelectAnswer: (answerId: string) => void;
 }
 
-export function VocabQuestionCard({ question, selectedAnswer, onSelectAnswer }: VocabQuestionProps) {
+export function ListeningQuestionCard({ question, selectedAnswer, onSelectAnswer }: ListeningQuestionProps) {
   return (
     <View style={styles.container}>
-      <Image source={{ uri: question.imageUrl }} style={styles.image} />
-
-      <View style={styles.audioRow}>
-        <AudioButton variant="speaker" size="small" onPress={() => {}} />
-      </View>
-
       <Text style={styles.instruction}>{question.instruction}</Text>
+
+      <View style={styles.audioContainer}>
+        <AudioButton variant="speaker" size="large" onPress={() => {}} />
+        <Text style={styles.audioHint}>Chạm để nghe</Text>
+      </View>
 
       <View style={styles.answers}>
         {question.answers.map((answer) => {
           const isSelected = selectedAnswer === answer.id;
           return (
-            <AnimatedPressable
+            <TouchableOpacity
               key={answer.id}
               style={[styles.answerCard, isSelected && styles.answerSelected]}
               onPress={() => onSelectAnswer(answer.id)}
-              pressScale={0.97}
+              activeOpacity={0.7}
             >
               <Text style={[styles.answerText, isSelected && styles.answerTextSelected]}>
                 {answer.text}
               </Text>
-            </AnimatedPressable>
+            </TouchableOpacity>
           );
         })}
       </View>
@@ -50,23 +44,23 @@ export function VocabQuestionCard({ question, selectedAnswer, onSelectAnswer }: 
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    gap: Spacing.five,
+    gap: Spacing.eight,
     paddingHorizontal: Spacing.four,
-  },
-  image: {
-    width: 200,
-    height: 140,
-    borderRadius: BorderRadius.lg,
-    resizeMode: 'cover',
-  },
-  audioRow: {
-    alignSelf: 'flex-end',
   },
   instruction: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
     textAlign: 'center',
+  },
+  audioContainer: {
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  audioHint: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    fontStyle: 'italic',
   },
   answers: {
     width: '100%',
@@ -79,6 +73,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accentPale,
     borderWidth: 2,
     borderColor: 'transparent',
+    alignItems: 'center',
   },
   answerSelected: {
     backgroundColor: Colors.accent,
@@ -88,7 +83,6 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
     color: Colors.textPrimary,
-    textAlign: 'center',
   },
   answerTextSelected: {
     color: Colors.textOnDark,

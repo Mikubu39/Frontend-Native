@@ -3,18 +3,18 @@
  * Scales + bounces on select with a checkmark entrance.
  */
 
-import React, { useEffect } from 'react';
-import { Text, StyleSheet, View } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withSequence,
-  withTiming,
-  interpolateColor,
-} from 'react-native-reanimated';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, AnimationPresets, Shadows } from '@/constants/theme';
+import { AnimationPresets, BorderRadius, Colors, FontSizes, FontWeights, Shadows, Spacing } from '@/constants/theme';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 interface OptionCardProps {
   title: string;
@@ -43,7 +43,7 @@ export function OptionCard({
         withSpring(1, { damping: 20, stiffness: 200 })
       );
       import('expo-haptics').then(Haptics => {
-        Haptics.selectionAsync().catch(() => {});
+        Haptics.selectionAsync().catch(() => { });
       });
     } else {
       selectionAnim.value = withSpring(0, AnimationPresets.springSnappy);

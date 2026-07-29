@@ -3,24 +3,31 @@
  * Figma screen 12, 13, 14, 31
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Text } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import LottieView from 'lottie-react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming, withSpring } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { Colors, Spacing } from '@/constants/theme';
 import {
-  QuizHeader,
-  VocabQuestionCard,
+  FillBlankQuestionCard,
+  FlashcardQuestionCard,
   KanaQuestionCard,
-  PictureQuestionCard,
   KanjiFillQuestionCard,
+  ListeningQuestionCard,
+  MatchingQuestionCard,
+  PictureQuestionCard,
+  QuizHeader,
+  SpeakingQuestionCard,
+  VocabQuestionCard,
 } from '@/components/quiz';
 import { GradientButton } from '@/components/ui/gradient-button';
-import { LESSON_QUESTIONS } from '@/data/quiz';
-import type { QuizQuestion } from '@/types';
+import { Colors, Spacing } from '@/constants/theme';
+import { useGamification } from '@/contexts/gamification-context';
+import { lessonAttemptApi } from '@/services/api/lessons';
+import type { QuizQuestion } from '@/types/quiz';
+import { mapApiQuestionsToQuizQuestions } from '@/utils/quiz-mapper';
+import * as Haptics from 'expo-haptics';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInRight, FadeOutLeft, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function QuizScreen() {
   const router = useRouter();
@@ -30,19 +37,84 @@ export default function QuizScreen() {
   const [currentIsCorrect, setCurrentIsCorrect] = useState<boolean>(false);
   const [hasInteracted, setHasInteracted] = useState<boolean>(false);
 
-  const questions: QuizQuestion[] = LESSON_QUESTIONS[lessonId as keyof typeof LESSON_QUESTIONS] || LESSON_QUESTIONS.lp5;
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [mistakeCount, setMistakeCount] = useState(0);
+  const startTime = useRef(Date.now());
+  const { deductEnergy } = useGamification();
+
+  const [lessonType, setLessonType] = useState<string>('NORMAL');
+  const [isReplay, setIsReplay] = useState<boolean>(false);
+  const [heartsRemaining, setHeartsRemaining] = useState<number>(3);
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const response = await lessonAttemptApi.startLesson(lessonId as string);
+        const mappedQuestions = mapApiQuestionsToQuizQuestions(response.questions);
+        setQuestions(mappedQuestions);
+        setLessonType(response.lessonType);
+        setIsReplay(response.isReplay);
+
+        if (response.totalEnergyDeducted > 0) {
+          deductEnergy(response.totalEnergyDeducted);
+        }
+
+        startTime.current = Date.now();
+      } catch (error) {
+        console.error("Failed to start lesson:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchQuestions();
+  }, [lessonId]);
 
   const currentQuestion = questions[currentIndex];
-  const progress = (currentIndex + 1) / questions.length;
+  const progress = questions.length > 0 ? (currentIndex + 1) / questions.length : 0;
   const isLastQuestion = currentIndex >= questions.length - 1;
 
   const lottieRef = useRef<LottieView>(null);
   const shakeOffset = useSharedValue(0);
 
-  const handleNext = () => {
-    if (isLastQuestion) {
-      router.replace('/quiz/result');
+  const handleNext = async () => {
+    const finalCorrectCount = correctCount + (currentIsCorrect ? 1 : 0);
+    const finalMistakeCount = mistakeCount + (!currentIsCorrect ? 1 : 0);
+    const isFailed = lessonType === 'JUMP_TEST' && heartsRemaining <= 0;
+
+    if (isLastQuestion || isFailed) {
+      setIsSubmitting(true);
+      try {
+        const timeTaken = Math.floor((Date.now() - startTime.current) / 1000);
+        const response = await lessonAttemptApi.submitLesson(lessonId as string, {
+          totalQuestions: questions.length,
+          totalCorrect: finalCorrectCount,
+          totalMistakes: finalMistakeCount,
+          timeTakenSeconds: timeTaken,
+          heartsRemaining: heartsRemaining,
+          isReplay: isReplay
+        });
+
+        router.replace({
+          pathname: '/quiz/result',
+          params: {
+            status: response.status,
+            expEarned: response.expEarned,
+            starsEarned: response.starsEarned,
+            correctCount: finalCorrectCount,
+            wrongCount: finalMistakeCount,
+            currentEnergy: response.currentEnergy
+          }
+        });
+      } catch (error) {
+        console.error("Failed to submit lesson:", error);
+        setIsSubmitting(false);
+      }
     } else {
+      setCorrectCount(finalCorrectCount);
+      setMistakeCount(finalMistakeCount);
       setCurrentIndex((prev) => prev + 1);
       setSelectedAnswerId(null);
       setCurrentIsCorrect(false);
@@ -53,12 +125,12 @@ export default function QuizScreen() {
   const handleAnswerSelection = (isCorrect: boolean) => {
     setCurrentIsCorrect(isCorrect);
     setHasInteracted(true);
-    
+
     if (isCorrect) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
       lottieRef.current?.play();
     } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => { });
       lottieRef.current?.play();
       shakeOffset.value = withSequence(
         withTiming(-10, { duration: 50 }),
@@ -67,6 +139,10 @@ export default function QuizScreen() {
         withTiming(10, { duration: 50 }),
         withTiming(0, { duration: 50 })
       );
+
+      if (lessonType === 'JUMP_TEST') {
+        setHeartsRemaining(prev => Math.max(0, prev - 1));
+      }
     }
   };
 
@@ -94,9 +170,9 @@ export default function QuizScreen() {
             question={currentQuestion}
             onAnswerChange={(isCorrect, arrangedString) => {
               if (arrangedString.length > 0 && !hasInteracted) {
-                 handleAnswerSelection(isCorrect);
+                handleAnswerSelection(isCorrect);
               } else if (arrangedString.length === 0) {
-                 setHasInteracted(false);
+                setHasInteracted(false);
               }
             }}
           />
@@ -123,20 +199,94 @@ export default function QuizScreen() {
             }}
           />
         );
+      case 'matching':
+        return (
+          <MatchingQuestionCard
+            question={currentQuestion}
+            onAnswerChange={(isCorrect) => {
+              handleAnswerSelection(isCorrect);
+            }}
+          />
+        );
+      case 'flashcard':
+        return (
+          <FlashcardQuestionCard
+            question={currentQuestion}
+            onAnswerChange={(isCorrect) => {
+              handleAnswerSelection(isCorrect);
+            }}
+          />
+        );
+      case 'fill-blank':
+        return (
+          <FillBlankQuestionCard
+            question={currentQuestion}
+            onAnswerChange={(isCorrect) => {
+              handleAnswerSelection(isCorrect);
+            }}
+          />
+        );
+      case 'listening':
+        return (
+          <ListeningQuestionCard
+            question={currentQuestion}
+            selectedAnswer={selectedAnswerId}
+            onSelectAnswer={(answerId) => {
+              setSelectedAnswerId(answerId);
+              const answer = currentQuestion.answers.find((a) => a.id === answerId);
+              handleAnswerSelection(answer?.isCorrect ?? false);
+            }}
+          />
+        );
+      case 'speaking':
+        return (
+          <SpeakingQuestionCard
+            question={currentQuestion}
+            onAnswerChange={(isCorrect) => {
+              handleAnswerSelection(isCorrect);
+            }}
+          />
+        );
       default:
         return null;
     }
   };
 
-  if (!currentQuestion) return null;
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.accent} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!currentQuestion) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ fontSize: 16, color: Colors.textSecondary }}>Không tìm thấy câu hỏi nào.</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <QuizHeader progress={progress} onClose={() => router.back()} />
+      <QuizHeader
+        progress={progress}
+        onClose={() => router.back()}
+        lessonType={lessonType}
+        heartsRemaining={heartsRemaining}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Animated.View style={[styles.content, shakeStyle]}>
-          {renderQuestionCard()}
+          <Animated.View
+            key={currentIndex}
+            entering={FadeInRight.duration(300).springify()}
+            exiting={FadeOutLeft.duration(200)}
+            style={{ width: '100%' }}
+          >
+            {renderQuestionCard()}
+          </Animated.View>
         </Animated.View>
       </ScrollView>
 
@@ -147,17 +297,17 @@ export default function QuizScreen() {
               ref={lottieRef}
               source={currentIsCorrect ? require('../../../assets/animations/happy_mascot.json') : require('../../../assets/animations/confuse_mascot.json')}
               style={styles.lottie}
-              autoPlay={false}
+              autoPlay={true}
               loop={false}
             />
           </View>
         )}
         <GradientButton
-          title={isLastQuestion ? 'FINISH' : 'NEXT'}
+          title={isSubmitting ? 'ĐANG NỘP BÀI...' : (isLastQuestion ? 'HOÀN THÀNH' : 'TIẾP TỤC')}
           onPress={handleNext}
-          disabled={!hasInteracted}
+          disabled={!hasInteracted || isSubmitting}
           style={styles.nextButton}
-          colors={hasInteracted ? (currentIsCorrect ? [Colors.success, '#388E3C'] : [Colors.error, '#D32F2F']) : undefined}
+          customColors={hasInteracted ? (currentIsCorrect ? [Colors.success, '#388E3C'] : [Colors.error, '#D32F2F']) : undefined}
         />
       </View>
     </SafeAreaView>

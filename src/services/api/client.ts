@@ -5,94 +5,70 @@
  * Customize base URL, headers, interceptors, and error handling here.
  */
 
+import axios, { AxiosInstance } from 'axios';
 import { storage } from '@/services/storage/async-storage';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.example.com";
 export const TOKEN_KEY = 'auth_token';
 
-interface RequestConfig extends RequestInit {
-  params?: Record<string, string>;
-}
-
 class ApiClient {
-  private baseUrl: string;
+  private axiosInstance: AxiosInstance;
 
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
-  }
-
-  private buildUrl(endpoint: string, params?: Record<string, string>): string {
-    const url = new URL(`${this.baseUrl}${endpoint}`);
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        url.searchParams.append(key, value);
-      });
-    }
-    return url.toString();
-  }
-
-  private async request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
-    const { params, ...fetchConfig } = config;
-    const url = this.buildUrl(endpoint, params);
-
-    const token = await storage.get(TOKEN_KEY);
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...((fetchConfig.headers as Record<string, string>) || {}),
-    };
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, {
-      ...fetchConfig,
-      headers,
+    this.axiosInstance = axios.create({
+      baseURL: baseUrl,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
-    if (response.status === 401) {
-      await storage.remove(TOKEN_KEY);
-      // Optional: trigger event to force re-login
-      throw new Error('Unauthorized');
-    }
+    // Request Interceptor: Attach token automatically
+    this.axiosInstance.interceptors.request.use(
+      async (config) => {
+        const token = await storage.get(TOKEN_KEY);
+        if (token && config.headers) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorMessage = `API Error: ${response.status} ${response.statusText}`;
-      try {
-        const errorJson = JSON.parse(errorText);
-        if (errorJson.message) errorMessage = errorJson.message;
-      } catch (e) {
-        // Not JSON
+    // Response Interceptor: Global error handling
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        if (error.response?.status === 401) {
+          await storage.remove(TOKEN_KEY);
+          // Optional: Trigger event to force user to login screen
+        }
+        
+        // Format error nicely
+        console.error("API Error in Axios interceptor:", error);
+        const errorMessage = error.response?.data?.message || error.message || 'API Error';
+        return Promise.reject(new Error(errorMessage));
       }
-      throw new Error(errorMessage);
-    }
-
-    // Xử lý trường hợp endpoint trả về rỗng (như 204 No Content)
-    const text = await response.text();
-    return text ? JSON.parse(text) : undefined as any;
+    );
   }
 
-  async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
-    return this.request<T>(endpoint, { method: "GET", params });
+  async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
+    const response = await this.axiosInstance.get<T>(endpoint, { params });
+    return response.data;
   }
 
-  async post<T>(endpoint: string, body?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: "POST",
-      body: body ? JSON.stringify(body) : undefined,
-    });
+  async post<T>(endpoint: string, data?: unknown): Promise<T> {
+    const response = await this.axiosInstance.post<T>(endpoint, data);
+    return response.data;
   }
 
-  async put<T>(endpoint: string, body?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: "PUT",
-      body: body ? JSON.stringify(body) : undefined,
-    });
+  async put<T>(endpoint: string, data?: unknown): Promise<T> {
+    const response = await this.axiosInstance.put<T>(endpoint, data);
+    return response.data;
   }
 
   async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: "DELETE" });
+    const response = await this.axiosInstance.delete<T>(endpoint);
+    return response.data;
   }
 }
 

@@ -86,21 +86,45 @@ export const LESSON_QUESTIONS: Record<string, QuizQuestion[]> = {
   lp2: [
     {
       id: 'lp2-q1',
-      type: 'vocab',
-      instruction: 'Nét viết đầu tiên của chữ "い" (i) nằm ở phía nào?',
-      imageUrl: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=300&h=200&fit=crop',
-      answers: [
-        { id: 'a1', text: 'Phía bên trái (có nét móc)', isCorrect: true },
-        { id: 'a2', text: 'Phía bên phải (nét cong ngắn)', isCorrect: false },
+      type: 'matching',
+      instruction: 'Nối từ tiếng Nhật với nghĩa tương ứng:',
+      pairs: [
+        { id: 'p1', left: 'こんにちは', right: 'Xin chào' },
+        { id: 'p2', left: 'ありがとう', right: 'Cám ơn' },
+        { id: 'p3', left: 'さようなら', right: 'Tạm biệt' },
       ],
     },
     {
       id: 'lp2-q2',
-      type: 'kana',
-      instruction: 'Sắp xếp các ký tự tạo thành chữ "A" (あ):',
-      imageUrl: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=300&h=200&fit=crop',
-      characters: ['あ', 'い', 'う'],
-      correctOrder: ['あ'],
+      type: 'flashcard',
+      instruction: 'Lật thẻ để ghi nhớ từ vựng:',
+      frontText: '先生',
+      backText: 'Giáo viên (Sensei)',
+    },
+    {
+      id: 'lp2-q3',
+      type: 'fill-blank',
+      instruction: 'Điền từ còn thiếu vào chỗ trống:',
+      sentence: 'わたし ___ がくせい です。',
+      options: ['は', 'が', 'を', 'に'],
+      correctAnswer: 'は',
+    },
+    {
+      id: 'lp2-q4',
+      type: 'listening',
+      instruction: 'Nghe và chọn đáp án đúng:',
+      audioUrl: 'https://example.com/audio1.mp3', // Mock URL
+      answers: [
+        { id: 'a1', text: 'Xin chào', isCorrect: true },
+        { id: 'a2', text: 'Tạm biệt', isCorrect: false },
+      ],
+    },
+    {
+      id: 'lp2-q5',
+      type: 'speaking',
+      instruction: 'Luyện đọc câu sau:',
+      textToSpeak: 'はじめまして',
+      translation: 'Rất hân hạnh được gặp bạn',
     }
   ],
   lp3: [

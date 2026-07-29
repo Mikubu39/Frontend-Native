@@ -2,29 +2,49 @@
  * Quiz Result Screen - Shows score and category breakdown.
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { QuizResultCard } from '@/components/quiz/quiz-result-card';
 import { GradientButton } from '@/components/ui/gradient-button';
+import { useGamification } from '@/contexts/gamification-context';
 import { Colors, Spacing } from '@/constants/theme';
-
-const MOCK_RESULT = {
-  totalQuestions: 20,
-  correctCount: 16,
-  wrongCount: 4,
-  correctCategories: [
-    { name: 'Vocabulary', stars: 3 },
-    { name: 'Grammar', stars: 2 },
-    { name: 'Reading', stars: 3 },
-  ],
-  wrongCategories: ['Kanji writing'],
-};
 
 export default function QuizResultScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { setEnergy, addExp } = useGamification();
+  
+  const correctCount = parseInt(params.correctCount as string || '0', 10);
+  const wrongCount = parseInt(params.wrongCount as string || '0', 10);
+  const expEarned = parseInt(params.expEarned as string || '0', 10);
+  const starsEarned = parseInt(params.starsEarned as string || '0', 10);
+  const status = params.status as string;
+  const currentEnergyStr = params.currentEnergy as string;
+
+  const isFailed = status === 'IN_PROGRESS';
+
+  useEffect(() => {
+    if (currentEnergyStr) {
+      setEnergy(parseInt(currentEnergyStr, 10));
+    }
+    if (expEarned > 0) {
+      addExp(expEarned);
+    }
+  }, []);
+
+  const realResult = {
+    totalQuestions: correctCount + wrongCount || 1,
+    correctCount,
+    wrongCount,
+    correctCategories: [
+      { name: `EXP Earned (+${expEarned})`, stars: starsEarned || (expEarned > 0 ? 3 : 0) }
+    ],
+    wrongCategories: [],
+  };
 
   return (
     <LinearGradient
@@ -35,19 +55,24 @@ export default function QuizResultScreen() {
     >
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
-          <QuizResultCard result={MOCK_RESULT} />
+          <QuizResultCard result={realResult} isFailed={isFailed} />
         </View>
 
         <View style={styles.buttons}>
-          <GradientButton
-            title="Continue"
-            onPress={() => router.replace('/(tabs)')}
-          />
-          <GradientButton
-            title="Try Again"
-            variant="outline"
-            onPress={() => router.back()}
-          />
+          <Animated.View entering={FadeInDown.delay(1000).springify()}>
+            <GradientButton
+              title="Continue"
+              onPress={() => router.replace('/(tabs)')}
+            />
+          </Animated.View>
+          
+          <Animated.View entering={FadeInDown.delay(1100).springify()}>
+            <GradientButton
+              title="Try Again"
+              variant="outline"
+              onPress={() => router.back()}
+            />
+          </Animated.View>
         </View>
       </SafeAreaView>
     </LinearGradient>

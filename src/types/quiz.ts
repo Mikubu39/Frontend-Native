@@ -2,7 +2,7 @@
  * Quiz and exercise type definitions.
  */
 
-export type QuizType = 'vocab' | 'kana' | 'picture' | 'kanji-fill' | 'writing' | 'listening' | 'pronunciation';
+export type QuizType = 'vocab' | 'kana' | 'picture' | 'kanji-fill' | 'writing' | 'listening' | 'speaking' | 'matching' | 'flashcard' | 'fill-blank';
 
 export interface QuizAnswer {
   id: string;
@@ -46,11 +46,53 @@ export interface KanjiFillQuestion extends BaseQuestion {
   correctFills: Record<number, string>;
 }
 
+export interface MatchingPair {
+  id: string;
+  left: string;
+  right: string;
+}
+
+export interface MatchingQuestion extends BaseQuestion {
+  type: 'matching';
+  pairs: MatchingPair[];
+}
+
+export interface FlashcardQuestion extends BaseQuestion {
+  type: 'flashcard';
+  frontText: string;
+  backText: string;
+  audioUrl?: string;
+}
+
+export interface FillBlankQuestion extends BaseQuestion {
+  type: 'fill-blank';
+  sentence: string;
+  options: string[];
+  correctAnswer: string;
+}
+
+export interface ListeningQuestion extends BaseQuestion {
+  type: 'listening';
+  audioUrl: string;
+  answers: QuizAnswer[];
+}
+
+export interface SpeakingQuestion extends BaseQuestion {
+  type: 'speaking';
+  textToSpeak: string;
+  translation: string;
+}
+
 export type QuizQuestion =
   | VocabQuestion
   | KanaQuestion
   | PictureQuestion
-  | KanjiFillQuestion;
+  | KanjiFillQuestion
+  | MatchingQuestion
+  | FlashcardQuestion
+  | FillBlankQuestion
+  | ListeningQuestion
+  | SpeakingQuestion;
 
 export interface QuizResultCategory {
   name: string;

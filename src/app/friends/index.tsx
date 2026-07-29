@@ -100,7 +100,6 @@ export default function FriendsScreen() {
             <AnimatedPressable
               key={option.id}
               style={styles.optionCard}
-              activeOpacity={1}
               onPress={() => handleOptionPress(option.id)}
               disabled={option.id === 'sync' && isSyncing}
               pressScale={0.98}

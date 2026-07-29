@@ -11,24 +11,35 @@
  *   const token = await storage.get('token');
  */
 
-// Sử dụng bộ nhớ tạm (In-memory) để vượt qua lỗi NativeModule của Expo Go
-// Lưu ý: Khi đóng app mở lại sẽ bị đăng xuất. Khi nào build app thật sẽ dùng lại SecureStore.
-const memoryStore = new Map<string, string>();
+import * as SecureStore from 'expo-secure-store';
 
 export const storage = {
   async get(key: string): Promise<string | null> {
-    return memoryStore.get(key) || null;
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch (error) {
+      console.warn('SecureStore get error:', error);
+      return null;
+    }
   },
 
   async set(key: string, value: string): Promise<void> {
-    memoryStore.set(key, value);
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch (error) {
+      console.warn('SecureStore set error:', error);
+    }
   },
 
   async remove(key: string): Promise<void> {
-    memoryStore.delete(key);
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch (error) {
+      console.warn('SecureStore remove error:', error);
+    }
   },
 
   async clear(): Promise<void> {
-    memoryStore.clear();
+    console.warn('SecureStore does not support native clear(). Please remove specific keys like "auth_token" directly.');
   },
 };

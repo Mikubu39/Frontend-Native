@@ -3,15 +3,15 @@
  * floating label, and error support.
  */
 
-import React, { useState, useEffect } from 'react';
-import { View, TextInput as RNTextInput, Text, StyleSheet, type TextInputProps } from 'react-native';
+import { AnimationPresets, BorderRadius, Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
+import React, { useEffect, useState } from 'react';
+import { TextInput as RNTextInput, StyleSheet, Text, View, type TextInputProps } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows, AnimationPresets } from '@/constants/theme';
 
 const AnimatedView = Animated.View;
 

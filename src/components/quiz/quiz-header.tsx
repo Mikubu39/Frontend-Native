@@ -4,15 +4,18 @@
 
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Colors, Spacing } from '@/constants/theme';
 
 interface QuizHeaderProps {
   progress: number;
   onClose: () => void;
+  lessonType?: string;
+  heartsRemaining?: number;
 }
 
-export function QuizHeader({ progress, onClose }: QuizHeaderProps) {
+export function QuizHeader({ progress, onClose, lessonType, heartsRemaining }: QuizHeaderProps) {
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
@@ -20,6 +23,21 @@ export function QuizHeader({ progress, onClose }: QuizHeaderProps) {
           <Text style={styles.flagEmoji}>🇯🇵</Text>
         </View>
         <View style={styles.spacer} />
+        
+        {lessonType === 'JUMP_TEST' && heartsRemaining !== undefined && (
+          <View style={styles.heartsContainer}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <FontAwesome5 
+                key={i} 
+                name="heart" 
+                size={20} 
+                color={i < heartsRemaining ? "#FF4B4B" : Colors.lockedBg} 
+                solid={i < heartsRemaining}
+              />
+            ))}
+          </View>
+        )}
+        
         <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
           <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
@@ -63,5 +81,10 @@ const styles = StyleSheet.create({
   closeText: {
     fontSize: 20,
     color: Colors.textSecondary,
+  },
+  heartsContainer: {
+    flexDirection: 'row',
+    gap: 6,
+    marginRight: Spacing.four,
   },
 });

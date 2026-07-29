@@ -4,7 +4,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
 import { AudioButton } from '../ui/audio-button';
 import { useAudio } from '@/hooks/use-audio';
@@ -41,24 +43,24 @@ export function PictureQuestionCard({ question, selectedAnswerId, onSelectAnswer
         {question.images.map((img) => {
           const isSelected = selectedAnswerId === img.id;
           return (
-            <TouchableOpacity
+            <AnimatedPressable
               key={img.id}
               style={[
                 styles.optionCard,
                 isSelected && styles.optionCardSelected,
               ]}
               onPress={() => handleSelect(img.id, img.isCorrect)}
-              activeOpacity={0.8}
+              pressScale={0.95}
             >
               {img.imageUrl && (
                 <Image source={{ uri: img.imageUrl }} style={styles.image} />
               )}
               {isSelected && (
-                <View style={styles.checkBadge}>
+                <Animated.View entering={ZoomIn.duration(200).springify()} style={styles.checkBadge}>
                   <Text style={styles.checkText}>✓</Text>
-                </View>
+                </Animated.View>
               )}
-            </TouchableOpacity>
+            </AnimatedPressable>
           );
         })}
       </View>

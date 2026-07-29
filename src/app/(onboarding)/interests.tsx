@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { InterestGrid } from '@/components/onboarding/interest-grid';
@@ -21,19 +22,23 @@ export default function InterestsScreen() {
       <ProgressBar progress={0.66} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Sở thích của bạn là gì?</Text>
-        <InterestGrid
-          selectedInterests={state.selectedInterests}
-          onToggle={toggleInterest}
-        />
+        <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.animatedContent}>
+          <Text style={styles.title}>Sở thích của bạn là gì?</Text>
+          <InterestGrid
+            selectedInterests={state.selectedInterests}
+            onToggle={toggleInterest}
+          />
+        </Animated.View>
       </ScrollView>
 
-      <GradientButton
-        title="TIẾP TỤC"
-        onPress={() => router.push('/(onboarding)/level')}
-        disabled={state.selectedInterests.length === 0}
-        style={styles.button}
-      />
+      <Animated.View entering={FadeInDown.delay(100).duration(400).springify()}>
+        <GradientButton
+          title="TIẾP TỤC"
+          onPress={() => router.push('/(onboarding)/level')}
+          disabled={state.selectedInterests.length === 0}
+          style={styles.button}
+        />
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -46,8 +51,10 @@ const styles = StyleSheet.create({
     gap: Spacing.five,
   },
   scroll: {
-    gap: Spacing.seven,
     paddingBottom: Spacing.four,
+  },
+  animatedContent: {
+    gap: Spacing.seven,
   },
   title: {
     fontSize: FontSizes.xxl,

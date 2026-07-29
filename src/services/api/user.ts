@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { API_ENDPOINTS } from './endpoints';
 import {
   UpdatePhoneRequest,
   SyncContactsRequest,
@@ -10,26 +11,26 @@ import {
 
 export const userService = {
   updatePhoneNumber: async (data: UpdatePhoneRequest): Promise<void> => {
-    return apiClient.put('/api/v1/users/me/phone', data);
+    return apiClient.put(API_ENDPOINTS.USER.UPDATE_PHONE, data);
   },
 
   syncContacts: async (data: SyncContactsRequest): Promise<UserOverviewResponse[]> => {
-    return apiClient.post('/api/v1/users/sync-contacts', data);
+    return apiClient.post(API_ENDPOINTS.USER.SYNC_CONTACTS, data);
   },
 
   toggleFollow: async (id: number): Promise<boolean> => {
-    return apiClient.post(`/api/v1/users/${id}/follow`);
+    return apiClient.post(API_ENDPOINTS.USER.TOGGLE_FOLLOW(id));
   },
 
   searchUsers: async (keyword: string): Promise<UserSearchResponse[]> => {
-    return apiClient.get('/api/v1/users/search', { keyword });
+    return apiClient.get(API_ENDPOINTS.USER.SEARCH, { keyword });
   },
 
   getProfileByUsername: async (username: string): Promise<UserProfileResponse> => {
-    return apiClient.get(`/api/v1/users/profile/${username}`);
+    return apiClient.get(API_ENDPOINTS.USER.PROFILE(username));
   },
 
   updateProfile: async (data: UpdateProfileRequest): Promise<void> => {
-    return apiClient.put('/api/v1/users/me/profile', data);
+    return apiClient.put(API_ENDPOINTS.USER.UPDATE_PROFILE, data);
   },
 };

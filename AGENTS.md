@@ -61,3 +61,68 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before 
 - Types/Interfaces: `PascalCase`
 - Functions/hooks: `camelCase`
 - Constants: `SCREAMING_SNAKE_CASE` or `PascalCase` object
+
+---
+
+# Behavior Rules – React Native Frontend
+
+## General
+- Act conservatively; prefer reversible changes.
+- Do not silently expand scope. If a task implies larger refactors or new features, propose a minimal path first.
+
+## React Native Specifics
+- Follow existing patterns for props, hooks, and styling (`StyleSheet`, design tokens).
+- Avoid introducing new global state mechanisms unless asked.
+- Optimize list rendering (`FlatList`), image loading, and memoization for performance-sensitive screens.
+
+## Verification Before Completion
+Before marking an RN task complete:
+- Run available static checks: `npx tsc --noEmit` or lint scripts.
+- If direct execution is unavailable, summarize type-check status and request manual verification on emulator/device.
+
+## Safety & Confirmation
+For changes that can break navigation, environment configs, or production settings:
+1. State exactly what will change.
+2. Ask for explicit user confirmation before proceeding.
+
+---
+
+# Backend Modification Rule
+- DO NOT modify any code inside the backend project (e.g., `BE_NihongoApp`) unless explicitly requested by the user. Your role is strictly focused on the `Frontend-Native` project.
+
+---
+
+# State Maintenance & Discipline
+
+## State Files Location
+- `.state/session_state.md`: Tracks active mission, session goals, current plan, progress, blockers, and decisions.
+- `.state/memory.md`: Stores learned patterns, reusable code snippets, and workspace gotchas.
+
+## When to READ & UPDATE `.state/session_state.md`
+- 🟢 **MUST UPDATE (`session_state.md`)**:
+  - Starting a new coding task or feature (Define Mission/Goal and initial Plan).
+  - Completing a sub-task or plan step (Mark `[x]` and update `Progress`).
+  - Encountering or resolving technical blockers (Update `Blockers`).
+  - Making major architectural or UI/UX decisions (Update `Decisions`).
+- ⚪ **DO NOT UPDATE (`session_state.md`)**:
+  - Responding to Q&A, code explanations, concept clarifications, or informational requests (Read-Only queries).
+
+## Pattern Capture
+- When encountering reusable patterns or solving tricky bugs, append the solution to `.state/memory.md` for future sessions.
+
+---
+
+# Project Skills Integration
+
+The workspace includes specialized skills in `.agents/skills/`. Always follow their guidance:
+
+- **`state-keeper`** ([SKILL.md](file:///c:/Users/Endministrator/Pictures/Frontend-Native/.agents/skills/state-keeper/SKILL.md)):
+  - Automatically manage `.state/session_state.md` using the exact structure (Mission, Session Goal, Plan, Progress, Blockers, Decisions).
+- **`goal-tracker`** ([SKILL.md](file:///c:/Users/Endministrator/Pictures/Frontend-Native/.agents/skills/goal-tracker/SKILL.md)):
+  - Align all implementation steps with project mission (ship fast, stable, accessible RN app). Prevent scope creep.
+- **`behavior-guard`** ([SKILL.md](file:///c:/Users/Endministrator/Pictures/Frontend-Native/.agents/skills/behavior-guard/SKILL.md)):
+  - Prevent command execution loops (max 3 identical runs).
+  - Verify static type-checks (`tsc --noEmit`).
+  - Require explicit user approval before destructive file or database operations.
+
+

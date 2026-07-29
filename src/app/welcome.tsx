@@ -3,22 +3,20 @@
  * Enhanced with animated mascot entrance, gradient accents, and premium 3D buttons.
  */
 
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { AnimatedPressable } from '@/components/ui/animated-pressable';
+import { AnimationPresets, BorderRadius, Colors, FontSizes, FontWeights, Shadows, Spacing } from '@/constants/theme';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useEffect } from 'react';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  useSharedValue,
+  FadeInDown,
   useAnimatedStyle,
-  withSpring,
+  useSharedValue,
   withDelay,
   withSequence,
-  withTiming,
-  FadeInDown,
-  FadeIn,
+  withSpring
 } from 'react-native-reanimated';
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, AnimationPresets, Shadows } from '@/constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -218,4 +216,5 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 });
+
 

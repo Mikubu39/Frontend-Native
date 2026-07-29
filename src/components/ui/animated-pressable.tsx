@@ -4,15 +4,15 @@
  * Replaces TouchableOpacity for a more premium, app-wide feel.
  */
 
+import { AnimationPresets } from '@/constants/theme';
+import * as Haptics from 'expo-haptics';
 import React from 'react';
-import { Pressable, type ViewStyle, type PressableProps, StyleSheet, type StyleProp } from 'react-native';
+import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { AnimationPresets } from '@/constants/theme';
 
 const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
 
@@ -48,7 +48,7 @@ export function AnimatedPressable({
       scale.value = withSpring(pressScale, AnimationPresets.springSnappy);
       opacity.value = withSpring(0.85, AnimationPresets.springSnappy);
       // Trigger light haptic feedback on press
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     }
     onPressIn?.(e);
   };

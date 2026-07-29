@@ -3,15 +3,15 @@
  * Fill width animates smoothly from 0 to target value on mount.
  */
 
+import { Colors } from '@/constants/theme';
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
-import { Colors, BorderRadius } from '@/constants/theme';
 
 interface ProgressBarProps {
   progress: number; // 0 to 1

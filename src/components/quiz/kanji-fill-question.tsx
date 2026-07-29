@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
 import type { KanjiFillQuestion } from '@/types';
+import { JapaneseText } from '../ui/japanese-text';
 
 interface KanjiFillQuestionProps {
   question: KanjiFillQuestion;
@@ -67,7 +68,7 @@ export function KanjiFillQuestionCard({ question, onAnswerChange }: KanjiFillQue
 
           return (
             <React.Fragment key={index}>
-              <Text style={styles.sentenceText}>{part}</Text>
+              <JapaneseText text={part} style={styles.sentenceText} />
               {hasBlank && (
                 <TouchableOpacity
                   style={[

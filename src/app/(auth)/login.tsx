@@ -3,17 +3,17 @@
  * animated mascot, and press-animated buttons.
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useAuth } from '@/contexts/auth-context';
-import { StyledTextInput } from '@/components/ui/text-input';
 import { SocialAuthSection } from '@/components/auth/social-auth-section';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
+import { StyledTextInput } from '@/components/ui/text-input';
+import { BorderRadius, Colors, FontSizes, FontWeights, Shadows, Spacing } from '@/constants/theme';
+import { useAuth } from '@/contexts/auth-context';
+import { useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
+import React, { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -101,7 +101,7 @@ export default function LoginScreen() {
             </View>
           </AnimatedPressable>
 
-          <AnimatedPressable style={styles.forgotButton} onPress={() => {}} pressScale={0.95}>
+          <AnimatedPressable style={styles.forgotButton} onPress={() => { }} pressScale={0.95}>
             <Text style={styles.forgotText}>QUÊN MẬT KHẨU</Text>
           </AnimatedPressable>
         </Animated.View>

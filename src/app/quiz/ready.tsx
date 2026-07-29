@@ -12,12 +12,16 @@ import { GradientButton } from '@/components/ui/gradient-button';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows, AnimationPresets } from '@/constants/theme';
 import { LESSON_TIPS } from '@/data/quiz';
+import { LEARNING_PATH } from '@/data/lessons';
 
 export default function QuizReadyScreen() {
   const router = useRouter();
   const { lessonId = 'lp1' } = useLocalSearchParams<{ lessonId: string }>();
   const [showTranslation1, setShowTranslation1] = useState(false);
   const [showTranslation2, setShowTranslation2] = useState(false);
+
+  const node = LEARNING_PATH.find((n) => n.id === lessonId);
+  const isTheory = node?.nodeType === 'theory' || !node?.nodeType;
 
   const tip = LESSON_TIPS[lessonId as keyof typeof LESSON_TIPS] || LESSON_TIPS.lp5;
 
@@ -32,64 +36,66 @@ export default function QuizReadyScreen() {
         entering={FadeInDown.delay(100).duration(400)}
         style={styles.flag}
       >
-        <Text style={styles.flagEmoji}>💡</Text>
+        <Text style={styles.flagEmoji}>{isTheory ? '💡' : (node?.nodeType === 'boss' ? '🏆' : '💪')}</Text>
       </Animated.View>
 
       <Animated.View
         entering={FadeInDown.delay(200).duration(400)}
         style={styles.tipHeader}
       >
-        <Text style={styles.tipSubtitle}>{tip.subtitle}</Text>
-        <Text style={styles.tipTitle}>{tip.title}</Text>
+        <Text style={styles.tipSubtitle}>{isTheory ? tip.subtitle : (node?.nodeType === 'boss' ? 'KIỂM TRA CHƯƠNG' : 'LUYỆN TẬP')}</Text>
+        <Text style={styles.tipTitle}>{isTheory ? tip.title : node?.title}</Text>
       </Animated.View>
 
+      {isTheory && (
+        <Animated.View
+          entering={FadeInDown.delay(350).duration(400)}
+          style={styles.card}
+        >
+          {tip.formula ? (
+            <View style={styles.formulaContainer}>
+              <Text style={styles.formulaText}>{tip.formula}</Text>
+            </View>
+          ) : null}
+
+          <Text style={styles.explanation}>
+            {tip.explanation}
+          </Text>
+
+          <Text style={styles.sectionLabel}>Ví dụ thực hành:</Text>
+
+          {tip.examples.map((ex, index) => {
+            const isShow = index === 0 ? showTranslation1 : showTranslation2;
+            const setIsShow = index === 0 ? setShowTranslation1 : setShowTranslation2;
+            
+            return (
+              <AnimatedPressable 
+                key={index}
+                style={styles.exampleRow} 
+                onPress={() => setIsShow(!isShow)}
+                pressScale={0.98}
+              >
+                <View style={styles.exampleContent}>
+                  <Text style={styles.japaneseText}>{ex.japanese}</Text>
+                  <Text style={styles.translationText}>
+                    {isShow ? ex.translation : 'タップして翻訳を表示 (Nhấp để xem dịch)'}
+                  </Text>
+                </View>
+                <View style={styles.speakerBtn}>
+                  <Text style={styles.speakerEmoji}>🔊</Text>
+                </View>
+              </AnimatedPressable>
+            );
+          })}
+        </Animated.View>
+      )}
+
       <Animated.View
-        entering={FadeInDown.delay(350).duration(400)}
-        style={styles.card}
-      >
-        {tip.formula ? (
-          <View style={styles.formulaContainer}>
-            <Text style={styles.formulaText}>{tip.formula}</Text>
-          </View>
-        ) : null}
-
-        <Text style={styles.explanation}>
-          {tip.explanation}
-        </Text>
-
-        <Text style={styles.sectionLabel}>Ví dụ thực hành:</Text>
-
-        {tip.examples.map((ex, index) => {
-          const isShow = index === 0 ? showTranslation1 : showTranslation2;
-          const setIsShow = index === 0 ? setShowTranslation1 : setShowTranslation2;
-          
-          return (
-            <AnimatedPressable 
-              key={index}
-              style={styles.exampleRow} 
-              onPress={() => setIsShow(!isShow)}
-              pressScale={0.98}
-            >
-              <View style={styles.exampleContent}>
-                <Text style={styles.japaneseText}>{ex.japanese}</Text>
-                <Text style={styles.translationText}>
-                  {isShow ? ex.translation : 'タップして翻訳を表示 (Nhấp để xem dịch)'}
-                </Text>
-              </View>
-              <View style={styles.speakerBtn}>
-                <Text style={styles.speakerEmoji}>🔊</Text>
-              </View>
-            </AnimatedPressable>
-          );
-        })}
-      </Animated.View>
-
-      <Animated.View
-        entering={FadeInDown.delay(500).duration(400)}
-        style={{ width: '100%' }}
+        entering={FadeInDown.delay(isTheory ? 500 : 350).duration(400)}
+        style={{ width: '100%', marginTop: isTheory ? 0 : Spacing.eight }}
       >
         <GradientButton
-          title="BẮT ĐẦU LUYỆN TẬP"
+          title={node?.nodeType === 'boss' ? "BẮT ĐẦU KIỂM TRA" : "BẮT ĐẦU LUYỆN TẬP"}
           onPress={() => router.replace(`/quiz/q1?lessonId=${lessonId}`)}
           style={styles.button}
         />
