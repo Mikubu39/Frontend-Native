@@ -31,8 +31,8 @@ export default function LoginScreen() {
     try {
       await signIn(emailOrUser, password);
       router.replace('/(tabs)');
-    } catch (error) {
-      Alert.alert('Thất bại', 'Đăng nhập không thành công.');
+    } catch (error: any) {
+      Alert.alert('Thất bại', error.message || 'Đăng nhập không thành công.');
     } finally {
       setLoading(false);
     }

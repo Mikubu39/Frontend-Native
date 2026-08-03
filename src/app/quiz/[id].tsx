@@ -16,7 +16,7 @@ import {
   VocabQuestionCard,
 } from '@/components/quiz';
 import { GradientButton } from '@/components/ui/gradient-button';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Spacing, FontSizes, FontWeights } from '@/constants/theme';
 import { useGamification } from '@/contexts/gamification-context';
 import { lessonAttemptApi } from '@/services/api/lessons';
 import type { QuizQuestion } from '@/types/quiz';
@@ -36,6 +36,9 @@ export default function QuizScreen() {
   const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
   const [currentIsCorrect, setCurrentIsCorrect] = useState<boolean>(false);
   const [hasInteracted, setHasInteracted] = useState<boolean>(false);
+  const [hasSubmitted, setHasSubmitted] = useState<boolean>(false);
+  const [isShowingRedoIntro, setIsShowingRedoIntro] = useState<boolean>(false);
+  const [originalQuestionsLength, setOriginalQuestionsLength] = useState<number>(0);
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,6 +58,7 @@ export default function QuizScreen() {
         const response = await lessonAttemptApi.startLesson(lessonId as string);
         const mappedQuestions = mapApiQuestionsToQuizQuestions(response.questions);
         setQuestions(mappedQuestions);
+        setOriginalQuestionsLength(mappedQuestions.length);
         setLessonType(response.lessonType);
         setIsReplay(response.isReplay);
 
@@ -73,60 +77,37 @@ export default function QuizScreen() {
   }, [lessonId]);
 
   const currentQuestion = questions[currentIndex];
-  const progress = questions.length > 0 ? (currentIndex + 1) / questions.length : 0;
+  const progress = originalQuestionsLength > 0 ? Math.min((currentIndex + 1) / originalQuestionsLength, 1) : 0;
   const isLastQuestion = currentIndex >= questions.length - 1;
 
   const lottieRef = useRef<LottieView>(null);
   const shakeOffset = useSharedValue(0);
 
-  const handleNext = async () => {
-    const finalCorrectCount = correctCount + (currentIsCorrect ? 1 : 0);
-    const finalMistakeCount = mistakeCount + (!currentIsCorrect ? 1 : 0);
-    const isFailed = lessonType === 'JUMP_TEST' && heartsRemaining <= 0;
-
-    if (isLastQuestion || isFailed) {
-      setIsSubmitting(true);
-      try {
-        const timeTaken = Math.floor((Date.now() - startTime.current) / 1000);
-        const response = await lessonAttemptApi.submitLesson(lessonId as string, {
-          totalQuestions: questions.length,
-          totalCorrect: finalCorrectCount,
-          totalMistakes: finalMistakeCount,
-          timeTakenSeconds: timeTaken,
-          heartsRemaining: heartsRemaining,
-          isReplay: isReplay
-        });
-
-        router.replace({
-          pathname: '/quiz/result',
-          params: {
-            status: response.status,
-            expEarned: response.expEarned,
-            starsEarned: response.starsEarned,
-            correctCount: finalCorrectCount,
-            wrongCount: finalMistakeCount,
-            currentEnergy: response.currentEnergy
-          }
-        });
-      } catch (error) {
-        console.error("Failed to submit lesson:", error);
-        setIsSubmitting(false);
-      }
-    } else {
-      setCorrectCount(finalCorrectCount);
-      setMistakeCount(finalMistakeCount);
-      setCurrentIndex((prev) => prev + 1);
-      setSelectedAnswerId(null);
-      setCurrentIsCorrect(false);
-      setHasInteracted(false);
+  const getCorrectAnswerText = (q: QuizQuestion): string | null => {
+    switch (q.type) {
+      case 'vocab':
+      case 'listening':
+        return q.answers.find((a: any) => a.isCorrect)?.text || null;
+      case 'picture':
+        return q.images.find((a: any) => a.isCorrect)?.text || null;
+      case 'kana':
+        return q.correctOrder.join('');
+      case 'fill-blank':
+        return q.correctAnswer;
+      case 'kanji-fill':
+        return Object.values(q.correctFills).join(', ');
+      case 'speaking':
+        return q.textToSpeak;
+      case 'flashcard':
+        return q.backText;
+      default:
+        return null;
     }
   };
 
-  const handleAnswerSelection = (isCorrect: boolean) => {
-    setCurrentIsCorrect(isCorrect);
-    setHasInteracted(true);
-
-    if (isCorrect) {
+  const checkAnswer = () => {
+    setHasSubmitted(true);
+    if (currentIsCorrect) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
       lottieRef.current?.play();
     } else {
@@ -143,7 +124,73 @@ export default function QuizScreen() {
       if (lessonType === 'JUMP_TEST') {
         setHeartsRemaining(prev => Math.max(0, prev - 1));
       }
+
+      if (lessonType !== 'JUMP_TEST') {
+        setQuestions(prev => [...prev, { ...currentQuestion, isRedo: true } as any]);
+      }
     }
+
+    if (!(currentQuestion as any).isRedo) {
+      if (currentIsCorrect) {
+        setCorrectCount(prev => prev + 1);
+      } else {
+        setMistakeCount(prev => prev + 1);
+      }
+    }
+  };
+
+  const proceedToNext = () => {
+    setCurrentIndex((prev) => prev + 1);
+    setSelectedAnswerId(null);
+    setCurrentIsCorrect(false);
+    setHasInteracted(false);
+    setHasSubmitted(false);
+    setIsShowingRedoIntro(false);
+  };
+
+  const moveToNextQuestion = async () => {
+    const isFailed = lessonType === 'JUMP_TEST' && heartsRemaining <= 0;
+
+    if (isLastQuestion || isFailed) {
+      setIsSubmitting(true);
+      try {
+        const timeTaken = Math.floor((Date.now() - startTime.current) / 1000);
+        const response = await lessonAttemptApi.submitLesson(lessonId as string, {
+          totalQuestions: originalQuestionsLength,
+          totalCorrect: correctCount,
+          totalMistakes: mistakeCount,
+          timeTakenSeconds: timeTaken,
+          heartsRemaining: heartsRemaining,
+          isReplay: isReplay
+        });
+
+        router.replace({
+          pathname: '/quiz/result',
+          params: {
+            status: response.status,
+            expEarned: response.expEarned,
+            starsEarned: response.starsEarned,
+            correctCount: correctCount,
+            wrongCount: mistakeCount,
+            currentEnergy: response.currentEnergy
+          }
+        });
+      } catch (error) {
+        console.error("Failed to submit lesson:", error);
+        setIsSubmitting(false);
+      }
+    } else {
+      if (currentIndex === originalQuestionsLength - 1 && questions.length > originalQuestionsLength) {
+        setIsShowingRedoIntro(true);
+      } else {
+        proceedToNext();
+      }
+    }
+  };
+
+  const handleAnswerSelection = (isCorrect: boolean) => {
+    setCurrentIsCorrect(isCorrect);
+    setHasInteracted(true);
   };
 
   const shakeStyle = useAnimatedStyle(() => ({
@@ -169,19 +216,17 @@ export default function QuizScreen() {
           <KanaQuestionCard
             question={currentQuestion}
             onAnswerChange={(isCorrect, arrangedString) => {
-              if (arrangedString.length > 0 && !hasInteracted) {
-                handleAnswerSelection(isCorrect);
-              } else if (arrangedString.length === 0) {
-                setHasInteracted(false);
-              }
+              setCurrentIsCorrect(isCorrect);
+              setHasInteracted(arrangedString.length > 0);
             }}
           />
         );
       case 'picture':
         return (
           <PictureQuestionCard
-            question={currentQuestion}
+            question={currentQuestion as any}
             selectedAnswerId={selectedAnswerId}
+            hasSubmitted={hasSubmitted}
             onSelectAnswer={(answerId, isCorrect) => {
               setSelectedAnswerId(answerId);
               handleAnswerSelection(isCorrect);
@@ -268,6 +313,28 @@ export default function QuizScreen() {
     );
   }
 
+  if (isShowingRedoIntro) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.redoIntroContainer}>
+          <LottieView
+            source={require('../../../assets/animations/school_mascot.json')}
+            style={styles.redoIntroLottie}
+            autoPlay={true}
+            loop={true}
+          />
+          <Text style={styles.redoIntroTitle}>Cố lên nào!</Text>
+          <Text style={styles.redoIntroText}>Hãy cùng ôn lại các lỗi sai của bạn nhé!</Text>
+          <GradientButton 
+            title="BẮT ĐẦU ÔN TẬP"
+            onPress={proceedToNext}
+            style={styles.redoIntroButton}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <QuizHeader
@@ -285,13 +352,21 @@ export default function QuizScreen() {
             exiting={FadeOutLeft.duration(200)}
             style={{ width: '100%' }}
           >
-            {renderQuestionCard()}
+            <View pointerEvents={hasSubmitted ? "none" : "auto"}>
+              {renderQuestionCard()}
+            </View>
           </Animated.View>
         </Animated.View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        {hasInteracted && (
+        {hasSubmitted && !currentIsCorrect && (
+          <View style={styles.correctAnswerBanner}>
+            <Text style={styles.correctAnswerLabel}>Đáp án đúng:</Text>
+            <Text style={styles.correctAnswerText}>{getCorrectAnswerText(currentQuestion) || 'Hãy xem lại bài học'}</Text>
+          </View>
+        )}
+        {hasSubmitted && (
           <View style={styles.lottieContainer}>
             <LottieView
               ref={lottieRef}
@@ -303,11 +378,11 @@ export default function QuizScreen() {
           </View>
         )}
         <GradientButton
-          title={isSubmitting ? 'ĐANG NỘP BÀI...' : (isLastQuestion ? 'HOÀN THÀNH' : 'TIẾP TỤC')}
-          onPress={handleNext}
+          title={isSubmitting ? 'ĐANG NỘP BÀI...' : (!hasSubmitted ? 'KIỂM TRA' : (isLastQuestion ? 'HOÀN THÀNH' : 'TIẾP TỤC'))}
+          onPress={!hasSubmitted ? checkAnswer : moveToNextQuestion}
           disabled={!hasInteracted || isSubmitting}
           style={styles.nextButton}
-          customColors={hasInteracted ? (currentIsCorrect ? [Colors.success, '#388E3C'] : [Colors.error, '#D32F2F']) : undefined}
+          customColors={hasSubmitted ? (currentIsCorrect ? [Colors.success, '#388E3C'] : [Colors.error, '#D32F2F']) : undefined}
         />
       </View>
     </SafeAreaView>
@@ -318,6 +393,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.cream,
+  },
+  redoIntroContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.six,
+  },
+  redoIntroLottie: {
+    width: 250,
+    height: 250,
+    marginBottom: Spacing.six,
+  },
+  redoIntroTitle: {
+    fontSize: FontSizes.xxxl,
+    fontWeight: FontWeights.extrabold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.three,
+    textAlign: 'center',
+  },
+  redoIntroText: {
+    fontSize: FontSizes.lg,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.eight,
+    lineHeight: 24,
+  },
+  redoIntroButton: {
+    width: '100%',
+    maxWidth: 300,
   },
   scrollContent: {
     flexGrow: 1,
@@ -349,5 +453,25 @@ const styles = StyleSheet.create({
   lottie: {
     width: '100%',
     height: '100%',
+  },
+  correctAnswerBanner: {
+    backgroundColor: '#FFEBEE',
+    padding: Spacing.four,
+    borderRadius: 12,
+    marginBottom: Spacing.four,
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+  },
+  correctAnswerLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#D32F2F',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  correctAnswerText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#B71C1C',
   }
 });

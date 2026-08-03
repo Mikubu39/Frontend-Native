@@ -43,8 +43,8 @@ class ApiClient {
           // Optional: Trigger event to force user to login screen
         }
         
-        // Format error nicely
-        console.error("API Error in Axios interceptor:", error);
+        // Do not use console.error here as it triggers Expo LogBox for expected errors like 401/403
+        // console.error("API Error in Axios interceptor:", error);
         const errorMessage = error.response?.data?.message || error.message || 'API Error';
         return Promise.reject(new Error(errorMessage));
       }

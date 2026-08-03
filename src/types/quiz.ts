@@ -16,10 +16,12 @@ export interface BaseQuestion {
   id: string;
   type: QuizType;
   instruction: string;
+  hint?: string;
 }
 
 export interface VocabQuestion extends BaseQuestion {
   type: 'vocab';
+  word?: string;
   imageUrl: string;
   answers: QuizAnswer[];
 }
@@ -29,6 +31,7 @@ export interface KanaQuestion extends BaseQuestion {
   imageUrl: string;
   characters: string[];
   correctOrder: string[];
+  audioUrl?: string;
 }
 
 export interface PictureQuestion extends BaseQuestion {

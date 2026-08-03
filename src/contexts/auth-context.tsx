@@ -116,7 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await storage.set('user_data', JSON.stringify(userData));
       setUser(userData);
     } catch (e: any) {
-      Alert.alert("Lỗi Đăng nhập", e.message || "Tài khoản hoặc mật khẩu không đúng.");
       throw e;
     } finally {
       setIsLoading(false);
@@ -141,7 +140,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await storage.set('user_data', JSON.stringify(userData));
       setUser(userData);
     } catch (e: any) {
-      Alert.alert("Lỗi Đăng ký", e.message || "Không thể tạo tài khoản.");
       throw e;
     } finally {
       setIsLoading(false);

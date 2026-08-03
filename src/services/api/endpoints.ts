@@ -27,5 +27,15 @@ export const API_ENDPOINTS = {
   UPLOADS: {
     IMAGE: '/api/v1/uploads/images',
     AUDIO: '/api/v1/uploads/audio',
+    BATCH_IMAGE: '/api/v1/uploads/images/batch',
+    BATCH_AUDIO: '/api/v1/uploads/audio/batch',
+  },
+  ENERGY: {
+    GET_INFO: '/api/v1/users/me/energy',
+    PRACTICE: '/api/v1/users/me/energy/practice',
+    REFILL: '/api/v1/users/me/energy/refill',
+  },
+  STREAK: {
+    GET_INFO: '/api/v1/users/me/streak',
   },
 } as const;

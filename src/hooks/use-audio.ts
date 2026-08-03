@@ -5,38 +5,54 @@
  * Simulates audio playing state.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Audio } from 'expo-av';
 
-export function useAudio(durationMs = 1500) {
+export function useAudio(url?: string) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const timeoutRef = useRef<any>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const play = useCallback(async (overrideUrl?: string | any) => {
+    const playUrl = (typeof overrideUrl === 'string') ? overrideUrl : url;
+    if (!playUrl || playUrl === 'null' || playUrl === 'undefined' || String(playUrl).trim() === '') return;
+
+    try {
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+      }
+      
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: playUrl },
+        { shouldPlay: true }
+      );
+      
+      soundRef.current = newSound;
+      setIsPlaying(true);
+      
+      newSound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setIsPlaying(false);
+        }
+      });
+    } catch (error) {
+      console.warn('Error playing audio:', error);
+      setIsPlaying(false);
+    }
+  }, [url]);
+
+  const stop = useCallback(async () => {
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      setIsPlaying(false);
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
       }
     };
-  }, []);
-
-  const play = useCallback(() => {
-    // If already playing, stop first
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    setIsPlaying(true);
-    timeoutRef.current = setTimeout(() => {
-      setIsPlaying(false);
-      timeoutRef.current = null;
-    }, durationMs);
-  }, [durationMs]);
-
-  const stop = useCallback(() => {
-    setIsPlaying(false);
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
   }, []);
 
   return {

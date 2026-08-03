@@ -16,7 +16,7 @@ import { Colors, Spacing } from '@/constants/theme';
 export default function QuizResultScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { setEnergy, addExp } = useGamification();
+  const { setEnergy, addExp, fetchGamificationData } = useGamification();
   
   const correctCount = parseInt(params.correctCount as string || '0', 10);
   const wrongCount = parseInt(params.wrongCount as string || '0', 10);
@@ -34,6 +34,8 @@ export default function QuizResultScreen() {
     if (expEarned > 0) {
       addExp(expEarned);
     }
+    // Lấy dữ liệu mới nhất (gồm cả streak) từ backend
+    fetchGamificationData();
   }, []);
 
   const realResult = {

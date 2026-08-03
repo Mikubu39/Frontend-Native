@@ -1,11 +1,7 @@
-/**
- * TextInput - Styled input with animated focus border glow,
- * floating label, and error support.
- */
-
 import { AnimationPresets, BorderRadius, Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { TextInput as RNTextInput, StyleSheet, Text, View, type TextInputProps } from 'react-native';
+import { TextInput as RNTextInput, StyleSheet, Text, View, TouchableOpacity, type TextInputProps } from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -20,9 +16,12 @@ interface StyledTextInputProps extends TextInputProps {
   error?: string;
 }
 
-export function StyledTextInput({ label, error, style, ...props }: StyledTextInputProps) {
+export function StyledTextInput({ label, error, style, secureTextEntry, ...props }: StyledTextInputProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const focusAnim = useSharedValue(0);
+
+  const isPassword = secureTextEntry !== undefined && secureTextEntry !== false;
 
   useEffect(() => {
     focusAnim.value = withTiming(isFocused ? 1 : 0, {
@@ -55,13 +54,28 @@ export function StyledTextInput({ label, error, style, ...props }: StyledTextInp
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
       <AnimatedView style={[styles.inputWrapper, borderAnimStyle, shadowAnimStyle, error && styles.inputError]}>
-        <RNTextInput
-          style={[styles.input, style]}
-          placeholderTextColor={Colors.textSecondary}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          {...props}
-        />
+        <View style={styles.inputContainer}>
+          <RNTextInput
+            style={[styles.input, style, isPassword && { paddingRight: 50 }]}
+            placeholderTextColor={Colors.textSecondary}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            secureTextEntry={isPassword && !showPassword}
+            {...props}
+          />
+          {isPassword && (
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={24}
+                color={Colors.textSecondary}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </AnimatedView>
       {error && (
         <View style={styles.errorRow}>
@@ -88,12 +102,22 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.inputBorder,
   },
+  inputContainer: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
   input: {
     height: 52,
     paddingHorizontal: Spacing.four,
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
     borderRadius: BorderRadius.lg,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: Spacing.four,
+    height: '100%',
+    justifyContent: 'center',
   },
   inputError: {
     borderColor: Colors.error,

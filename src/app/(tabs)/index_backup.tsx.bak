@@ -1,7 +1,6 @@
 /**
  * Learn / Home Screen - Redesigned with animated nodes,
- * gradient header, pulse effects on active node, staggered entrance,
- * and sticky scroll-spy tab bar for topics.
+ * gradient header, pulse effects on active node, and staggered entrance.
  */
 
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
@@ -10,13 +9,12 @@ import { CircleProgress } from '@/components/ui/circle-progress';
 import { BorderRadius, Colors, FontSizes, FontWeights, Shadows, Spacing } from '@/constants/theme';
 import { useGamification } from '@/contexts/gamification-context';
 import { roadmapApi } from '@/services/api/roadmap';
-import type { RoadmapTopicResponse, RoadmapLessonResponse } from '@/types';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -31,7 +29,7 @@ import Svg, { G, Path } from 'react-native-svg';
 // Constants for deterministic node mapping
 const NODE_SIZE = 88;
 const NODE_SPACING = 135; // Vertical distance between nodes
-const START_Y = 120;       // Starting padding top of the map
+const START_Y = 40;       // Starting padding top of the map
 
 // Function to calculate horizontal offset
 const getOffset = (index: number) => {
@@ -124,8 +122,6 @@ function PathNodeItem({
         -1,
         true
       );
-    } else {
-      floatOffset.value = withTiming(0);
     }
   }, [isActive]);
 
@@ -159,7 +155,7 @@ function PathNodeItem({
               onPress={onPress}
               pressScale={0.95}
             >
-              <Text style={styles.tooltipButtonText}>BẮT ĐẦU</Text>
+              <Text style={styles.tooltipButtonText}>BẮT ĐẦU +10 XP</Text>
             </AnimatedPressable>
           </View>
           <View style={styles.tooltipArrow} />
@@ -201,7 +197,7 @@ export default function LearnScreen() {
   const CENTER_X = width / 2;
   const { energy, exp, streak, coins, maxEnergy } = useGamification();
 
-  const [topics, setTopics] = useState<RoadmapTopicResponse[]>([]);
+  const [learningPath, setLearningPath] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useFocusEffect(
@@ -209,7 +205,15 @@ export default function LearnScreen() {
       const fetchRoadmap = async () => {
         try {
           const data = await roadmapApi.getRoadmap();
-          setTopics(data);
+          const flattened = data.flatMap(topic => topic.lessons.map(lesson => ({
+            id: lesson.lessonId,
+            title: lesson.title,
+            isLocked: lesson.status === 'LOCKED',
+            progress: lesson.status === 'COMPLETED' ? 1 : 0,
+            total: 1,
+            icon: lesson.lessonType === 'GRAMMAR' ? '📚' : (lesson.lessonType === 'VOCABULARY' ? '📝' : '⭐')
+          })));
+          setLearningPath(flattened);
         } catch (error) {
           console.error("Failed to fetch roadmap:", error);
         } finally {
@@ -221,63 +225,58 @@ export default function LearnScreen() {
     }, [])
   );
 
-  const globalActiveLessonId = topics.flatMap(t => t.lessons).find(l => l.status === 'UNLOCKED' && l.lessonType !== 'JUMP_TEST')?.lessonId
-    || topics.flatMap(t => t.lessons).find(l => l.status === 'UNLOCKED')?.lessonId;
+  // Find the active node index (first one that isn't locked)
+  const activeNodeIndex = learningPath.findIndex(node => !node.isLocked);
 
-  const generateSvgPath = (lessons: RoadmapLessonResponse[]) => {
-    if (lessons.length === 0) return { fullPath: '', activePath: '' };
-    
-    let fullPath = '';
-    let activePath = '';
+  // Generate SVG path command (smooth winding curve)
+  const generateSvgPath = (endIndex: number = learningPath.length - 1) => {
+    if (learningPath.length === 0) return '';
+    let path = '';
 
-    // Calculate how far the active path should go for this topic
-    let progressIndex = -1;
-    for (let i = 0; i < lessons.length; i++) {
-      if (lessons[i].status === 'COMPLETED' || lessons[i].lessonId === globalActiveLessonId) {
-        progressIndex = i;
-      }
-    }
+    // Safety check for empty or out-of-bounds index
+    const maxIndex = Math.min(endIndex, learningPath.length - 1);
 
-    lessons.forEach((lesson, index) => {
+    learningPath.slice(0, maxIndex + 1).forEach((_, index) => {
       const x = CENTER_X + getOffset(index);
       const y = START_Y + index * NODE_SPACING + NODE_SIZE / 2;
-      const isActiveNode = index <= progressIndex;
 
       if (index === 0) {
-        fullPath += `M ${x} ${y}`;
-        if (isActiveNode) activePath += `M ${x} ${y}`;
+        path += `M ${x} ${y}`;
       } else {
+        // Use a cubic bezier curve for a perfectly smooth winding look
+        // Tangents at both start and end points will be strictly vertical
         const prevX = CENTER_X + getOffset(index - 1);
         const prevY = START_Y + (index - 1) * NODE_SPACING + NODE_SIZE / 2;
 
         const cp1x = prevX;
         const cp1y = (prevY + y) / 2;
+
         const cp2x = x;
         const cp2y = (prevY + y) / 2;
-        
-        const curve = ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x} ${y}`;
-        fullPath += curve;
-        if (isActiveNode) {
-          if (activePath === '') activePath += `M ${prevX} ${prevY}`;
-          activePath += curve;
-        }
+
+        path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x} ${y}`;
       }
     });
 
-    return { fullPath, activePath };
+    return path;
   };
 
-  const renderDecorations = (lessons: RoadmapLessonResponse[], topicIndex: number) => {
-    return lessons.map((_, index) => {
+  const renderDecorations = () => {
+    return learningPath.map((_, index) => {
+      // Add decorations roughly every other node to prevent clutter
       if (index % 2 !== 0 && index % 3 !== 0) return null;
+
       const nodeOffset = getOffset(index);
+      // Place decoration on the opposite side of the node
       const decX = nodeOffset > 0 ? 30 : width - 80;
       const decY = START_Y + index * NODE_SPACING + 20 + (index % 2 === 0 ? 30 : -20);
+
       const icons = ['☁️', '🌳', '🌸', '✨', '🗻', '🎈', '🕊️', '⛩️'];
-      const icon = icons[((topicIndex * 5) + index * 3) % icons.length]; 
+      const icon = icons[(index * 3) % icons.length]; // Deterministic randomness
+
       return (
         <Animated.View
-          key={`dec-${topicIndex}-${index}`}
+          key={`dec-${index}`}
           entering={FadeIn.delay(index * 100).duration(500)}
           style={{ position: 'absolute', left: decX, top: decY, zIndex: 1, opacity: 0.85 }}
         >
@@ -289,38 +288,36 @@ export default function LearnScreen() {
     });
   };
 
+  const totalMapHeight = START_Y + learningPath.length * NODE_SPACING + 60;
   const insets = useSafeAreaInsets();
 
   return (
     <AnimatedScreen>
       <View style={styles.container}>
-        {/* Sticky Header Container */}
+        {/* Glassmorphism Sticky Header */}
         <BlurView
-          intensity={90}
+          intensity={80}
           tint="light"
-          style={[styles.headerContainer, { paddingTop: insets.top + Spacing.four }]}
+          style={[styles.header, { paddingTop: insets.top + Spacing.four }]}
         >
-          {/* Top Stats Row */}
-          <View style={styles.statsRow}>
-            <AnimatedPressable style={styles.flagButton} onPress={() => { }} pressScale={0.9}>
-              <Text style={styles.flagEmoji}>🇯🇵</Text>
-            </AnimatedPressable>
+          <AnimatedPressable style={styles.flagButton} onPress={() => { }} pressScale={0.9}>
+            <Text style={styles.flagEmoji}>🇯🇵</Text>
+          </AnimatedPressable>
 
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <FontAwesome5 name="fire" size={20} color="#FF9600" solid />
-                <Text style={styles.statText}>{streak}</Text>
-              </View>
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <FontAwesome5 name="fire" size={20} color="#FF9600" solid />
+              <Text style={styles.statText}>{streak}</Text>
+            </View>
 
-              <View style={styles.statItem}>
-                <FontAwesome5 name="gem" size={20} color="#1CB0F6" solid />
-                <Text style={[styles.statText, { color: '#1CB0F6' }]}>{coins > 0 ? coins : exp}</Text>
-              </View>
+            <View style={styles.statItem}>
+              <FontAwesome5 name="gem" size={20} color="#1CB0F6" solid />
+              <Text style={[styles.statText, { color: '#1CB0F6' }]}>{coins > 0 ? coins : exp}</Text>
+            </View>
 
-              <View style={styles.statItem}>
-                <FontAwesome5 name="battery-full" size={20} color="#00E676" solid />
-                <Text style={[styles.statText, { color: '#00E676' }]}>{energy}</Text>
-              </View>
+            <View style={styles.statItem}>
+              <FontAwesome5 name="heart" size={20} color="#FF4B4B" solid />
+              <Text style={[styles.statText, { color: '#FF4B4B' }]}>{energy}</Text>
             </View>
           </View>
         </BlurView>
@@ -332,109 +329,90 @@ export default function LearnScreen() {
           </View>
         ) : (
           <ScrollView
-            contentContainerStyle={[styles.scrollContent]}
+            contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 80 }]}
             showsVerticalScrollIndicator={false}
           >
-            {topics.flatMap((topic, topicIndex) => {
-              const lessons = topic.lessons;
-
-              const totalMapHeight = START_Y + lessons.length * NODE_SPACING + 60;
-              const paths = generateSvgPath(lessons);
-
-              return [
-                <View key={`header-${topic.topicId}`} style={styles.topicHeaderWrapper}>
-                  {/* Unit Banner - will be sticky */}
-                    <LinearGradient
-                      colors={[Colors.accent, '#E6A300']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.unitBanner}
-                    >
-                      <View style={styles.unitTextContainer}>
-                        <Text style={styles.unitSubtitle}>PHẦN {topicIndex + 1}</Text>
-                        <Text style={styles.unitTitle}>{topic.topicTitle}</Text>
-                      </View>
-                      <AnimatedPressable style={styles.guidebookButton} onPress={() => { }} pressScale={0.95}>
-                        <Text style={styles.guidebookIcon}>📖</Text>
-                        <Text style={styles.guidebookText}>HƯỚNG DẪN</Text>
-                      </AnimatedPressable>
-                    </LinearGradient>
-                  </View>,
-
-                <View key={`map-${topic.topicId}`} style={[styles.mapContainer, { height: totalMapHeight }]}>
-                  {/* Map Path Container */}
-                    {renderDecorations(lessons, topicIndex)}
-
-                    {/* Background SVG Curve - Gamified 3D Road */}
-                    <Svg style={StyleSheet.absoluteFillObject}>
-                      {/* 3D Road Shadow / Base */}
-                      <G y={6}>
-                        <Path
-                          d={paths.fullPath}
-                          fill="none"
-                          stroke="#D4D4D4"
-                          strokeWidth={22}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        {paths.activePath !== '' && (
-                          <Path
-                            d={paths.activePath}
-                            fill="none"
-                            stroke="#C28A00"
-                            strokeWidth={22}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        )}
-                      </G>
-
-                      {/* Road Top Surface */}
-                      <Path
-                        d={paths.fullPath}
-                        fill="none"
-                        stroke="#F0F0F0"
-                        strokeWidth={22}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      {paths.activePath !== '' && (
-                        <Path
-                          d={paths.activePath}
-                          fill="none"
-                          stroke={Colors.accent}
-                          strokeWidth={22}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      )}
-                    </Svg>
-
-                    {/* Render Nodes Absolutely */}
-                    {lessons.map((lesson, index) => {
-                      const isLocked = lesson.status === 'LOCKED';
-                      const progress = lesson.status === 'COMPLETED' ? 1 : 0;
-                      return (
-                        <PathNodeItem
-                          key={lesson.lessonId}
-                          node={{
-                            id: lesson.lessonId,
-                            title: lesson.title,
-                            isLocked,
-                            progress,
-                            total: 1,
-                            icon: lesson.lessonType === 'GRAMMAR' ? '📚' : (lesson.lessonType === 'VOCABULARY' ? '📝' : '⭐')
-                          }}
-                          index={index}
-                          centerX={CENTER_X}
-                          isActive={lesson.lessonId === globalActiveLessonId}
-                          onPress={() => !isLocked && router.push(`/quiz/ready?lessonId=${lesson.lessonId}`)}
-                        />
-                      );
-                    })}
+            {/* Unit Banner */}
+            <Animated.View entering={FadeIn.delay(50).duration(200)}>
+              <LinearGradient
+                colors={[Colors.accent, '#E6A300']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.unitBanner}
+              >
+                <View style={styles.unitTextContainer}>
+                  <Text style={styles.unitSubtitle}>PHẦN 1: NHẬP MÔN</Text>
+                  <Text style={styles.unitTitle}>Chào hỏi, giới thiệu bản thân</Text>
                 </View>
-              ];
-            })}
+                <AnimatedPressable style={styles.guidebookButton} onPress={() => { }} pressScale={0.95}>
+                  <Text style={styles.guidebookIcon}>📖</Text>
+                  <Text style={styles.guidebookText}>HƯỚNG DẪN</Text>
+                </AnimatedPressable>
+              </LinearGradient>
+            </Animated.View>
+
+            {/* Map Path Container */}
+            <View style={[styles.mapContainer, { height: totalMapHeight }]}>
+              {/* Gamified Background Decorations */}
+              {renderDecorations()}
+
+              {/* Background SVG Curve - Gamified 3D Road */}
+              <Svg style={StyleSheet.absoluteFillObject}>
+                {/* 3D Road Shadow / Base */}
+                <G y={6}>
+                  <Path
+                    d={generateSvgPath()}
+                    fill="none"
+                    stroke="#D4D4D4"
+                    strokeWidth={22}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  {activeNodeIndex > 0 && (
+                    <Path
+                      d={generateSvgPath(activeNodeIndex)}
+                      fill="none"
+                      stroke="#C28A00"
+                      strokeWidth={22}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
+                </G>
+
+                {/* Road Top Surface */}
+                <Path
+                  d={generateSvgPath()}
+                  fill="none"
+                  stroke="#F0F0F0"
+                  strokeWidth={22}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                {activeNodeIndex > 0 && (
+                  <Path
+                    d={generateSvgPath(activeNodeIndex)}
+                    fill="none"
+                    stroke={Colors.accent}
+                    strokeWidth={22}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+              </Svg>
+
+              {/* Render Nodes Absolutely */}
+              {learningPath.map((node, index) => (
+                <PathNodeItem
+                  key={node.id}
+                  node={node}
+                  index={index}
+                  centerX={CENTER_X}
+                  isActive={index === activeNodeIndex}
+                  onPress={() => !node.isLocked && router.push(`/quiz/ready?lessonId=${node.id}`)}
+                />
+              ))}
+            </View>
           </ScrollView>
         )}
       </View>
@@ -447,44 +425,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.cream,
   },
-  headerContainer: {
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     zIndex: 100,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.7)',
-    backgroundColor: Colors.cream,
-  },
-  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.five,
-    paddingBottom: Spacing.two,
-  },
-  tabBar: {
-    paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.three,
-    gap: Spacing.three,
-  },
-  tabItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: BorderRadius.full,
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  tabItemActive: {
-    backgroundColor: Colors.surface,
-    borderColor: Colors.accent,
-    ...Shadows.sm,
-  },
-  tabText: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.bold,
-    color: Colors.textSecondary,
-  },
-  tabTextActive: {
-    color: Colors.accent,
+    paddingBottom: Spacing.four,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.5)',
   },
   flagButton: {
     width: 44,
@@ -502,7 +455,7 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    gap: Spacing.four,
+    gap: Spacing.five,
   },
   statItem: {
     flexDirection: 'row',
@@ -513,21 +466,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   statText: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
   scrollContent: {
     paddingBottom: 100,
   },
-  topicHeaderWrapper: {
-    backgroundColor: Colors.cream,
-    paddingBottom: Spacing.two,
-    paddingTop: Spacing.two,
-    zIndex: 10,
-  },
   unitBanner: {
     marginHorizontal: Spacing.five,
+    marginTop: Spacing.four,
     padding: Spacing.five,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -545,7 +493,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
   },
   unitTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: '#FFFFFF',
     marginTop: 4,

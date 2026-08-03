@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, interpolate } from 'react-native-reanimated';
 import type { FlashcardQuestion } from '@/types';
@@ -128,3 +128,4 @@ const styles = StyleSheet.create({
     marginTop: Spacing.six,
   }
 });
+

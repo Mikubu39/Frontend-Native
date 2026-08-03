@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AudioButton } from '@/components/ui/audio-button';
 import type { ListeningQuestion } from '@/types';
 import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows } from '@/constants/theme';
+import { useAudio } from '@/hooks/use-audio';
 
 interface ListeningQuestionProps {
   question: ListeningQuestion;
@@ -11,12 +12,18 @@ interface ListeningQuestionProps {
 }
 
 export function ListeningQuestionCard({ question, selectedAnswer, onSelectAnswer }: ListeningQuestionProps) {
+  const { isPlaying, play } = useAudio(question.audioUrl);
+
+  useEffect(() => {
+    play();
+  }, [question, play]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.instruction}>{question.instruction}</Text>
 
       <View style={styles.audioContainer}>
-        <AudioButton variant="speaker" size="large" onPress={() => {}} />
+        <AudioButton variant="speaker" size="large" isPlaying={isPlaying} onPress={() => play()} />
         <Text style={styles.audioHint}>Chạm để nghe</Text>
       </View>
 

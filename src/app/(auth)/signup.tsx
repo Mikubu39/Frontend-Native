@@ -31,8 +31,8 @@ export default function SignupScreen() {
     try {
       await signUp(email, password, name || 'User');
       router.replace('/(onboarding)/goal');
-    } catch (error) {
-      Alert.alert('Thất bại', 'Đăng ký tài khoản thất bại.');
+    } catch (error: any) {
+      Alert.alert('Thất bại', error.message || 'Đăng ký tài khoản thất bại.');
     } finally {
       setLoading(false);
     }

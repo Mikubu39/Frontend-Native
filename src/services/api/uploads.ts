@@ -16,4 +16,18 @@ export const uploadApi = {
   uploadAudio: async (formData: FormData): Promise<UploadResponse> => {
     return apiClient.post<UploadResponse>(API_ENDPOINTS.UPLOADS.AUDIO, formData);
   },
+
+  /**
+   * Upload multiple image files.
+   */
+  uploadBatchImage: async (formData: FormData): Promise<UploadResponse[]> => {
+    return apiClient.post<UploadResponse[]>(API_ENDPOINTS.UPLOADS.BATCH_IMAGE, formData);
+  },
+
+  /**
+   * Upload multiple audio files.
+   */
+  uploadBatchAudio: async (formData: FormData): Promise<UploadResponse[]> => {
+    return apiClient.post<UploadResponse[]>(API_ENDPOINTS.UPLOADS.BATCH_AUDIO, formData);
+  },
 };

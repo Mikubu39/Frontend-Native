@@ -11,3 +11,4 @@ export * from './onboarding';
 export * from './quiz';
 export * from './review';
 export * from './user';
+export * from './gamification';
