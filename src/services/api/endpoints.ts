@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
     REGISTER: '/api/v1/auth/register',
   },
   USER: {
+    ME: '/api/v1/users/me',
     UPDATE_PHONE: '/api/v1/users/me/phone',
     SYNC_CONTACTS: '/api/v1/users/sync-contacts',
     TOGGLE_FOLLOW: (id: number | string) => `/api/v1/users/${id}/follow`,
@@ -34,8 +35,17 @@ export const API_ENDPOINTS = {
     GET_INFO: '/api/v1/users/me/energy',
     PRACTICE: '/api/v1/users/me/energy/practice',
     REFILL: '/api/v1/users/me/energy/refill',
+    ADS: '/api/v1/users/me/energy/ads',
   },
   STREAK: {
     GET_INFO: '/api/v1/users/me/streak',
+    BUY_FREEZE: '/api/v1/users/me/streak/freeze/buy',
+  },
+  QUESTS: {
+    GET_ALL: '/api/v1/users/me/quests',
+  },
+  CHEST: {
+    GET_STATUS: '/api/v1/users/me/chest',
+    OPEN: '/api/v1/users/me/chest/open',
   },
 } as const;

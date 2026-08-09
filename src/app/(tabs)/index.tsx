@@ -14,6 +14,8 @@ import type { RoadmapTopicResponse, RoadmapLessonResponse } from '@/types';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ModalCard } from '@/components/ui/modal-card';
+import { GradientButton } from '@/components/ui/gradient-button';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
@@ -101,13 +103,17 @@ function PathNodeItem({
   node,
   index,
   isActive,
+  isPopupVisible,
   onPress,
+  onStart,
   centerX,
 }: {
   node: { id: number | string; title: string; isLocked: boolean; progress: number; total: number; icon?: string };
   index: number;
   isActive: boolean;
+  isPopupVisible: boolean;
   onPress: () => void;
+  onStart: () => void;
   centerX: number;
 }) {
   const isLocked = node.isLocked;
@@ -142,30 +148,11 @@ function PathNodeItem({
         {
           left: x - NODE_SIZE / 2,
           top: y,
+          zIndex: isPopupVisible ? 100 : (isActive ? 10 : 2),
         },
         isActive && floatStyle,
       ]}
     >
-      {/* Speech Bubble Tooltip for Active Node */}
-      {isActive && (
-        <Animated.View
-          entering={FadeIn.delay(300).duration(200)}
-          style={styles.tooltipContainer}
-        >
-          <View style={styles.tooltipBody}>
-            <Text style={styles.tooltipTitle}>BÀI TIẾP THEO</Text>
-            <AnimatedPressable
-              style={styles.tooltipButton}
-              onPress={onPress}
-              pressScale={0.95}
-            >
-              <Text style={styles.tooltipButtonText}>BẮT ĐẦU</Text>
-            </AnimatedPressable>
-          </View>
-          <View style={styles.tooltipArrow} />
-        </Animated.View>
-      )}
-
       {/* Circular Lesson Node */}
       <AnimatedPressable
         style={[
@@ -187,10 +174,25 @@ function PathNodeItem({
         />
       </AnimatedPressable>
 
-      {/* Node Title text below circle */}
-      <Text style={[styles.nodeTitle, isLocked && styles.nodeTitleLocked]} numberOfLines={1}>
-        {node.title}
-      </Text>
+      {/* Lesson Details Popover (Bottom) */}
+      {isPopupVisible && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          style={styles.lessonPopoverContainer}
+        >
+          <View style={styles.lessonPopoverArrow} />
+          <View style={styles.lessonPopoverBody}>
+            <Text style={styles.lessonPopoverTitle}>{node.title}</Text>
+            <Text style={styles.lessonPopoverSubtitle}>Bài học • 1 ⚡</Text>
+            <GradientButton
+              title="BẮT ĐẦU"
+              onPress={onStart}
+              style={{ width: '100%', paddingVertical: 10 }}
+            />
+          </View>
+        </Animated.View>
+      )}
+
     </Animated.View>
   );
 }
@@ -199,10 +201,13 @@ export default function LearnScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const CENTER_X = width / 2;
-  const { energy, exp, streak, coins, maxEnergy } = useGamification();
+  const { energy, exp, streak, coins, maxEnergy, refillEnergy, watchAdToRefill } = useGamification();
 
   const [topics, setTopics] = useState<RoadmapTopicResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showEnergyPopup, setShowEnergyPopup] = useState(false);
+  const [adError, setAdError] = useState<string | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<RoadmapLessonResponse | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -233,8 +238,13 @@ export default function LearnScreen() {
     // Calculate how far the active path should go for this topic
     let progressIndex = -1;
     for (let i = 0; i < lessons.length; i++) {
-      if (lessons[i].status === 'COMPLETED' || lessons[i].lessonId === globalActiveLessonId) {
+      if (lessons[i].status === 'COMPLETED') {
         progressIndex = i;
+      } else if (lessons[i].status === 'UNLOCKED') {
+        progressIndex = i;
+        break;
+      } else {
+        break;
       }
     }
 
@@ -279,11 +289,13 @@ export default function LearnScreen() {
         <Animated.View
           key={`dec-${topicIndex}-${index}`}
           entering={FadeIn.delay(index * 100).duration(500)}
-          style={{ position: 'absolute', left: decX, top: decY, zIndex: 1, opacity: 0.85 }}
+          style={{ position: 'absolute', left: decX, top: decY, zIndex: 1 }}
         >
-          <Text style={{ fontSize: 38, transform: [{ scaleX: nodeOffset > 0 ? -1 : 1 }] }}>
-            {icon}
-          </Text>
+          <View style={{ opacity: 0.85 }}>
+            <Text style={{ fontSize: 38, transform: [{ scaleX: nodeOffset > 0 ? -1 : 1 }] }}>
+              {icon}
+            </Text>
+          </View>
         </Animated.View>
       );
     });
@@ -313,8 +325,8 @@ export default function LearnScreen() {
               </View>
 
               <View style={styles.statItem}>
-                <FontAwesome5 name="gem" size={20} color="#1CB0F6" solid />
-                <Text style={[styles.statText, { color: '#1CB0F6' }]}>{coins > 0 ? coins : exp}</Text>
+                <FontAwesome5 name="coins" size={20} color="#FFC107" solid />
+                <Text style={[styles.statText, { color: '#FFC107' }]}>{coins}</Text>
               </View>
 
               <View style={styles.statItem}>
@@ -324,6 +336,64 @@ export default function LearnScreen() {
             </View>
           </View>
         </BlurView>
+
+        {showEnergyPopup && (
+          <ModalCard onClose={() => setShowEnergyPopup(false)}>
+            <View style={{ alignItems: 'center', gap: Spacing.four, marginTop: Spacing.four }}>
+              <Text style={{ fontSize: 48 }}>⚡</Text>
+              <Text style={{ fontSize: FontSizes.xl, fontWeight: FontWeights.extrabold, color: Colors.textPrimary, textAlign: 'center' }}>
+                Hết năng lượng!
+              </Text>
+              <Text style={{ fontSize: FontSizes.md, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22 }}>
+                Bạn cần năng lượng để bắt đầu bài học mới. Năng lượng tối đa là 5. Hãy mua bằng xu hoặc xem quảng cáo để hồi phục.
+              </Text>
+              {adError && (
+                <Text style={{ fontSize: FontSizes.sm, color: Colors.error, textAlign: 'center' }}>
+                  {adError}
+                </Text>
+              )}
+              <View style={{ width: '100%', gap: Spacing.two, marginTop: Spacing.two }}>
+                <GradientButton
+                  title="MUA FULL (400 COIN)"
+                  onPress={async () => {
+                    try {
+                      await refillEnergy();
+                      setShowEnergyPopup(false);
+                    } catch (e: any) {
+                      setAdError(e?.response?.data?.message || 'Khong du coins');
+                    }
+                  }}
+                  style={{ width: '100%' }}
+                />
+                <GradientButton
+                  title="XEM QUẢNG CÁO (+5 NL)"
+                  variant="outline"
+                  onPress={async () => {
+                    try {
+                      setAdError(null);
+                      await watchAdToRefill();
+                      setShowEnergyPopup(false);
+                    } catch (e: any) {
+                      setAdError(e?.response?.data?.message || 'Lỗi kết nối quảng cáo');
+                    }
+                  }}
+                  style={{ width: '100%' }}
+                />
+                <GradientButton
+                  title="ĐỂ SAU"
+                  variant="outline"
+                  onPress={() => {
+                    setShowEnergyPopup(false);
+                    setAdError(null);
+                  }}
+                  style={{ width: '100%', borderWidth: 0 }}
+                />
+              </View>
+            </View>
+          </ModalCard>
+        )}
+
+        {/* ModalCard for selectedLesson has been removed and replaced by popover */}
 
         {/* Main Scroll Content */}
         {isLoading ? (
@@ -428,7 +498,23 @@ export default function LearnScreen() {
                           index={index}
                           centerX={CENTER_X}
                           isActive={lesson.lessonId === globalActiveLessonId}
-                          onPress={() => !isLocked && router.push(`/quiz/ready?lessonId=${lesson.lessonId}`)}
+                          isPopupVisible={selectedLesson?.lessonId === lesson.lessonId}
+                          onPress={() => {
+                            if (isLocked) return;
+                            if (energy < 1) {
+                              setShowEnergyPopup(true);
+                            } else {
+                              if (selectedLesson?.lessonId === lesson.lessonId) {
+                                setSelectedLesson(null);
+                              } else {
+                                setSelectedLesson(lesson);
+                              }
+                            }
+                          }}
+                          onStart={() => {
+                            setSelectedLesson(null);
+                            router.push(`/quiz/ready?lessonId=${lesson.lessonId}`);
+                          }}
                         />
                       );
                     })}
@@ -608,51 +694,44 @@ const styles = StyleSheet.create({
   nodeTitleLocked: {
     color: Colors.textSecondary,
   },
-  tooltipContainer: {
+  lessonPopoverContainer: {
     position: 'absolute',
-    top: -90,
+    top: NODE_SIZE + 10,
     alignSelf: 'center',
-    zIndex: 10,
+    zIndex: 20,
     alignItems: 'center',
-    width: 160,
+    width: 260,
   },
-  tooltipBody: {
-    backgroundColor: Colors.secondary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: 6,
-    ...Shadows.glow(Colors.secondary),
-  },
-  tooltipTitle: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.extrabold,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    letterSpacing: 0.5,
-  },
-  tooltipButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.sm,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    ...Shadows.sm,
-  },
-  tooltipButtonText: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.secondary,
-  },
-  tooltipArrow: {
+  lessonPopoverArrow: {
     width: 0,
     height: 0,
     borderLeftWidth: 10,
     borderRightWidth: 10,
-    borderTopWidth: 10,
+    borderBottomWidth: 10,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: Colors.secondary,
-    marginTop: -2,
+    borderBottomColor: Colors.surface,
+    marginBottom: -2,
+  },
+  lessonPopoverBody: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.four,
+    width: '100%',
+    ...Shadows.lg,
+  },
+  lessonPopoverTitle: {
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.extrabold,
+    color: Colors.textPrimary,
+    textAlign: 'left',
+    marginBottom: 4,
+  },
+  lessonPopoverSubtitle: {
+    fontSize: FontSizes.sm,
+    color: Colors.accent,
+    fontWeight: FontWeights.bold,
+    textAlign: 'left',
+    marginBottom: Spacing.three,
   },
 });

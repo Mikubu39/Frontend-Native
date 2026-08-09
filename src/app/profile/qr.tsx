@@ -1,9 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, Share } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, Share, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
 import QRCode from 'react-native-qrcode-svg';
+import ViewShot from 'react-native-view-shot';
+import * as MediaLibrary from 'expo-media-library';
 import { GradientButton } from '@/components/ui/gradient-button';
 import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 
@@ -13,6 +15,9 @@ export default function MyQRScreen() {
   
   const username = user?.email?.split('@')[0] || 'user';
   const profileUrl = `nihongoapp://profile/@${username}`;
+  const viewShotRef = useRef<ViewShot>(null);
+  
+  const [status, requestPermission] = MediaLibrary.usePermissions();
 
   const handleShare = async () => {
     try {
@@ -21,6 +26,27 @@ export default function MyQRScreen() {
       });
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleSaveImage = async () => {
+    if (!status?.granted) {
+      const { granted } = await requestPermission();
+      if (!granted) {
+        Alert.alert('Lỗi', 'Cần quyền truy cập thư viện ảnh để lưu mã QR.');
+        return;
+      }
+    }
+    
+    try {
+      if (viewShotRef.current && viewShotRef.current.capture) {
+        const uri = await viewShotRef.current.capture();
+        await MediaLibrary.saveToLibraryAsync(uri);
+        Alert.alert('Thành công', 'Mã QR đã được lưu vào thư viện ảnh.');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Lỗi', 'Không thể lưu mã QR.');
     }
   };
 
@@ -33,26 +59,34 @@ export default function MyQRScreen() {
       </View>
 
       <View style={styles.content}>
-        <View style={styles.qrCard}>
-          <Text style={styles.displayName}>{user?.displayName}</Text>
-          <Text style={styles.username}>@{username}</Text>
-          
-          <View style={styles.qrWrapper}>
-            <QRCode
-              value={profileUrl}
-              size={200}
-              color={Colors.primary}
-              backgroundColor="#FFFFFF"
-            />
+        <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
+          <View style={styles.qrCard}>
+            <Text style={styles.displayName}>{user?.displayName}</Text>
+            <Text style={styles.username}>@{username}</Text>
+            
+            <View style={styles.qrWrapper}>
+              <QRCode
+                value={profileUrl}
+                size={200}
+                color={Colors.primary}
+                backgroundColor="#FFFFFF"
+              />
+            </View>
+            
+            <Text style={styles.hint}>Quét mã để kết bạn với tôi</Text>
           </View>
-          
-          <Text style={styles.hint}>Quét mã để kết bạn với tôi</Text>
-        </View>
+        </ViewShot>
 
-        <GradientButton 
-          title="Chia sẻ mã QR" 
-          onPress={handleShare} 
-        />
+        <View style={styles.actions}>
+          <GradientButton 
+            title="Lưu thành ảnh" 
+            onPress={handleSaveImage} 
+            style={styles.actionBtn}
+          />
+          <Text style={styles.shareTextBtn} onPress={handleShare}>
+            Chia sẻ liên kết
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -116,5 +150,19 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: Spacing.six,
     textAlign: 'center',
+  },
+  actions: {
+    width: '100%',
+    alignItems: 'center',
+    gap: Spacing.four,
+  },
+  actionBtn: {
+    width: '100%',
+  },
+  shareTextBtn: {
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.bold,
+    color: Colors.primary,
+    padding: Spacing.three,
   }
 });

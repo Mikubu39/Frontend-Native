@@ -24,20 +24,14 @@ export default function WelcomeScreen() {
   const router = useRouter();
 
   const mascotScale = useSharedValue(0);
-  const mascotRotate = useSharedValue(-15);
+  const mascotRotate = useSharedValue(0); // Set initial rotation to 0 to prevent tilting
 
   useEffect(() => {
     mascotScale.value = withDelay(
       200,
       withSpring(1, AnimationPresets.springBouncy)
     );
-    mascotRotate.value = withDelay(
-      200,
-      withSequence(
-        withSpring(8, { damping: 8, stiffness: 100 }),
-        withSpring(0, { damping: 10, stiffness: 120 })
-      )
-    );
+    // Removed rotation animation to keep the owl straight
   }, []);
 
   const mascotStyle = useAnimatedStyle(() => ({

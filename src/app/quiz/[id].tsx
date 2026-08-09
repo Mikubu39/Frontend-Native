@@ -172,7 +172,8 @@ export default function QuizScreen() {
             starsEarned: response.starsEarned,
             correctCount: correctCount,
             wrongCount: mistakeCount,
-            currentEnergy: response.currentEnergy
+            currentEnergy: response.currentEnergy,
+            coinsEarned: response.coinsEarned
           }
         });
       } catch (error) {
@@ -406,7 +407,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.six,
   },
   redoIntroTitle: {
-    fontSize: FontSizes.xxxl,
+    fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
     marginBottom: Spacing.three,

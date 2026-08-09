@@ -1,189 +1,153 @@
-/**
- * Profile Screen Tab - Enhanced with gradient header banner,
- * animated progress bars, avatar glow, and colored stat cards.
- */
-
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
-import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { StaggeredList } from '@/components/ui/staggered-list';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
-import { Alert } from 'react-native';
-
-interface StatBoxProps {
-  label: string;
-  value: string | number;
-  icon: string;
-  accentColor: string;
-}
-
-function StatBox({ label, value, icon, accentColor }: StatBoxProps) {
-  return (
-    <AnimatedPressable style={[styles.statBox, { borderLeftColor: accentColor, borderLeftWidth: 3 }]} onPress={() => {}} pressScale={0.97}>
-      <Text style={styles.statIcon}>{icon}</Text>
-      <View>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statLabel}>{label}</Text>
-      </View>
-    </AnimatedPressable>
-  );
-}
-
-interface Achievement {
-  id: string;
-  icon: string;
-  title: string;
-  description: string;
-  progress: number;
-  target: number;
-}
-
-const ACHIEVEMENTS: Achievement[] = [
-  { id: 'a1', icon: '🔥', title: 'Lửa rừng', description: 'Đạt chuỗi 7 ngày Streak', progress: 7, target: 7 },
-  { id: 'a2', icon: '🎓', title: 'Học giả', description: 'Học 100 từ vựng mới', progress: 45, target: 100 },
-  { id: 'a3', icon: '🏆', title: 'Vô địch', description: 'Lọt vào top 3 của giải đấu', progress: 1, target: 1 },
-  { id: 'a4', icon: '🌟', title: 'Huyền thoại', description: 'Hoàn thành 10 bài học huyền thoại', progress: 3, target: 10 },
-];
-
-/** Animated achievement progress bar */
-function AnimatedProgressFill({ progress, isCompleted }: { progress: number; isCompleted: boolean }) {
-  const animWidth = useSharedValue(0);
-
-  useEffect(() => {
-    animWidth.value = withDelay(
-      400,
-      withTiming(progress, { duration: 800, easing: Easing.out(Easing.cubic) })
-    );
-  }, [progress]);
-
-  const fillStyle = useAnimatedStyle(() => ({
-    width: `${animWidth.value}%` as any,
-  }));
-
-  return (
-    <View style={styles.progressBarBg}>
-      <Animated.View
-        style={[
-          styles.progressBarFill,
-          { backgroundColor: isCompleted ? Colors.accent : Colors.primary },
-          fillStyle,
-        ]}
-      />
-    </View>
-  );
-}
+import { StatusBar } from 'expo-status-bar';
+import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { useGamification } from '@/contexts/gamification-context';
+import { GradientButton } from '@/components/ui/gradient-button';
 
 export default function ProfileTabScreen() {
   const router = useRouter();
-  const { user, signOut } = useAuth();
-
-  const handleSignOut = () => {
-    Alert.alert(
-      'Đăng xuất',
-      'Bạn có chắc chắn muốn đăng xuất không?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        { 
-          text: 'Đăng xuất', 
-          style: 'destructive',
-          onPress: async () => {
-            await signOut();
-            router.replace('/welcome');
-          }
-        }
-      ]
-    );
-  };
+  const { user } = useAuth();
+  const { streak, exp, coins } = useGamification();
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Gradient Profile Header */}
-      <LinearGradient
-        colors={[Colors.primary, Colors.secondary]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <Text style={styles.headerTitle}>Hồ sơ cá nhân</Text>
-        <AnimatedPressable style={styles.signOutBtn} onPress={handleSignOut} pressScale={0.95}>
-          <Text style={styles.signOutBtnText}>Đăng xuất</Text>
-        </AnimatedPressable>
-      </LinearGradient>
-
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* User Card */}
-        <Animated.View entering={FadeIn.duration(400)}>
-          <View style={styles.userCard}>
-            <View style={styles.avatarBg}>
-              <Text style={styles.avatarEmoji}>🦉</Text>
-            </View>
-            <View style={styles.userInfo}>
-              <Text style={styles.displayName}>{user?.displayName || 'Học viên Kotodama'}</Text>
-              <Text style={styles.userName}>@{user?.email?.split('@')[0] || 'kotodama_user'}</Text>
-              <Text style={styles.joinDate}>Tham gia từ tháng 6 năm 2026</Text>
-            </View>
-            <AnimatedPressable onPress={() => router.push('/profile/edit')} pressScale={0.9} style={styles.editProfileBtn}>
-              <Text style={styles.editProfileText}>Sửa</Text>
+    <SafeAreaView edges={['top']} style={styles.container}>
+      <StatusBar style="dark" />
+      
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={true}>
+        {/* TOP SECTION */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{user?.displayName || 'Dương Gia Đắc'}</Text>
+          <View style={styles.headerActions}>
+            <AnimatedPressable onPress={() => router.push('/profile/qr')} pressScale={0.9}>
+              <Ionicons name="share-outline" size={26} color={Colors.textPrimary} />
+            </AnimatedPressable>
+            <AnimatedPressable onPress={() => router.push('/settings')} pressScale={0.9}>
+              <Ionicons name="settings-outline" size={26} color={Colors.textPrimary} />
             </AnimatedPressable>
           </View>
-        </Animated.View>
+        </View>
 
-        {/* Statistics Grid */}
-        <Animated.Text
-          entering={FadeIn.delay(100).duration(400)}
-          style={styles.sectionTitle}
-        >
-          Thống kê
-        </Animated.Text>
-        <Animated.View
-          entering={FadeIn.delay(200).duration(400)}
-          style={styles.statsGrid}
-        >
-          <StatBox icon="🔥" label="Ngày Streak" value={7} accentColor="#F59E0B" />
-          <StatBox icon="⚡" label="Tổng số XP" value={980} accentColor={Colors.primary} />
-          <StatBox icon="🛡️" label="Giải đấu" value="Emerald" accentColor="#10B981" />
-          <StatBox icon="👑" label="Vương miện" value={12} accentColor={Colors.secondary} />
-        </Animated.View>
+        {/* Profile Card */}
+        <View style={styles.profileCard}>
+          {/* Avatar */}
+          <View style={styles.avatarRing}>
+            <View style={styles.avatarInner}>
+              <Text style={{ fontSize: 60 }}>🥸</Text>
+            </View>
+          </View>
 
-        {/* Achievements Section */}
-        <Animated.Text
-          entering={FadeIn.delay(300).duration(400)}
-          style={styles.sectionTitle}
-        >
-          Thành tích
-        </Animated.Text>
-        <StaggeredList staggerDelay={80} initialDelay={400}>
-          {ACHIEVEMENTS.map((item) => {
-            const isCompleted = item.progress >= item.target;
-            const progressPercent = Math.min((item.progress / item.target) * 100, 100);
+          {/* User Info Row */}
+          <View style={styles.userInfoRow}>
+            <Text style={styles.userHandle}>
+              @{user?.email?.split('@')[0].toUpperCase() || 'USER'} • THAM GIA TỪ 2025
+            </Text>
+          </View>
 
-            return (
-              <AnimatedPressable key={item.id} style={styles.achievementCard} onPress={() => {}} pressScale={0.98}>
-                <View style={styles.achievementIconBg}>
-                  <Text style={styles.achievementIcon}>{item.icon}</Text>
-                </View>
-                
-                <View style={styles.achievementContent}>
-                  <Text style={styles.achievementTitle}>{item.title}</Text>
-                  <Text style={styles.achievementDesc}>{item.description}</Text>
-                  
-                  {/* Animated Progress Row */}
-                  <View style={styles.progressRow}>
-                    <AnimatedProgressFill progress={progressPercent} isCompleted={isCompleted} />
-                    <Text style={styles.progressText}>
-                      {item.progress} / {item.target}
-                    </Text>
-                  </View>
-                </View>
-              </AnimatedPressable>
-            );
-          })}
-        </StaggeredList>
+          {/* Follower Stats */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>3</Text>
+              <Text style={styles.statLabel}>Đang theo dõi</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>4</Text>
+              <Text style={styles.statLabel}>Người theo dõi</Text>
+            </View>
+          </View>
+
+          {/* Add Friend Button */}
+          <AnimatedPressable 
+            style={styles.addFriendBtn} 
+            onPress={() => router.push('/friends/search')}
+            pressScale={0.97}
+          >
+            <Ionicons name="person-add" size={20} color={Colors.primary} />
+            <Text style={styles.addFriendText}>THÊM BẠN BÈ</Text>
+          </AnimatedPressable>
+        </View>
+
+        {/* OVERVIEW SECTION */}
+        <Text style={styles.sectionTitle}>TỔNG QUAN</Text>
+        <View style={styles.overviewGrid}>
+          <View style={[styles.overviewItem, styles.overviewCard]}>
+            <Text style={styles.overviewIcon}>🔥</Text>
+            <View>
+              <Text style={styles.overviewText}>
+                {streak} ngày
+              </Text>
+              <Text style={styles.overviewLabel}>Streak</Text>
+            </View>
+          </View>
+          <View style={[styles.overviewItem, styles.overviewCard]}>
+            <Text style={styles.overviewIcon}>⚡</Text>
+            <View>
+              <Text style={styles.overviewText}>{exp} KN</Text>
+              <Text style={styles.overviewLabel}>Tổng KN</Text>
+            </View>
+          </View>
+          <View style={[styles.overviewItem, styles.overviewCard]}>
+            <Text style={styles.overviewIcon}>🪙</Text>
+            <View>
+              <Text style={styles.overviewText}>{coins} Xu</Text>
+              <Text style={styles.overviewLabel}>Tổng Xu</Text>
+            </View>
+          </View>
+          <View style={[styles.overviewItem, styles.overviewCard]}>
+            <Text style={styles.overviewIcon}>🏅</Text>
+            <View>
+              <Text style={styles.overviewText}>0 lần</Text>
+              <Text style={styles.overviewLabel}>Top 3</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* FRIENDS STREAK SECTION */}
+        <Text style={styles.sectionTitle}>STREAK BẠN BÈ</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
+          {[1, 2, 3, 4, 5].map((_, i) => (
+            <View key={i} style={styles.dashedCircle}>
+              <Ionicons name="add" size={32} color={Colors.locked} />
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* MONTHLY CHALLENGE BADGES */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>HUY HIỆU THỬ THÁCH THÁNG</Text>
+          <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
+          {['🐻', '🐸', '🐙', '👻'].map((emoji, i) => (
+            <View key={i} style={[styles.badgeCircle, { opacity: i === 3 ? 0.3 : 1 }]}>
+              <Text style={styles.badgeEmoji}>{emoji}</Text>
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* ACHIEVEMENTS */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>THÀNH TÍCH</Text>
+          <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
+          {['🥇', '🏆', '🎯', '🌟'].map((emoji, i) => (
+            <View key={i} style={styles.achievementContainer}>
+              <View style={styles.badgeCircle}>
+                <Text style={styles.badgeEmoji}>{emoji}</Text>
+              </View>
+              <View style={styles.levelBadge}>
+                <Text style={styles.levelBadgeText}>MỚI</Text>
+              </View>
+              <Text style={styles.achievementNumber}>{i === 0 ? '25' : i === 1 ? '500' : '20000'}</Text>
+            </View>
+          ))}
+        </ScrollView>
       </ScrollView>
     </SafeAreaView>
   );
@@ -194,186 +158,243 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.cream,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 100, // Important for bottom tab bar clearance
+  },
   header: {
-    paddingVertical: Spacing.five,
-    paddingHorizontal: Spacing.six,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 15,
   },
   headerTitle: {
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.extrabold,
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(0,0,0,0.15)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    fontSize: 22,
+    fontWeight: '800',
+    color: Colors.textPrimary,
   },
-  signOutBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  signOutBtnText: {
-    color: '#FFFFFF',
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.bold,
-  },
-  scrollContent: {
-    paddingHorizontal: Spacing.five,
-    paddingVertical: Spacing.five,
-    paddingBottom: 100,
-  },
-  userCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xxl,
-    padding: Spacing.five,
+  headerActions: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.four,
-    marginBottom: Spacing.six,
-    ...Shadows.md,
+    gap: 15,
   },
-  avatarBg: {
-    width: 76,
-    height: 76,
-    borderRadius: 46,
-    backgroundColor: Colors.cream,
-    borderWidth: 3,
-    borderColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Shadows.glow(Colors.accent),
-  },
-  avatarEmoji: {
-    fontSize: 44,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  displayName: {
-    fontSize: FontSizes.xxl,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-  },
-  userName: {
-    fontSize: FontSizes.md,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  joinDate: {
-    fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
-  editProfileBtn: {
-    backgroundColor: Colors.lockedBg,
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: BorderRadius.md,
-  },
-  editProfileText: {
-    color: Colors.textPrimary,
-    fontWeight: FontWeights.bold,
-    fontSize: FontSizes.sm,
-  },
-  sectionTitle: {
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.four,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.three,
-    marginBottom: Spacing.six,
-  },
-  statBox: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.four,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    ...Shadows.sm,
-  },
-  statIcon: {
-    fontSize: 32,
-  },
-  statValue: {
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-  },
-  statLabel: {
-    fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
-    fontWeight: FontWeights.semibold,
-    marginTop: 2,
-  },
-  achievementCard: {
+  profileCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.xl,
     padding: Spacing.five,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.four,
-    marginBottom: Spacing.three,
-    ...Shadows.sm,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    ...Shadows.md,
   },
-  achievementIconBg: {
-    width: 56,
-    height: 56,
-    borderRadius: 36,
-    backgroundColor: Colors.cream,
+  avatarRing: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: Colors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: Spacing.four,
   },
-  achievementIcon: {
-    fontSize: 30,
+  avatarInner: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
   },
-  achievementContent: {
-    flex: 1,
+  userInfoRow: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  achievementTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-  },
-  achievementDesc: {
-    fontSize: FontSizes.sm,
+  userHandle: {
+    fontSize: 14,
+    fontWeight: '700',
     color: Colors.textSecondary,
-    marginTop: 2,
+    letterSpacing: 0.5,
   },
-  progressRow: {
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    gap: 40,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    color: Colors.textPrimary,
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  statLabel: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  addFriendBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
-    marginTop: Spacing.three,
+    justifyContent: 'center',
+    backgroundColor: Colors.surface,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    width: '100%',
+    gap: 10,
+    ...Shadows.sm,
   },
-  progressBarBg: {
-    flex: 1,
-    height: 8,
-    backgroundColor: Colors.lockedBg,
+  addFriendText: {
+    color: Colors.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  sectionTitle: {
+    color: Colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 16,
+  },
+  overviewGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 30,
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  overviewItem: {
+    width: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 12,
+  },
+  overviewCard: {
+    backgroundColor: Colors.surface,
+    padding: 12,
     borderRadius: 16,
-    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    ...Shadows.sm,
   },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 16,
+  overviewIcon: {
+    fontSize: 24,
   },
-  progressText: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.bold,
+  overviewText: {
+    color: Colors.textPrimary,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  overviewLabel: {
     color: Colors.textSecondary,
-    width: 50,
-    textAlign: 'right',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  horizontalScroll: {
+    gap: 16,
+    marginBottom: 30,
+    paddingRight: 20,
+  },
+  shopContainer: {
+    marginBottom: 30,
+  },
+  shopItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surface,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    ...Shadows.sm,
+  },
+  shopItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  shopItemIcon: {
+    fontSize: 28,
+  },
+  shopItemTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.textPrimary,
+  },
+  shopItemDesc: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    maxWidth: '90%',
+  },
+  dashedCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 2,
+    borderColor: Colors.locked,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  badgeCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    ...Shadows.sm,
+  },
+  badgeEmoji: {
+    fontSize: 40,
+  },
+  achievementContainer: {
+    alignItems: 'center',
+    position: 'relative',
+    width: 90,
+  },
+  levelBadge: {
+    position: 'absolute',
+    top: -5,
+    right: 5,
+    backgroundColor: Colors.secondary,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  levelBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  achievementNumber: {
+    color: Colors.accent,
+    fontSize: 22,
+    fontWeight: '900',
+    position: 'absolute',
+    bottom: -8,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });
-

@@ -1,5 +1,6 @@
 import { apiClient } from './client';
 import { API_ENDPOINTS } from './endpoints';
+import { UserMeResponse } from '@/types/api';
 import {
   UpdatePhoneRequest,
   SyncContactsRequest,
@@ -10,6 +11,10 @@ import {
 } from '@/types/user-api';
 
 export const userService = {
+  getMe: async (): Promise<UserMeResponse> => {
+    return apiClient.get(API_ENDPOINTS.USER.ME);
+  },
+
   updatePhoneNumber: async (data: UpdatePhoneRequest): Promise<void> => {
     return apiClient.put(API_ENDPOINTS.USER.UPDATE_PHONE, data);
   },

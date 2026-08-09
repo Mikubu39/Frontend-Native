@@ -82,6 +82,23 @@ export interface UpdateProfileRequest {
   username: string;
 }
 
+export interface UserMeResponse {
+  id: number;
+  email: string;
+  displayName: string;
+  username: string;
+  role: string;
+  level: number;
+  exp: number;
+  currentLeague: string;
+  coins: number;
+  currentEnergy: number;
+  maxEnergy: number;
+  currentStreak: number;
+  longestStreak: number;
+  streakFreezeCount: number;
+}
+
 // ============== ROADMAP DTOs ==============
 export type RoadmapLessonStatus = 'LOCKED' | 'UNLOCKED' | 'COMPLETED';
 
@@ -145,6 +162,7 @@ export interface SubmitLessonResponse {
   isTopicCompleted: boolean;
   message: string;
   currentEnergy: number;
+  coinsEarned?: number;
 }
 
 export interface CancelLessonResponse {

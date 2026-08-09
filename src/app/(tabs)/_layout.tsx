@@ -3,19 +3,23 @@
  * refined tab bar styling with rounded corners and better shadows.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { AnimatedTabIcon } from '@/components/ui/animated-tab-icon';
+import { MoreBottomSheet } from '@/components/ui/more-bottom-sheet';
 import { Colors, FontWeights, Shadows, BorderRadius, Spacing } from '@/constants/theme';
 
 // Tab icon sizes
 const ICON_SIZE = 28;
 
 export default function TabLayout() {
+  const [moreSheetVisible, setMoreSheetVisible] = useState(false);
+
   return (
-    <Tabs
+    <>
+      <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.tabActive,
@@ -72,6 +76,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="quests"
+        options={{
+          title: 'Nhiệm vụ',
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon
+              iconName="gift"
+              focused={focused}
+              size={ICON_SIZE}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="feed"
         options={{
           title: 'Bảng tin',
@@ -96,6 +113,12 @@ export default function TabLayout() {
             />
           ),
         }}
+        listeners={() => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            setMoreSheetVisible(true);
+          },
+        })}
       />
       {/* Hide internal screens from bottom tab bar */}
       <Tabs.Screen
@@ -123,6 +146,8 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    <MoreBottomSheet visible={moreSheetVisible} onClose={() => setMoreSheetVisible(false)} />
+    </>
   );
 }
 

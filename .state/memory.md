@@ -12,3 +12,4 @@
 ## Project-Specific Preferences
 - React Native / Expo development target.
 - TypeScript for type safety.
+- **Backend Codebase Path**: `c:\Users\Endministrator\Documents\BE_NihongoApp` (Có thể đọc file từ đây để lấy thông tin API, tài liệu nhưng KHÔNG ĐƯỢC CHỈNH SỬA trừ khi có yêu cầu).

@@ -14,7 +14,7 @@ import { GradientButton } from '@/components/ui/gradient-button';
 
 export default function ListeningScreen() {
   const router = useRouter();
-  const { isPlaying, play } = useAudio(2000);
+  const { isPlaying, play } = useAudio('');
   const [showDescription, setShowDescription] = useState(false);
 
   const phrase = {

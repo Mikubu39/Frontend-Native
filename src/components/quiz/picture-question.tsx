@@ -39,7 +39,7 @@ export function PictureQuestionCard({ question, selectedAnswerId, hasSubmitted, 
       
       <View style={styles.audioRow}>
         <AudioButton isPlaying={isPlaying} onPress={play} size="medium" />
-        <DualText text={question.word} mainStyle={styles.wordText} align="flex-start" />
+        <DualText text={question.word} mainStyle={styles.wordText} align="flex-start" containerStyle={{ flexShrink: 1 }} />
       </View>
 
       <View style={styles.grid}>

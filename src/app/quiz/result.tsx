@@ -12,6 +12,7 @@ import { QuizResultCard } from '@/components/quiz/quiz-result-card';
 import { GradientButton } from '@/components/ui/gradient-button';
 import { useGamification } from '@/contexts/gamification-context';
 import { Colors, Spacing } from '@/constants/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function QuizResultScreen() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function QuizResultScreen() {
   const wrongCount = parseInt(params.wrongCount as string || '0', 10);
   const expEarned = parseInt(params.expEarned as string || '0', 10);
   const starsEarned = parseInt(params.starsEarned as string || '0', 10);
+  const coinsEarned = parseInt(params.coinsEarned as string || '0', 10);
   const status = params.status as string;
   const currentEnergyStr = params.currentEnergy as string;
 
@@ -38,12 +40,29 @@ export default function QuizResultScreen() {
     fetchGamificationData();
   }, []);
 
+  const handleContinue = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const lastShown = await AsyncStorage.getItem('lastStreakExtendedDate');
+      
+      // Nếu hôm nay chưa hiển thị màn hình chúc mừng streak và có expEarned > 0 (bài học thành công)
+      if (lastShown !== today && expEarned > 0) {
+        await AsyncStorage.setItem('lastStreakExtendedDate', today);
+        router.push('/lesson/streak-extended');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } catch (error) {
+      router.replace('/(tabs)');
+    }
+  };
+
   const realResult = {
     totalQuestions: correctCount + wrongCount || 1,
     correctCount,
     wrongCount,
     correctCategories: [
-      { name: `EXP Earned (+${expEarned})`, stars: starsEarned || (expEarned > 0 ? 3 : 0) }
+      { name: `+${expEarned} EXP${coinsEarned > 0 ? `, +${coinsEarned} Coin` : ''}`, stars: starsEarned || (expEarned > 0 ? 3 : 0) }
     ],
     wrongCategories: [],
   };
@@ -64,7 +83,7 @@ export default function QuizResultScreen() {
           <Animated.View entering={FadeInDown.delay(1000).springify()}>
             <GradientButton
               title="Continue"
-              onPress={() => router.replace('/(tabs)')}
+              onPress={handleContinue}
             />
           </Animated.View>
           

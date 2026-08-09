@@ -12,4 +12,7 @@ export const energyApi = {
   refill: async (): Promise<EnergyResponse> => {
     return apiClient.post<EnergyResponse>(API_ENDPOINTS.ENERGY.REFILL);
   },
+  watchAdToRefill: async (): Promise<EnergyResponse> => {
+    return apiClient.post<EnergyResponse>(API_ENDPOINTS.ENERGY.ADS);
+  },
 };

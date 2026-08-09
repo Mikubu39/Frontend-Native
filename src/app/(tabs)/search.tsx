@@ -12,6 +12,7 @@ import { AnimatedScreen } from '@/components/ui/animated-screen';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { StaggeredList } from '@/components/ui/staggered-list';
 import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows, AnimationPresets } from '@/constants/theme';
+import { useGamification } from '@/contexts/gamification-context';
 
 interface ShopItem {
   id: string;
@@ -26,11 +27,11 @@ interface ShopItem {
 const SHOP_ITEMS: ShopItem[] = [
   {
     id: 's1',
-    icon: '🛡️',
+    icon: '🧊',
     title: 'Bảo hộ Streak',
     description: 'Giữ nguyên chuỗi Streak của bạn nếu lỡ quên học 1 ngày.',
     price: 200,
-    currencyIcon: '💎',
+    currencyIcon: '🪙',
     purchased: false,
   },
   {
@@ -39,7 +40,7 @@ const SHOP_ITEMS: ShopItem[] = [
     title: 'Nạp đầy Tim',
     description: 'Bổ sung ngay 5 tim để tiếp tục các bài học của bạn.',
     price: 350,
-    currencyIcon: '💎',
+    currencyIcon: '🪙',
     purchased: false,
   },
   {
@@ -48,22 +49,36 @@ const SHOP_ITEMS: ShopItem[] = [
     title: 'Y phục Quý phái',
     description: 'Mặc cho cú mascot 🦉 một bộ lễ phục cực kỳ lịch lãm.',
     price: 400,
-    currencyIcon: '💎',
+    currencyIcon: '🪙',
     purchased: true,
   },
   {
     id: 's4',
     icon: '⚡',
     title: 'Gấp đôi hoặc không',
-    description: 'Đặt cược 50 💎 để nhận lại 100 💎 sau chuỗi 7 ngày học.',
+    description: 'Đặt cược 50 🪙 để nhận lại 100 🪙 sau chuỗi 7 ngày học.',
     price: 50,
-    currencyIcon: '💎',
+    currencyIcon: '🪙',
     purchased: false,
   },
 ];
 
 export default function ShopScreen() {
   const buttonPulse = useSharedValue(1);
+  const { buyStreakFreeze, coins } = useGamification();
+  const [buyingFreeze, setBuyingFreeze] = React.useState(false);
+
+  const handleBuyStreakFreeze = async () => {
+    setBuyingFreeze(true);
+    try {
+      await buyStreakFreeze();
+      alert('Mua Bảo hộ Streak thành công!');
+    } catch (e: any) {
+      alert(e?.response?.data?.message || 'Không đủ coins');
+    } finally {
+      setBuyingFreeze(false);
+    }
+  };
 
   React.useEffect(() => {
     buttonPulse.value = withRepeat(
@@ -84,8 +99,8 @@ export default function ShopScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Cửa hàng</Text>
         <View style={styles.gemCounter}>
-          <Text style={styles.gemEmoji}>💎</Text>
-          <Text style={styles.gemText}>520</Text>
+          <Text style={styles.gemEmoji}>🪙</Text>
+          <Text style={styles.gemText}>{coins}</Text>
         </View>
       </View>
 
@@ -147,11 +162,23 @@ export default function ShopScreen() {
                   <Text style={styles.purchasedText}>ĐÃ MUA</Text>
                 </View>
               ) : (
-                <AnimatedPressable style={styles.buyButton} onPress={() => {}} pressScale={0.93}>
+                <AnimatedPressable 
+                  style={styles.buyButton} 
+                  onPress={() => {
+                    if (item.id === 's1') {
+                      handleBuyStreakFreeze();
+                    }
+                  }} 
+                  pressScale={0.93}
+                  disabled={item.id === 's1' ? buyingFreeze || coins < item.price : false}
+                >
                   <View style={styles.buyButtonShadow} />
-                  <View style={styles.buyButtonContent}>
+                  <View style={[
+                    styles.buyButtonContent,
+                    (item.id === 's1' && coins < item.price) && { backgroundColor: Colors.textSecondary }
+                  ]}>
                     <Text style={styles.buyButtonText}>
-                      {item.price} {item.currencyIcon}
+                      {item.id === 's1' && buyingFreeze ? '...' : `${item.price} ${item.currencyIcon}`}
                     </Text>
                   </View>
                 </AnimatedPressable>
