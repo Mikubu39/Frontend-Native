@@ -1,23 +1,83 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useAuth } from '@/contexts/auth-context';
-import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { StatusBar } from 'expo-status-bar';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { AvatarDisplay } from '@/components/user/avatar-display';
+import { AvatarPickerModal } from '@/components/user/avatar-picker-modal';
+import { BorderRadius, Colors, Shadows, Spacing } from '@/constants/theme';
+import { useAuth } from '@/contexts/auth-context';
 import { useGamification } from '@/contexts/gamification-context';
-import { GradientButton } from '@/components/ui/gradient-button';
+import { buildAvatarUrl, DEFAULT_AVATAR_CONFIG, parseAvatarUrl, type AvatarConfig } from '@/data/avatar-options';
+import { avatarApi } from '@/services/api/avatar';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Kích thước avatar chính trên Profile - đổi 1 chỗ này để đồng bộ mọi nơi liên quan.
+const AVATAR_SIZE = 132;
+
+/**
+ * Lấy năm tham gia thật từ user.createdAt (backend trả về dạng ISO string,
+ * vd "2025-03-14T08:00:00"). Nếu chưa có field này (BE chưa trả), fallback
+ * về năm hiện tại thay vì hardcode "2025" như cũ.
+ */
+function getJoinYear(createdAt?: string | null): number {
+  if (!createdAt) return new Date().getFullYear();
+  const parsed = new Date(createdAt);
+  return Number.isNaN(parsed.getTime()) ? new Date().getFullYear() : parsed.getFullYear();
+}
 
 export default function ProfileTabScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { streak, exp, coins } = useGamification();
+  const [avatarUrl, setAvatarUrl] = useState<string>(buildAvatarUrl(DEFAULT_AVATAR_CONFIG));
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isLoadingAvatar, setIsLoadingAvatar] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAvatar = async () => {
+      try {
+        const url = await avatarApi.getAvatarUrl();
+        if (isMounted) {
+          setAvatarUrl(url);
+        }
+      } catch {
+        if (isMounted) {
+          setAvatarUrl(buildAvatarUrl(DEFAULT_AVATAR_CONFIG));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingAvatar(false);
+        }
+      }
+    };
+
+    loadAvatar();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSaveAvatar = async (config: AvatarConfig) => {
+    const nextUrl = buildAvatarUrl(config);
+    setAvatarUrl(nextUrl);
+    await avatarApi.updateAvatarUrl(nextUrl);
+  };
+
+  const joinYear = getJoinYear((user as any)?.createdAt);
 
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
       <StatusBar style="dark" />
+      <AvatarPickerModal
+        visible={isModalVisible}
+        initialConfig={parseAvatarUrl(avatarUrl)}
+        onClose={() => setIsModalVisible(false)}
+        onSave={handleSaveAvatar}
+      />
       
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={true}>
         {/* TOP SECTION */}
@@ -35,17 +95,24 @@ export default function ProfileTabScreen() {
 
         {/* Profile Card */}
         <View style={styles.profileCard}>
-          {/* Avatar */}
-          <View style={styles.avatarRing}>
-            <View style={styles.avatarInner}>
-              <Text style={{ fontSize: 60 }}>🥸</Text>
+          {/* Avatar - bấm vào để mở modal chỉnh sửa, có badge bút chì báo hiệu */}
+          <Pressable onPress={() => setIsModalVisible(true)} hitSlop={8}>
+            <View style={styles.avatarWrap}>
+              {isLoadingAvatar ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <AvatarDisplay uri={avatarUrl} size={AVATAR_SIZE} backgroundColor="#F5ECFF" />
+              )}
             </View>
-          </View>
+            <View style={styles.editBadge}>
+              <Ionicons name="pencil" size={16} color="#FFFFFF" />
+            </View>
+          </Pressable>
 
           {/* User Info Row */}
           <View style={styles.userInfoRow}>
             <Text style={styles.userHandle}>
-              @{user?.email?.split('@')[0].toUpperCase() || 'USER'} • THAM GIA TỪ 2025
+              @{user?.email?.split('@')[0].toUpperCase() || 'USER'} • THAM GIA TỪ {joinYear}
             </Text>
           </View>
 
@@ -188,25 +255,33 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.05)',
     ...Shadows.md,
   },
-  avatarRing: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
-    borderColor: Colors.secondary,
+  avatarWrap: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    backgroundColor: '#F5ECFF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.four,
+    overflow: 'hidden',
   },
-  avatarInner: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    backgroundColor: Colors.surface,
+  editBadge: {
+    position: 'absolute',
+    bottom: Spacing.four + 2,
+    right: 2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 4,
+    borderWidth: 3,
     borderColor: '#FFFFFF',
+    ...Shadows.sm,
+  },
+  avatarEmoji: {
+    fontSize: 60,
+    lineHeight: 60,
   },
   userInfoRow: {
     alignItems: 'center',

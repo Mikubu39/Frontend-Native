@@ -15,6 +15,7 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
 
 ## Progress
 - Done: All frontend UI/UX enhancements and bug fixes are complete.
+- Done: Removed the circular border/frame around the profile avatar so the top profile image matches the intended Duolingo-like appearance without changing the rest of the profile layout.
 
 ## Next Steps
 - User to verify UI changes in Expo app.

@@ -5,7 +5,9 @@
   "dependencies": {
     "@expo/metro-config": "~54.0.14",
     "@expo/vector-icons": "^15.0.3",
+    "@lottiefiles/dotlottie-react": "^0.13.5",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/slider": "5.0.1",
     "@react-native-google-signin/google-signin": "^16.1.2",
     "axios": "^1.18.1",
     "expo": "~54.0.35",

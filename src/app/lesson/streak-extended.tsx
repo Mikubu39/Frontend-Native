@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     ...Shadows.lg,
   },
   title: {
-    fontSize: FontSizes['2xl'],
+    fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
     marginBottom: Spacing.two,
