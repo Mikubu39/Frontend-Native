@@ -2,7 +2,17 @@
  * Quiz and exercise type definitions.
  */
 
-export type QuizType = 'vocab' | 'kana' | 'picture' | 'kanji-fill' | 'writing' | 'listening' | 'speaking' | 'matching' | 'flashcard' | 'fill-blank';
+export type QuizType =
+  | "vocab"
+  | "kana"
+  | "picture"
+  | "kanji-fill"
+  | "writing"
+  | "listening"
+  | "speaking"
+  | "matching"
+  | "flashcard"
+  | "fill-blank";
 
 export interface QuizAnswer {
   id: string;
@@ -17,17 +27,18 @@ export interface BaseQuestion {
   type: QuizType;
   instruction: string;
   hint?: string;
+  originalOptions?: any[];
 }
 
 export interface VocabQuestion extends BaseQuestion {
-  type: 'vocab';
+  type: "vocab";
   word?: string;
   imageUrl: string;
   answers: QuizAnswer[];
 }
 
 export interface KanaQuestion extends BaseQuestion {
-  type: 'kana';
+  type: "kana";
   imageUrl: string;
   characters: string[];
   correctOrder: string[];
@@ -35,14 +46,14 @@ export interface KanaQuestion extends BaseQuestion {
 }
 
 export interface PictureQuestion extends BaseQuestion {
-  type: 'picture';
+  type: "picture";
   word: string;
   audioUrl?: string;
   images: QuizAnswer[];
 }
 
 export interface KanjiFillQuestion extends BaseQuestion {
-  type: 'kanji-fill';
+  type: "kanji-fill";
   sentence: string;
   blanks: number[];
   kanjiBank: string[];
@@ -56,32 +67,32 @@ export interface MatchingPair {
 }
 
 export interface MatchingQuestion extends BaseQuestion {
-  type: 'matching';
+  type: "matching";
   pairs: MatchingPair[];
 }
 
 export interface FlashcardQuestion extends BaseQuestion {
-  type: 'flashcard';
+  type: "flashcard";
   frontText: string;
   backText: string;
   audioUrl?: string;
 }
 
 export interface FillBlankQuestion extends BaseQuestion {
-  type: 'fill-blank';
+  type: "fill-blank";
   sentence: string;
   options: string[];
   correctAnswer: string;
 }
 
 export interface ListeningQuestion extends BaseQuestion {
-  type: 'listening';
+  type: "listening";
   audioUrl: string;
   answers: QuizAnswer[];
 }
 
 export interface SpeakingQuestion extends BaseQuestion {
-  type: 'speaking';
+  type: "speaking";
   textToSpeak: string;
   translation: string;
 }

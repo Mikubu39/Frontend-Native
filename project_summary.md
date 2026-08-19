@@ -52,13 +52,15 @@ src/
 ## 2. Mô tả Chi tiết các Thư mục chính
 
 ### 📂 `src/app/` (Expo Router Screens)
+
 Tất cả các file ở đây đại diện cho một màn hình. Theo quy tắc của dự án, logic nghiệp vụ phức tạp hoặc giao diện thành phần chi tiết **không** viết trực tiếp ở đây mà được tách ra các component trong `src/components/`.
+
 - [_layout.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/_layout.tsx): Stack navigator chính quản lý chuyển cảnh giữa Splash -> Auth -> Onboarding -> Tabs và các modal phụ.
 - [index.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/index.tsx): Điểm khởi đầu kiểm tra trạng thái đăng nhập để tự động điều hướng tới `/(tabs)` hoặc `/welcome`.
 - [welcome.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/welcome.tsx): Màn hình chào mừng và dẫn vào luồng Đăng nhập/Đăng ký.
 - [reward.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/reward.tsx): Màn hình nhận thưởng hấp dẫn cho người dùng khi hoàn thành mốc học tập.
-- `(auth)`: Luồng xác thực gồm [login.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(auth)/login.tsx), [signup.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(auth)/signup.tsx) và file cấu hình layout.
-- `(onboarding)`: Thu thập thông tin khảo sát ban đầu về mục tiêu học [goal.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(onboarding)/goal.tsx), sở thích [interests.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(onboarding)/interests.tsx), trình độ hiện tại [level.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(onboarding)/level.tsx) và bài kiểm tra đầu vào [placement.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(onboarding)/placement.tsx).
+- `(auth)`: Luồng xác thực gồm [login.tsx](<file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(auth)/login.tsx>), [signup.tsx](<file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(auth)/signup.tsx>) và file cấu hình layout.
+- `(onboarding)`: Thu thập thông tin khảo sát ban đầu về mục tiêu học [goal.tsx](<file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(onboarding)/goal.tsx>), sở thích [interests.tsx](<file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(onboarding)/interests.tsx>), trình độ hiện tại [level.tsx](<file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(onboarding)/level.tsx>) và bài kiểm tra đầu vào [placement.tsx](<file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(onboarding)/placement.tsx>).
 - `(tabs)`: Bộ định tuyến bottom tab gồm:
   - `index.tsx`: Hiển thị sơ đồ bài học dạng cây kỹ năng.
   - `characters.tsx`: Học và luyện tập bảng chữ cái tiếng Nhật (Hiragana, Katakana) tích hợp canvas vẽ nét chữ.
@@ -85,7 +87,9 @@ Tất cả các file ở đây đại diện cho một màn hình. Theo quy tắ
 ---
 
 ### 📂 `src/components/` (Các Component giao diện)
+
 Nơi chứa toàn bộ thành phần giao diện, được module hóa theo từng tính năng để tránh lặp mã:
+
 - **`ui/`**: Chứa các component cơ sở dùng chung với hiệu ứng cao cấp:
   - [animated-screen.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/components/ui/animated-screen.tsx): Cung cấp hiệu ứng chuyển động mượt mà cho toàn màn hình.
   - [animated-tab-icon.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/components/ui/animated-tab-icon.tsx): Tạo chuyển động vi mô (micro-animation) cho biểu tượng tab dưới cùng.
@@ -106,7 +110,9 @@ Nơi chứa toàn bộ thành phần giao diện, được module hóa theo từ
 ---
 
 ### 📂 `src/contexts/` (Quản lý trạng thái)
+
 Đóng vai trò quản trị State chung cho toàn bộ ứng dụng:
+
 - [auth-context.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/contexts/auth-context.tsx): Cung cấp hàm đăng ký, đăng nhập bằng tài khoản và Google Sign-In, giữ thông tin người dùng hiện tại (`user`).
 - [onboarding-context.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/contexts/onboarding-context.tsx): Lưu trữ tạm thời các lựa chọn mục tiêu, sở thích của người dùng trong quá trình thiết lập ban đầu.
 - [quiz-context.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/contexts/quiz-context.tsx): Quản lý trạng thái của lượt chơi Quiz hiện tại (điểm số, câu hỏi hiện tại, đáp án người dùng chọn, kết quả đúng/sai).
@@ -114,7 +120,9 @@ Nơi chứa toàn bộ thành phần giao diện, được module hóa theo từ
 ---
 
 ### 📂 `src/data/` (Dữ liệu mẫu tĩnh)
+
 Chứa mock data chi tiết giúp ứng dụng hoạt động ngoại tuyến mượt mà:
+
 - [lessons.ts](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/data/lessons.ts): Các bài học từ vựng, ngữ pháp, bảng chữ cái Kanji/Hiragana/Katakana.
 - [categories.ts](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/data/categories.ts): Danh mục tìm kiếm từ vựng phổ biến.
 - [quiz.ts](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/data/quiz.ts): Kho câu hỏi đa dạng (kana, vocab, kanji fill, picture match).
@@ -125,7 +133,9 @@ Chứa mock data chi tiết giúp ứng dụng hoạt động ngoại tuyến m�
 ---
 
 ### 📂 `src/types/` (Định nghĩa TypeScript)
+
 Định nghĩa rõ ràng các kiểu dữ liệu và ràng buộc kiểu cho toàn hệ thống:
+
 - `api.ts`: Cấu trúc request/response của server.
 - `dictionary.ts`: Định nghĩa từ vựng, kanji, ví dụ.
 - `lesson.ts`: Kiểu dữ liệu bài học, chương học.
@@ -138,6 +148,7 @@ Chứa mock data chi tiết giúp ứng dụng hoạt động ngoại tuyến m�
 ---
 
 ### 📂 Các thư mục phụ trợ khác
+
 - **`config/`**: Quản lý biến môi trường và cấu hình như [google-auth.ts](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/config/google-auth.ts) cho API Đăng nhập Google.
 - **`constants/`**: Lưu trữ các biến bất biến của thiết kế như [theme.ts](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/constants/theme.ts) (phục vụ Dark/Light mode).
 - **`hooks/`**: Chứa hook tùy biến phục vụ âm thanh [use-audio.ts](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/hooks/use-audio.ts) và quản lý theme hệ thống.
@@ -185,13 +196,13 @@ graph TD
     E -->|Cập nhật| ContextOnboarding
     C -->|Lấy bài học để vẽ Map| LessonsComp
     LessonsComp -->|Hiển thị thông tin| MockData
-    
+
     %% Tương tác Quiz
     C -->|Bắt đầu học/kiểm tra| QuizRoute[quiz/id.tsx]
     QuizRoute -->|Quản lý luồng chơi| ContextQuiz
     ContextQuiz -->|Tải câu đố từ| MockData
     ContextQuiz -->|Render loại câu hỏi| QuizComp
-    
+
     %% Áp dụng Type và UI chung
     UI -.->|Định dạng giao diện chung| LessonsComp & QuizComp & VoiceComp
     Types -.->|Ràng buộc kiểu dữ liệu| ContextAuth & ContextOnboarding & ContextQuiz & MockData
@@ -217,6 +228,7 @@ graph TD
 Gần đây, dự án đã được tích hợp thêm nhiều công nghệ và tính năng quan trọng phục vụ trải nghiệm người dùng cao cấp:
 
 ### 🎭 Tích hợp Lottie Mascot Animation (Ảnh động linh vật tương tác)
+
 - Đã cài đặt thư viện `lottie-react-native` để hiển thị các chuyển động vector mượt mà từ các tệp tin cấu hình JSON trong `assets/animations/`:
   - `hi_mascot.json` - Mascot chào mừng.
   - `school_mascot.json` - Mascot đồng hành trong bài học.
@@ -226,16 +238,19 @@ Gần đây, dự án đã được tích hợp thêm nhiều công nghệ và t
 - Các hoạt ảnh này được nhúng trực tiếp vào luồng chào mừng (`welcome.tsx`), đăng nhập (`login.tsx`), và làm bài test nhằm nâng cao tính cá nhân hóa và sự thân thiện của ứng dụng.
 
 ### 🔑 Xác thực bằng Tài khoản Google (Google Login API)
+
 - Tích hợp thành công thư viện `@react-native-google-signin/google-signin` để hỗ trợ đăng nhập nhanh bằng tài khoản Google.
 - Cấu hình client credentials thông qua [google-auth.ts](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/config/google-auth.ts) và đưa logic xử lý vào trong [auth-context.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/contexts/auth-context.tsx).
 - Xây dựng component [google-sign-in-button.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/components/auth/google-sign-in-button.tsx) tương thích tốt với giao diện thiết kế mới.
 
 ### 🎌 Hoàn thiện học bảng chữ cái & Luyện viết (Kana & Stroke Learning)
-- Tái cấu trúc màn hình học bảng chữ cái [characters.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(tabs)/characters.tsx) hỗ trợ chuyển đổi linh hoạt giữa hai bảng chữ Hiragana và Katakana.
+
+- Tái cấu trúc màn hình học bảng chữ cái [characters.tsx](<file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/(tabs)/characters.tsx>) hỗ trợ chuyển đổi linh hoạt giữa hai bảng chữ Hiragana và Katakana.
 - Tích hợp bảng vẽ nét chữ [writing-canvas.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/components/lessons/writing-canvas.tsx) cho phép vẽ nét chữ bằng ngón tay, kiểm tra tính chính xác của nét vẽ chữ Nhật trực tiếp trên thiết bị di động.
 - Mở rộng ngân hàng câu hỏi câu đố hỗ trợ học ký tự trong [quiz.ts](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/data/quiz.ts).
 
 ### ✨ Hệ thống Animation & Trải nghiệm Premium nâng cao
+
 - Cập nhật định cấu hình chuyển cảnh mượt mà kiểu iOS `ios_from_right` ở các sub-layout để đem lại phản hồi tức thì và tự nhiên nhất.
 - Nâng cấp các component chuyển động chuyên dụng:
   - [animated-pressable.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/components/ui/animated-pressable.tsx): Tránh việc nút bấm bị đơ giật bằng cách dùng thư viện `react-native-reanimated` với spring physics.
@@ -250,20 +265,23 @@ Gần đây, dự án đã được tích hợp thêm nhiều công nghệ và t
 Dự án vừa thực hiện một đợt quét toàn diện (TypeScript compiler check) và khắc phục thành công toàn bộ các lỗi biên dịch hiện tại:
 
 ### 🛠️ Chuẩn hóa Style Types trong Hệ thống Component dùng chung
+
 - **Vấn đề:** Các thuộc tính `style` trong [animated-pressable.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/components/ui/animated-pressable.tsx) và [gradient-button.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/components/ui/gradient-button.tsx) được khai báo kiểu dữ liệu thô (`ViewStyle` hoặc `ViewStyle[]`). Khi sử dụng với cấu trúc nối style có điều kiện (ví dụ: `[styles.base, condition && styles.active]`), TypeScript báo lỗi vì giá trị `false` (khi điều kiện sai) không khớp với kiểu `ViewStyle`.
 - **Giải pháp:** Đổi kiểu dữ liệu sang `StyleProp<ViewStyle>` và `StyleProp<TextStyle>` chuẩn từ `react-native`, giúp tự động tương thích với các mảng style phức tạp và cấu trúc logic điều kiện.
 
 ### 🎨 Sửa lỗi tham chiếu Design System không tồn tại
+
 - **Vấn đề:** Màn hình tìm kiếm bạn bè [search.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/friends/search.tsx) và chi tiết hồ sơ [[username].tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/app/friends/profile/%5Busername%5D.tsx) tham chiếu đến `Colors.border` và `BorderRadius.pill` - các hằng số không hề có trong file cấu hình hệ thống thiết kế [theme.ts](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/constants/theme.ts).
 - **Giải pháp:**
   - Thay thế `BorderRadius.pill` bằng `BorderRadius.full` (bo tròn hoàn toàn).
   - Thay thế `Colors.border` bằng hằng số hợp lệ `Colors.inputBorder` (ở các ô nhập liệu) và `Colors.lockedBg` (màu xám nhạt làm vách ngăn phân chia thông tin).
 
 ### 🌐 Khắc phục tương thích Web Component
+
 - **Vấn đề:** Component [animated-icon.web.tsx](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/components/animated-icon.web.tsx) cố gắng import trực tiếp CSS Module `./animated-icon.module.css` vốn chưa được khai báo kiểu dữ liệu toàn cục, dẫn đến lỗi biên dịch TypeScript `TS2307: Cannot find module`.
 - **Giải pháp:** Loại bỏ việc import tệp CSS Module và chuyển đổi thẻ `div` thuần sang sử dụng `<Animated.View>` có thuộc tính inline style của React Native Web (`backgroundImage: 'linear-gradient(...)'`), đảm bảo code sạch sẽ, tối ưu hiệu năng và tương thích TypeScript tuyệt đối.
 
 ### 🔌 Đồng bộ kiểu phản hồi của API Client
+
 - **Vấn đề:** Trong [client.ts](file:///c:/Users/Endministrator/Pictures/Frontend-Native/src/services/api/client.ts), hàm `request<T>` trả về `undefined` đối với các phản hồi không có nội dung (như mã HTTP 204 No Content), gây lỗi TypeScript vì `undefined` không tương thích trực tiếp với kiểu generic `T`.
 - **Giải pháp:** Ép kiểu trả về khi rỗng thành `undefined as any` để thỏa mãn bộ kiểm tra kiểu tĩnh mà không làm ảnh hưởng tới logic xử lý ở các tầng nghiệp vụ phía trên.
-

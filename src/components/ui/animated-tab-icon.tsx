@@ -4,9 +4,9 @@
  * and includes a subtle active dot indicator.
  */
 
-import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
+import React, { useEffect } from "react";
+import { StyleSheet, View } from "react-native";
+import { FontAwesome5 } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,9 +14,9 @@ import Animated, {
   withSequence,
   withTiming,
   interpolate,
-} from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { AnimationPresets, Colors } from '@/constants/theme';
+} from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
+import { AnimationPresets, Colors } from "@/constants/theme";
 
 interface AnimatedTabIconProps {
   iconName: string;
@@ -36,13 +36,13 @@ export function AnimatedTabIcon({
   useEffect(() => {
     if (focused) {
       scale.value = withSequence(
-        withTiming(0.7, { duration: 50 }),
-        withSpring(1.2, { damping: 12, stiffness: 200 }),
-        withSpring(1, { damping: 15, stiffness: 150 })
+        withTiming(0.85, { duration: 80 }),
+        withSpring(1.2, AnimationPresets.springTab),
+        withSpring(1.0, AnimationPresets.springSnappy),
       );
-      translateY.value = withSpring(-4, { damping: 15, stiffness: 150 });
-      dotOpacity.value = withTiming(1, { duration: 150 });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      translateY.value = withSpring(-4, AnimationPresets.springTab);
+      dotOpacity.value = withSpring(1, AnimationPresets.springSnappy);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     } else {
       scale.value = withTiming(0.85, { duration: 150 });
       translateY.value = withTiming(0, { duration: 150 });
@@ -52,17 +52,14 @@ export function AnimatedTabIcon({
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [
-        { scale: scale.value },
-        { translateY: translateY.value }
-      ],
+      transform: [{ scale: scale.value }, { translateY: translateY.value }],
     };
   });
 
   const dotStyle = useAnimatedStyle(() => {
     return {
       opacity: dotOpacity.value,
-      transform: [{ scale: dotOpacity.value }]
+      transform: [{ scale: dotOpacity.value }],
     };
   });
 
@@ -84,21 +81,21 @@ export function AnimatedTabIcon({
 
 const styles = StyleSheet.create({
   wrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 34, // Fixed height to prevent layout shifts
+    alignItems: "center",
+    justifyContent: "center",
+    height: 30, // Fixed height to prevent layout shifts
   },
   activeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: Colors.tabActive,
     marginTop: 2,
-    position: 'absolute',
-    bottom: -6,
+    position: "absolute",
+    bottom: -4,
   },
 });

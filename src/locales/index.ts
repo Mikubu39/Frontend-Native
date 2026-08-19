@@ -9,5 +9,5 @@
  *   <Text>{strings.common.loading}</Text>
  */
 
-export { en as strings } from './en';
-export { strings as stringsVi } from './vi';
+export { en as strings } from "./en";
+export { strings as stringsVi } from "./vi";

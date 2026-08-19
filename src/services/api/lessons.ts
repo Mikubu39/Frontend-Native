@@ -1,18 +1,22 @@
-import { apiClient } from './client';
-import { API_ENDPOINTS } from './endpoints';
+import { apiClient } from "./client";
+import { API_ENDPOINTS } from "./endpoints";
 import {
   StartLessonResponse,
   SubmitLessonRequest,
   SubmitLessonResponse,
   CancelLessonResponse,
-} from '@/types';
+} from "@/types";
 
 export const lessonAttemptApi = {
   /**
    * Start a lesson attempt (deducts energy & returns questions).
    */
-  startLesson: async (lessonId: number | string): Promise<StartLessonResponse> => {
-    return apiClient.post<StartLessonResponse>(API_ENDPOINTS.LESSONS.START(lessonId));
+  startLesson: async (
+    lessonId: number | string,
+  ): Promise<StartLessonResponse> => {
+    return apiClient.post<StartLessonResponse>(
+      API_ENDPOINTS.LESSONS.START(lessonId),
+    );
   },
 
   /**
@@ -20,18 +24,22 @@ export const lessonAttemptApi = {
    */
   submitLesson: async (
     lessonId: number | string,
-    data: SubmitLessonRequest
+    data: SubmitLessonRequest,
   ): Promise<SubmitLessonResponse> => {
     return apiClient.post<SubmitLessonResponse>(
       API_ENDPOINTS.LESSONS.SUBMIT(lessonId),
-      data
+      data,
     );
   },
 
   /**
    * Cancel an in-progress lesson (refunds deducted energy).
    */
-  cancelLesson: async (lessonId: number | string): Promise<CancelLessonResponse> => {
-    return apiClient.post<CancelLessonResponse>(API_ENDPOINTS.LESSONS.CANCEL(lessonId));
+  cancelLesson: async (
+    lessonId: number | string,
+  ): Promise<CancelLessonResponse> => {
+    return apiClient.post<CancelLessonResponse>(
+      API_ENDPOINTS.LESSONS.CANCEL(lessonId),
+    );
   },
 };

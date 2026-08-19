@@ -1,10 +1,19 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows, AnimationPresets } from '@/constants/theme';
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import Animated, { FadeIn, SlideInDown } from "react-native-reanimated";
+import { BlurView } from "expo-blur";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+  Shadows,
+  AnimationPresets,
+} from "@/constants/theme";
+import { useTheme } from "@/contexts/theme-context";
 
 interface MoreBottomSheetProps {
   visible: boolean;
@@ -13,6 +22,7 @@ interface MoreBottomSheetProps {
 
 export function MoreBottomSheet({ visible, onClose }: MoreBottomSheetProps) {
   const router = useRouter();
+  const { colors, isDark } = useTheme();
 
   if (!visible) return null;
 
@@ -26,37 +36,74 @@ export function MoreBottomSheet({ visible, onClose }: MoreBottomSheetProps) {
       entering={FadeIn.duration(AnimationPresets.duration.fast)}
       style={styles.overlayContainer}
     >
-      <TouchableOpacity activeOpacity={1} style={styles.overlay} onPress={onClose}>
-        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <TouchableOpacity
+        activeOpacity={1}
+        style={styles.overlay}
+        onPress={onClose}
+      >
+        <BlurView
+          intensity={20}
+          tint="dark"
+          style={StyleSheet.absoluteFillObject}
+        />
       </TouchableOpacity>
-      
+
       <Animated.View
         entering={SlideInDown.duration(AnimationPresets.duration.normal)}
-        style={styles.sheetContainer}
+        style={[styles.sheetContainer, { backgroundColor: colors.background }]}
       >
-        <View style={styles.dragIndicator} />
-        <Text style={styles.sheetTitle}>Khám phá thêm</Text>
-        
+        <View style={[styles.dragIndicator, { backgroundColor: isDark ? colors.border : Colors.lockedBg }]} />
+        <Text style={[styles.sheetTitle, { color: colors.text }]}>Khám phá thêm</Text>
+
         <View style={styles.optionsContainer}>
-          <TouchableOpacity style={styles.optionButton} onPress={() => handleNavigate('/(tabs)/profile')}>
-            <View style={[styles.iconContainer, { backgroundColor: Colors.primary + '15' }]}>
-              <Ionicons name="person-outline" size={28} color={Colors.primary} />
+          <TouchableOpacity
+            style={[styles.optionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => handleNavigate("/(tabs)/profile")}
+          >
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: Colors.primary + "15" },
+              ]}
+            >
+              <Ionicons
+                name="person-outline"
+                size={28}
+                color={Colors.primary}
+              />
             </View>
-            <Text style={styles.optionText}>Hồ sơ</Text>
+            <Text style={[styles.optionText, { color: colors.text }]}>Hồ sơ</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.optionButton} onPress={() => handleNavigate('/characters')}>
-            <View style={[styles.iconContainer, { backgroundColor: Colors.accent + '15' }]}>
-              <Ionicons name="language-outline" size={28} color={Colors.accent} />
+
+          <TouchableOpacity
+            style={[styles.optionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => handleNavigate("/characters")}
+          >
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: Colors.accent + "15" },
+              ]}
+            >
+              <Ionicons
+                name="language-outline"
+                size={28}
+                color={Colors.accent}
+              />
             </View>
-            <Text style={styles.optionText}>Chữ Kana</Text>
+            <Text style={[styles.optionText, { color: colors.text }]}>Chữ Kana</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.optionButton} onPress={() => handleNavigate('/review')}>
-            <View style={[styles.iconContainer, { backgroundColor: '#10B98115' }]}>
+
+          <TouchableOpacity
+            style={[styles.optionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => handleNavigate("/review")}
+          >
+            <View
+              style={[styles.iconContainer, { backgroundColor: "#10B98115" }]}
+            >
               <Ionicons name="barbell-outline" size={28} color="#10B981" />
             </View>
-            <Text style={styles.optionText}>Trung tâm luyện tập</Text>
+            <Text style={[styles.optionText, { color: colors.text }]}>Trung tâm luyện tập</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -67,15 +114,14 @@ export function MoreBottomSheet({ visible, onClose }: MoreBottomSheetProps) {
 const styles = StyleSheet.create({
   overlayContainer: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
     zIndex: 1000,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
   sheetContainer: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: BorderRadius.xxl,
     borderTopRightRadius: BorderRadius.xxl,
     paddingHorizontal: Spacing.six,
@@ -88,39 +134,35 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 3,
     backgroundColor: Colors.lockedBg,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: Spacing.five,
   },
   sheetTitle: {
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
     marginBottom: Spacing.six,
-    textAlign: 'center',
+    textAlign: "center",
   },
   optionsContainer: {
     gap: Spacing.four,
   },
   optionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.cream,
+    flexDirection: "row",
+    alignItems: "center",
     padding: Spacing.four,
     borderRadius: BorderRadius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.03)',
   },
   iconContainer: {
     width: 50,
     height: 50,
     borderRadius: BorderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: Spacing.four,
   },
   optionText: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-  }
+  },
 });

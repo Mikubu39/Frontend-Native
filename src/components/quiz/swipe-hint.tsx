@@ -3,16 +3,25 @@
  * Figma screen 15/25
  */
 
-import React, { useEffect, useRef } from 'react';
-import { Animated, Text, StyleSheet } from 'react-native';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React, { useEffect, useRef } from "react";
+import { Animated, Text, StyleSheet } from "react-native";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
 
 interface SwipeHintProps {
   text?: string;
   visible?: boolean;
 }
 
-export function SwipeHint({ text = 'Swipe to continue', visible = true }: SwipeHintProps) {
+export function SwipeHint({
+  text = "Swipe to continue",
+  visible = true,
+}: SwipeHintProps) {
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -29,7 +38,7 @@ export function SwipeHint({ text = 'Swipe to continue', visible = true }: SwipeH
             duration: 800,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       ).start();
     } else {
       bounceAnim.setValue(0);
@@ -54,7 +63,7 @@ export function SwipeHint({ text = 'Swipe to continue', visible = true }: SwipeH
 
 const styles = StyleSheet.create({
   container: {
-    alignSelf: 'center',
+    alignSelf: "center",
     backgroundColor: Colors.accent,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.four,

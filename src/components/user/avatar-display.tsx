@@ -1,6 +1,6 @@
-import { Colors } from '@/constants/theme';
-import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Colors } from "@/constants/theme";
+import React from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 interface AvatarDisplayProps {
   uri?: string;
@@ -13,7 +13,7 @@ interface AvatarDisplayProps {
 export function AvatarDisplay({
   uri,
   size = 108,
-  backgroundColor = '#F5ECFF',
+  backgroundColor = "#F5ECFF",
   borderWidth = 0,
   borderColor = Colors.primaryLight,
 }: AvatarDisplayProps) {
@@ -40,7 +40,11 @@ export function AvatarDisplay({
           resizeMode="cover"
         />
       ) : (
-        <Text style={[styles.fallback, { fontSize: Math.max(size * 0.52, 28) }]}>🐼</Text>
+        <Text
+          style={[styles.fallback, { fontSize: Math.max(size * 0.52, 28) }]}
+        >
+          🐼
+        </Text>
       )}
     </View>
   );
@@ -48,12 +52,12 @@ export function AvatarDisplay({
 
 const styles = StyleSheet.create({
   container: {
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   fallback: {
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 60,
   },
 });

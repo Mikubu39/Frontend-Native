@@ -4,8 +4,14 @@
  * Manages current quiz state, answers, and scoring.
  */
 
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { QuizQuestion, QuizResult } from '@/types';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
+import type { QuizQuestion, QuizResult } from "@/types";
 
 interface QuizContextType {
   questions: QuizQuestion[];
@@ -46,7 +52,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
 
     for (const q of questions) {
       const userAnswer = answers[q.id];
-      if (q.type === 'vocab') {
+      if (q.type === "vocab") {
         const correct = q.answers.find((a) => a.isCorrect);
         if (correct && userAnswer === correct.id) {
           correctCount++;
@@ -61,9 +67,9 @@ export function QuizProvider({ children }: { children: ReactNode }) {
       correctCount,
       wrongCount,
       correctCategories: [
-        { name: 'Vocabulary', stars: Math.min(correctCount, 3) },
+        { name: "Vocabulary", stars: Math.min(correctCount, 3) },
       ],
-      wrongCategories: wrongCount > 0 ? ['Review needed'] : [],
+      wrongCategories: wrongCount > 0 ? ["Review needed"] : [],
     });
   }, [questions, answers]);
 
@@ -97,7 +103,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
 export function useQuiz(): QuizContextType {
   const context = useContext(QuizContext);
   if (!context) {
-    throw new Error('useQuiz must be used within a QuizProvider');
+    throw new Error("useQuiz must be used within a QuizProvider");
   }
   return context;
 }

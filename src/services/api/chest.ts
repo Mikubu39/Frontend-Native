@@ -1,6 +1,6 @@
-import { apiClient } from './client';
-import { API_ENDPOINTS } from './endpoints';
-import { ChestStatus, OpenChestResponse } from '@/types';
+import { apiClient } from "./client";
+import { API_ENDPOINTS } from "./endpoints";
+import { ChestStatus, OpenChestResponse } from "@/types";
 
 export const chestApi = {
   getChestStatus: async (): Promise<ChestStatus> => {

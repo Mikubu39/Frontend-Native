@@ -2,19 +2,28 @@
  * InterestGrid - 2-column image grid for interest selection.
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
-import Animated, { ZoomIn } from 'react-native-reanimated';
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { ONBOARDING_INTERESTS } from '@/data';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React from "react";
+import { View, Text, StyleSheet, Image } from "react-native";
+import Animated, { ZoomIn } from "react-native-reanimated";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { ONBOARDING_INTERESTS } from "@/data";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
 
 interface InterestGridProps {
   selectedInterests: string[];
   onToggle: (id: string) => void;
 }
 
-export function InterestGrid({ selectedInterests, onToggle }: InterestGridProps) {
+export function InterestGrid({
+  selectedInterests,
+  onToggle,
+}: InterestGridProps) {
   return (
     <View style={styles.grid}>
       {ONBOARDING_INTERESTS.map((interest) => {
@@ -29,7 +38,10 @@ export function InterestGrid({ selectedInterests, onToggle }: InterestGridProps)
             <Image source={{ uri: interest.imageUrl }} style={styles.image} />
             {isSelected && (
               <View style={styles.overlay}>
-                <Animated.View entering={ZoomIn.duration(200).springify()} style={styles.checkCircle}>
+                <Animated.View
+                  entering={ZoomIn.duration(200).springify()}
+                  style={styles.checkCircle}
+                >
                   <Text style={styles.checkMark}>✓</Text>
                 </Animated.View>
               </View>
@@ -44,32 +56,32 @@ export function InterestGrid({ selectedInterests, onToggle }: InterestGridProps)
 
 const styles = StyleSheet.create({
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: Spacing.four,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   card: {
-    width: '45%',
+    width: "45%",
     borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
     backgroundColor: Colors.surface,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: "transparent",
   },
   cardSelected: {
     borderColor: Colors.secondary,
   },
   image: {
-    width: '100%',
+    width: "100%",
     height: 120,
-    resizeMode: 'cover',
+    resizeMode: "cover",
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(233, 30, 142, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(233, 30, 142, 0.3)",
+    alignItems: "center",
+    justifyContent: "center",
     height: 120,
   },
   checkCircle: {
@@ -77,8 +89,8 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 32,
     backgroundColor: Colors.secondary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   checkMark: {
     color: Colors.textOnDark,
@@ -89,7 +101,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
     color: Colors.textPrimary,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: Spacing.three,
   },
 });

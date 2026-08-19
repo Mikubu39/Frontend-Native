@@ -3,9 +3,15 @@
  * Figma screen 29
  */
 
-import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, Text, StyleSheet, Animated } from 'react-native';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React, { useEffect, useRef } from "react";
+import { TouchableOpacity, Text, StyleSheet, Animated } from "react-native";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
 
 interface RecordButtonProps {
   isRecording: boolean;
@@ -13,7 +19,11 @@ interface RecordButtonProps {
   size?: number;
 }
 
-export function RecordButton({ isRecording, onPress, size = 160 }: RecordButtonProps) {
+export function RecordButton({
+  isRecording,
+  onPress,
+  size = 160,
+}: RecordButtonProps) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -30,7 +40,7 @@ export function RecordButton({ isRecording, onPress, size = 160 }: RecordButtonP
             duration: 500,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       ).start();
     } else {
       pulseAnim.setValue(1);
@@ -58,13 +68,17 @@ export function RecordButton({ isRecording, onPress, size = 160 }: RecordButtonP
             height: size - Spacing.four,
             borderRadius: (size - Spacing.four) / 2,
             transform: [{ scale: pulseAnim }],
-            backgroundColor: isRecording ? Colors.secondaryLight : Colors.secondary,
+            backgroundColor: isRecording
+              ? Colors.secondaryLight
+              : Colors.secondary,
             shadowColor: Colors.secondary,
           },
         ]}
       >
         <Text style={styles.icon}>🎙️</Text>
-        <Text style={styles.text}>{isRecording ? 'RECORDING...' : 'TAP TO RECORD'}</Text>
+        <Text style={styles.text}>
+          {isRecording ? "RECORDING..." : "TAP TO RECORD"}
+        </Text>
       </Animated.View>
     </TouchableOpacity>
   );
@@ -72,14 +86,14 @@ export function RecordButton({ isRecording, onPress, size = 160 }: RecordButtonP
 
 const styles = StyleSheet.create({
   outerContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(233, 30, 142, 0.15)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(233, 30, 142, 0.15)",
     padding: Spacing.two,
   },
   button: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,

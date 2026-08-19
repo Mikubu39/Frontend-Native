@@ -1,6 +1,6 @@
-import { apiClient } from './client';
-import { API_ENDPOINTS } from './endpoints';
-import { AuthResponse, LoginRequest, RegisterRequest } from '@/types/api';
+import { apiClient } from "./client";
+import { API_ENDPOINTS } from "./endpoints";
+import { AuthResponse, LoginRequest, RegisterRequest } from "@/types/api";
 
 export const authService = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {

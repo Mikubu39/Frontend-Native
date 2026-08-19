@@ -1,5 +1,5 @@
-import { apiClient } from '@/services/api/client';
-import { DEFAULT_AVATAR_CONFIG, buildAvatarUrl } from '@/data/avatar-options';
+import { apiClient } from "@/services/api/client";
+import { DEFAULT_AVATAR_CONFIG, buildAvatarUrl } from "@/data/avatar-options";
 
 interface AvatarUrlResponse {
   avatarUrl: string | null;
@@ -15,18 +15,20 @@ interface AvatarUrlResponse {
 export const avatarApi = {
   async getAvatarUrl(): Promise<string> {
     try {
-      const data = await apiClient.get<AvatarUrlResponse>('/api/v1/users/me/avatar');
+      const data = await apiClient.get<AvatarUrlResponse>(
+        "/api/v1/users/me/avatar",
+      );
       return data.avatarUrl || buildAvatarUrl(DEFAULT_AVATAR_CONFIG);
     } catch (err) {
       // Chưa đăng nhập, hoặc user mới chưa từng lưu avatar -> dùng mặc định,
       // không throw để không vỡ màn hình Profile.
-      console.warn('Không lấy được avatarUrl từ server:', err);
+      console.warn("Không lấy được avatarUrl từ server:", err);
       return buildAvatarUrl(DEFAULT_AVATAR_CONFIG);
     }
   },
 
   async updateAvatarUrl(url: string): Promise<string> {
-    await apiClient.put('/api/v1/users/me/avatar', { avatarUrl: url });
+    await apiClient.put("/api/v1/users/me/avatar", { avatarUrl: url });
     return url;
   },
 };

@@ -1,5 +1,5 @@
-import { Stack } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { Stack } from "expo-router";
+import { Colors } from "@/constants/theme";
 
 export default function OnboardingLayout() {
   return (
@@ -7,7 +7,7 @@ export default function OnboardingLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: Colors.cream },
-        animation: 'ios_from_right',
+        animation: "ios_from_right",
         animationDuration: 280,
         gestureEnabled: true,
         fullScreenGestureEnabled: true,

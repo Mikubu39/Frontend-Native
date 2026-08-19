@@ -2,13 +2,19 @@
  * Lesson Detail Screen - Shows lesson sub-items grid.
  */
 
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LessonGrid } from '@/components/lessons/lesson-grid';
-import { HIRAGANA_LESSON_DETAIL } from '@/data';
-import { Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
+import React from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LessonGrid } from "@/components/lessons/lesson-grid";
+import { HIRAGANA_LESSON_DETAIL } from "@/data";
+import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 
 export default function LessonDetailScreen() {
   const router = useRouter();
@@ -33,18 +39,20 @@ export default function LessonDetailScreen() {
           items={detail.subItems}
           onItemPress={(item) => {
             const titleLower = item.title.toLowerCase();
-            if (titleLower.includes('writing')) {
+            if (titleLower.includes("writing")) {
               router.push(`/lesson/character/writing-hiragana`);
-            } else if (titleLower.includes('listening')) {
+            } else if (titleLower.includes("listening")) {
               router.push(`/voice/listen`);
-            } else if (titleLower.includes('speaking')) {
+            } else if (titleLower.includes("speaking")) {
               router.push(`/voice/record`);
             } else {
               router.push(`/quiz/ready?lessonId=${item.id}`);
             }
           }}
           overallQuiz={detail.overallQuiz}
-          onQuizPress={(quizItem) => router.push(`/quiz/ready?lessonId=${quizItem.id}`)}
+          onQuizPress={(quizItem) =>
+            router.push(`/quiz/ready?lessonId=${quizItem.id}`)
+          }
         />
       </ScrollView>
     </SafeAreaView>
@@ -57,16 +65,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
   },
   backBtn: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   backText: {
     fontSize: FontSizes.xxl,
@@ -77,7 +85,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   scroll: {
     padding: Spacing.six,

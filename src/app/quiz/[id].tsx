@@ -1,6 +1,6 @@
 /**
- * Quiz Screen - Handles all 4 question types dynamically.
- * Figma screen 12, 13, 14, 31
+ * Quiz Screen — Impeccable redesign.
+ * Theme-aware immersive question experience.
  */
 
 import {
@@ -14,70 +14,119 @@ import {
   QuizHeader,
   SpeakingQuestionCard,
   VocabQuestionCard,
-} from '@/components/quiz';
-import { GradientButton } from '@/components/ui/gradient-button';
-import { Colors, Spacing, FontSizes, FontWeights } from '@/constants/theme';
-import { useGamification } from '@/contexts/gamification-context';
-import { lessonAttemptApi } from '@/services/api/lessons';
-import type { QuizQuestion } from '@/types/quiz';
-import { mapApiQuestionsToQuizQuestions } from '@/utils/quiz-mapper';
-import * as Haptics from 'expo-haptics';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import LottieView from 'lottie-react-native';
-import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInRight, FadeOutLeft, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "@/components/quiz";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { ModalCard } from "@/components/ui/modal-card";
+import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from "@/constants/theme";
+import { useGamification } from "@/contexts/gamification-context";
+import { useTheme } from "@/contexts/theme-context";
+import { lessonAttemptApi } from "@/services/api/lessons";
+import type { QuizQuestion } from "@/types/quiz";
+import { mapApiQuestionsToQuizQuestions } from "@/utils/quiz-mapper";
+import * as Haptics from "expo-haptics";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import LottieView from "lottie-react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import Animated, {
+  FadeInRight,
+  FadeInUp,
+  FadeOutLeft,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function QuizScreen() {
   const router = useRouter();
-  const { lessonId = 'lp1' } = useLocalSearchParams<{ lessonId: string }>();
+  const { lessonId = "lp1" } = useLocalSearchParams<{ lessonId: string }>();
+  const { colors, isDark } = useTheme();
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
   const [currentIsCorrect, setCurrentIsCorrect] = useState<boolean>(false);
   const [hasInteracted, setHasInteracted] = useState<boolean>(false);
   const [hasSubmitted, setHasSubmitted] = useState<boolean>(false);
   const [isShowingRedoIntro, setIsShowingRedoIntro] = useState<boolean>(false);
-  const [originalQuestionsLength, setOriginalQuestionsLength] = useState<number>(0);
+  const [originalQuestionsLength, setOriginalQuestionsLength] =
+    useState<number>(0);
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [mistakeCount, setMistakeCount] = useState(0);
+  const [answers, setAnswers] = useState<
+    { questionId: number; selectedOptionId: number }[]
+  >([]);
   const startTime = useRef(Date.now());
   const { deductEnergy } = useGamification();
 
-  const [lessonType, setLessonType] = useState<string>('NORMAL');
+  const [lessonType, setLessonType] = useState<string>("NORMAL");
   const [isReplay, setIsReplay] = useState<boolean>(false);
   const [heartsRemaining, setHeartsRemaining] = useState<number>(3);
 
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const response = await lessonAttemptApi.startLesson(lessonId as string);
-        const mappedQuestions = mapApiQuestionsToQuizQuestions(response.questions);
-        setQuestions(mappedQuestions);
-        setOriginalQuestionsLength(mappedQuestions.length);
-        setLessonType(response.lessonType);
-        setIsReplay(response.isReplay);
+  const { refillEnergy, watchAdToRefill } = useGamification();
+  const [showEnergyPopup, setShowEnergyPopup] = useState(false);
+  const [adError, setAdError] = useState<string | null>(null);
 
-        if (response.totalEnergyDeducted > 0) {
-          deductEnergy(response.totalEnergyDeducted);
-        }
+  const fetchQuestions = async () => {
+    setIsLoading(true);
+    try {
+      const response = await lessonAttemptApi.startLesson(lessonId as string);
+      const mappedQuestions = mapApiQuestionsToQuizQuestions(
+        response.questions,
+      );
+      setQuestions(mappedQuestions);
+      setOriginalQuestionsLength(mappedQuestions.length);
+      setLessonType(response.lessonType);
+      setIsReplay(response.isReplay);
 
-        startTime.current = Date.now();
-      } catch (error) {
-        console.error("Failed to start lesson:", error);
-      } finally {
-        setIsLoading(false);
+      if (response.totalEnergyDeducted > 0) {
+        deductEnergy(response.totalEnergyDeducted);
       }
-    };
+
+      startTime.current = Date.now();
+    } catch (error: any) {
+      console.error("Failed to start lesson:", error);
+      const errorMsg = error?.message || error?.response?.data?.message || "";
+      if (
+        errorMsg.toLowerCase().includes("nang luong") ||
+        errorMsg.toLowerCase().includes("năng lượng")
+      ) {
+        setShowEnergyPopup(true);
+      } else {
+        Alert.alert(
+          "Lỗi",
+          errorMsg || "Không thể bắt đầu bài học. Vui lòng kiểm tra kết nối.",
+          [{ text: "OK", onPress: () => router.back() }],
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchQuestions();
   }, [lessonId]);
 
   const currentQuestion = questions[currentIndex];
-  const progress = originalQuestionsLength > 0 ? Math.min((currentIndex + 1) / originalQuestionsLength, 1) : 0;
+  const progress =
+    originalQuestionsLength > 0
+      ? Math.min((currentIndex + 1) / originalQuestionsLength, 1)
+      : 0;
   const isLastQuestion = currentIndex >= questions.length - 1;
 
   const lottieRef = useRef<LottieView>(null);
@@ -85,20 +134,20 @@ export default function QuizScreen() {
 
   const getCorrectAnswerText = (q: QuizQuestion): string | null => {
     switch (q.type) {
-      case 'vocab':
-      case 'listening':
+      case "vocab":
+      case "listening":
         return q.answers.find((a: any) => a.isCorrect)?.text || null;
-      case 'picture':
+      case "picture":
         return q.images.find((a: any) => a.isCorrect)?.text || null;
-      case 'kana':
-        return q.correctOrder.join('');
-      case 'fill-blank':
+      case "kana":
+        return q.correctOrder.join("");
+      case "fill-blank":
         return q.correctAnswer;
-      case 'kanji-fill':
-        return Object.values(q.correctFills).join(', ');
-      case 'speaking':
+      case "kanji-fill":
+        return Object.values(q.correctFills).join(", ");
+      case "speaking":
         return q.textToSpeak;
-      case 'flashcard':
+      case "flashcard":
         return q.backText;
       default:
         return null;
@@ -108,33 +157,79 @@ export default function QuizScreen() {
   const checkAnswer = () => {
     setHasSubmitted(true);
     if (currentIsCorrect) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+        () => {},
+      );
       lottieRef.current?.play();
     } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => { });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
+        () => {},
+      );
       lottieRef.current?.play();
       shakeOffset.value = withSequence(
         withTiming(-10, { duration: 50 }),
         withTiming(10, { duration: 50 }),
         withTiming(-10, { duration: 50 }),
         withTiming(10, { duration: 50 }),
-        withTiming(0, { duration: 50 })
+        withTiming(0, { duration: 50 }),
       );
 
-      if (lessonType === 'JUMP_TEST') {
-        setHeartsRemaining(prev => Math.max(0, prev - 1));
+      if (lessonType === "JUMP_TEST") {
+        setHeartsRemaining((prev) => Math.max(0, prev - 1));
       }
 
-      if (lessonType !== 'JUMP_TEST') {
-        setQuestions(prev => [...prev, { ...currentQuestion, isRedo: true } as any]);
+      if (lessonType !== "JUMP_TEST") {
+        setQuestions((prev) => [
+          ...prev,
+          { ...currentQuestion, isRedo: true } as any,
+        ]);
       }
     }
 
     if (!(currentQuestion as any).isRedo) {
       if (currentIsCorrect) {
-        setCorrectCount(prev => prev + 1);
+        setCorrectCount((prev) => prev + 1);
       } else {
-        setMistakeCount(prev => prev + 1);
+        setMistakeCount((prev) => prev + 1);
+      }
+
+      const q = currentQuestion as any;
+      let optionId = selectedAnswerId ? Number(selectedAnswerId) : null;
+
+      if (!optionId && q.originalOptions && q.originalOptions.length > 0) {
+        if (currentIsCorrect) {
+          const correctOpt = q.originalOptions.find(
+            (opt: any) => opt.isCorrect,
+          );
+          if (correctOpt) optionId = Number(correctOpt.optionId);
+        } else {
+          const wrongOpt = q.originalOptions.find((opt: any) => !opt.isCorrect);
+          if (wrongOpt) optionId = Number(wrongOpt.optionId);
+          if (!optionId) optionId = Number(q.originalOptions[0].optionId);
+        }
+      }
+
+      if (!optionId && q.answers && q.answers.length > 0) {
+        if (currentIsCorrect) {
+          const correctOpt = q.answers.find((opt: any) => opt.isCorrect);
+          if (correctOpt) optionId = Number(correctOpt.id);
+        } else {
+          const wrongOpt = q.answers.find((opt: any) => !opt.isCorrect);
+          if (wrongOpt) optionId = Number(wrongOpt.id);
+        }
+      }
+
+      if (!optionId && q.originalOptions)
+        optionId = Number(q.originalOptions[0]?.optionId);
+
+      if (optionId) {
+        setAnswers((prev) => [
+          ...prev,
+          {
+            questionId: Number(currentQuestion.id),
+            selectedOptionId: optionId,
+          },
+        ]);
       }
     }
   };
@@ -149,23 +244,27 @@ export default function QuizScreen() {
   };
 
   const moveToNextQuestion = async () => {
-    const isFailed = lessonType === 'JUMP_TEST' && heartsRemaining <= 0;
+    const isFailed = lessonType === "JUMP_TEST" && heartsRemaining <= 0;
 
     if (isLastQuestion || isFailed) {
       setIsSubmitting(true);
       try {
         const timeTaken = Math.floor((Date.now() - startTime.current) / 1000);
-        const response = await lessonAttemptApi.submitLesson(lessonId as string, {
-          totalQuestions: originalQuestionsLength,
-          totalCorrect: correctCount,
-          totalMistakes: mistakeCount,
-          timeTakenSeconds: timeTaken,
-          heartsRemaining: heartsRemaining,
-          isReplay: isReplay
-        });
+        const response = await lessonAttemptApi.submitLesson(
+          lessonId as string,
+          {
+            totalQuestions: originalQuestionsLength,
+            totalCorrect: correctCount,
+            totalMistakes: mistakeCount,
+            timeTakenSeconds: timeTaken,
+            heartsRemaining: heartsRemaining,
+            isReplay: isReplay,
+            answers: answers,
+          },
+        );
 
         router.replace({
-          pathname: '/quiz/result',
+          pathname: "/quiz/result",
           params: {
             status: response.status,
             expEarned: response.expEarned,
@@ -173,15 +272,20 @@ export default function QuizScreen() {
             correctCount: correctCount,
             wrongCount: mistakeCount,
             currentEnergy: response.currentEnergy,
-            coinsEarned: response.coinsEarned
-          }
+            coinsEarned: response.coinsEarned,
+            isPromoted: response.isPromoted ? "true" : "false",
+            newRankName: response.newRankName || "",
+          },
         });
       } catch (error) {
         console.error("Failed to submit lesson:", error);
         setIsSubmitting(false);
       }
     } else {
-      if (currentIndex === originalQuestionsLength - 1 && questions.length > originalQuestionsLength) {
+      if (
+        currentIndex === originalQuestionsLength - 1 &&
+        questions.length > originalQuestionsLength
+      ) {
         setIsShowingRedoIntro(true);
       } else {
         proceedToNext();
@@ -195,24 +299,26 @@ export default function QuizScreen() {
   };
 
   const shakeStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeOffset.value }]
+    transform: [{ translateX: shakeOffset.value }],
   }));
 
   const renderQuestionCard = () => {
     switch (currentQuestion.type) {
-      case 'vocab':
+      case "vocab":
         return (
           <VocabQuestionCard
             question={currentQuestion}
             selectedAnswer={selectedAnswerId}
             onSelectAnswer={(answerId) => {
               setSelectedAnswerId(answerId);
-              const answer = currentQuestion.answers.find((a) => a.id === answerId);
+              const answer = currentQuestion.answers.find(
+                (a) => a.id === answerId,
+              );
               handleAnswerSelection(answer?.isCorrect ?? false);
             }}
           />
         );
-      case 'kana':
+      case "kana":
         return (
           <KanaQuestionCard
             question={currentQuestion}
@@ -222,7 +328,7 @@ export default function QuizScreen() {
             }}
           />
         );
-      case 'picture':
+      case "picture":
         return (
           <PictureQuestionCard
             question={currentQuestion as any}
@@ -234,18 +340,17 @@ export default function QuizScreen() {
             }}
           />
         );
-      case 'kanji-fill':
+      case "kanji-fill":
         return (
           <KanjiFillQuestionCard
             question={currentQuestion}
             onAnswerChange={(isCorrect, fills) => {
               setCurrentIsCorrect(isCorrect);
-              // Interacted if at least one blank has a value
               setHasInteracted(Object.keys(fills).length > 0);
             }}
           />
         );
-      case 'matching':
+      case "matching":
         return (
           <MatchingQuestionCard
             question={currentQuestion}
@@ -254,7 +359,7 @@ export default function QuizScreen() {
             }}
           />
         );
-      case 'flashcard':
+      case "flashcard":
         return (
           <FlashcardQuestionCard
             question={currentQuestion}
@@ -263,7 +368,7 @@ export default function QuizScreen() {
             }}
           />
         );
-      case 'fill-blank':
+      case "fill-blank":
         return (
           <FillBlankQuestionCard
             question={currentQuestion}
@@ -272,19 +377,21 @@ export default function QuizScreen() {
             }}
           />
         );
-      case 'listening':
+      case "listening":
         return (
           <ListeningQuestionCard
             question={currentQuestion}
             selectedAnswer={selectedAnswerId}
             onSelectAnswer={(answerId) => {
               setSelectedAnswerId(answerId);
-              const answer = currentQuestion.answers.find((a) => a.id === answerId);
+              const answer = currentQuestion.answers.find(
+                (a) => a.id === answerId,
+              );
               handleAnswerSelection(answer?.isCorrect ?? false);
             }}
           />
         );
-      case 'speaking':
+      case "speaking":
         return (
           <SpeakingQuestionCard
             question={currentQuestion}
@@ -298,46 +405,190 @@ export default function QuizScreen() {
     }
   };
 
+  const bg = isDark ? Colors.dark.background : Colors.light.background;
+
+  // ── Energy popup ──────────────────────────────────────────────────────────
+  if (showEnergyPopup) {
+    return (
+      <SafeAreaView style={[styles.centered, { backgroundColor: bg }]}>
+        <ModalCard onClose={() => router.back()}>
+          <View style={styles.energyPopupContent}>
+            <LinearGradient
+              colors={[Colors.accent + "33", Colors.accent + "11"]}
+              style={styles.energyIconBadge}
+            >
+              <Text style={styles.energyIconEmoji}>⚡</Text>
+            </LinearGradient>
+
+            <Text style={[styles.energyTitle, { color: isDark ? "#F9FAFB" : Colors.textPrimary }]}>
+              Hết năng lượng!
+            </Text>
+            <Text style={[styles.energySubtitle, { color: isDark ? "rgba(255,255,255,0.55)" : Colors.textSecondary }]}>
+              Bạn không đủ năng lượng để bắt đầu bài học này. Hãy mua bằng xu
+              hoặc xem quảng cáo để hồi phục.
+            </Text>
+
+            {adError && (
+              <Text style={styles.adErrorText}>{adError}</Text>
+            )}
+
+            <View style={styles.energyBtnGroup}>
+              <GradientButton
+                title="MUA FULL (400 COIN)"
+                onPress={async () => {
+                  try {
+                    await refillEnergy();
+                    setShowEnergyPopup(false);
+                    fetchQuestions();
+                  } catch (e: any) {
+                    setAdError(e?.response?.data?.message || "Không đủ xu");
+                  }
+                }}
+                style={{ width: "100%" }}
+              />
+              <GradientButton
+                title="XEM QUẢNG CÁO (+5 NL)"
+                variant="outline"
+                onPress={async () => {
+                  try {
+                    setAdError(null);
+                    await watchAdToRefill();
+                    setShowEnergyPopup(false);
+                    fetchQuestions();
+                  } catch (e: any) {
+                    setAdError(
+                      e?.response?.data?.message || "Lỗi kết nối quảng cáo",
+                    );
+                  }
+                }}
+                style={{ width: "100%" }}
+              />
+              <GradientButton
+                title="ĐỂ SAU"
+                variant="outline"
+                onPress={() => {
+                  setShowEnergyPopup(false);
+                  setAdError(null);
+                  router.back();
+                }}
+                style={{ width: "100%", borderWidth: 0 }}
+              />
+            </View>
+          </View>
+        </ModalCard>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={Colors.accent} />
+      <SafeAreaView style={[styles.centered, { backgroundColor: bg }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={[styles.loadingText, { color: isDark ? "rgba(255,255,255,0.4)" : Colors.textSecondary }]}>
+          Đang tải bài học…
+        </Text>
       </SafeAreaView>
     );
   }
 
+  // ── No questions ──────────────────────────────────────────────────────────
   if (!currentQuestion) {
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ fontSize: 16, color: Colors.textSecondary }}>Không tìm thấy câu hỏi nào.</Text>
+      <SafeAreaView style={[styles.centered, { backgroundColor: bg }]}>
+        <Text style={[styles.emptyText, { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary }]}>
+          Không tìm thấy câu hỏi nào.
+        </Text>
       </SafeAreaView>
     );
   }
 
+  // ── Redo intro ────────────────────────────────────────────────────────────
   if (isShowingRedoIntro) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+        {isDark && (
+          <>
+            <View style={styles.orbTL} pointerEvents="none" />
+            <View style={styles.orbBR} pointerEvents="none" />
+          </>
+        )}
         <View style={styles.redoIntroContainer}>
           <LottieView
-            source={require('../../../assets/animations/school_mascot.json')}
+            source={require("../../../assets/animations/school_mascot.json")}
             style={styles.redoIntroLottie}
             autoPlay={true}
             loop={true}
           />
-          <Text style={styles.redoIntroTitle}>Cố lên nào!</Text>
-          <Text style={styles.redoIntroText}>Hãy cùng ôn lại các lỗi sai của bạn nhé!</Text>
-          <GradientButton 
-            title="BẮT ĐẦU ÔN TẬP"
-            onPress={proceedToNext}
-            style={styles.redoIntroButton}
-          />
+          <Animated.View
+            entering={FadeInUp.delay(200).springify()}
+            style={styles.redoTextGroup}
+          >
+            <View
+              style={[
+                styles.redoPill,
+                { backgroundColor: Colors.warning + "22", borderColor: Colors.warning + "55" },
+              ]}
+            >
+              <Text style={[styles.redoPillText, { color: Colors.warning }]}>
+                ÔN LẠI LỖI SAI
+              </Text>
+            </View>
+            <Text
+              style={[
+                styles.redoIntroTitle,
+                { color: isDark ? "#F9FAFB" : Colors.textPrimary },
+              ]}
+            >
+              Cố lên nào! 💪
+            </Text>
+            <Text
+              style={[
+                styles.redoIntroText,
+                { color: isDark ? "rgba(255,255,255,0.55)" : Colors.textSecondary },
+              ]}
+            >
+              Hãy cùng ôn lại các câu bạn chưa đúng nhé.
+            </Text>
+            <GradientButton
+              title="BẮT ĐẦU ÔN TẬP"
+              onPress={proceedToNext}
+              style={styles.redoIntroButton}
+            />
+          </Animated.View>
         </View>
       </SafeAreaView>
     );
   }
 
+  // ── Main quiz ─────────────────────────────────────────────────────────────
+  const btnLabel = isSubmitting
+    ? "ĐANG NỘP BÀI..."
+    : !hasSubmitted
+    ? "KIỂM TRA"
+    : isLastQuestion
+    ? "HOÀN THÀNH"
+    : "TIẾP TỤC";
+
+  const feedbackGradient: [string, string] = hasSubmitted
+    ? currentIsCorrect
+      ? ["#166534", "#14532D"]
+      : ["#7F1D1D", "#991B1B"]
+    : isDark
+    ? [Colors.dark.backgroundElement, Colors.dark.backgroundElement]
+    : [Colors.light.card, Colors.light.card];
+
+  const correctAnswerText = getCorrectAnswerText(currentQuestion);
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+      {isDark && (
+        <>
+          <View style={styles.orbTL} pointerEvents="none" />
+          <View style={styles.orbBR} pointerEvents="none" />
+        </>
+      )}
+
       <QuizHeader
         progress={progress}
         onClose={() => router.back()}
@@ -345,13 +596,16 @@ export default function QuizScreen() {
         heartsRemaining={heartsRemaining}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View style={[styles.content, shakeStyle]}>
           <Animated.View
             key={currentIndex}
             entering={FadeInRight.duration(300).springify()}
             exiting={FadeOutLeft.duration(200)}
-            style={{ width: '100%' }}
+            style={{ width: "100%" }}
           >
             <View pointerEvents={hasSubmitted ? "none" : "auto"}>
               {renderQuestionCard()}
@@ -360,30 +614,79 @@ export default function QuizScreen() {
         </Animated.View>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
-        {hasSubmitted && !currentIsCorrect && (
-          <View style={styles.correctAnswerBanner}>
-            <Text style={styles.correctAnswerLabel}>Đáp án đúng:</Text>
-            <Text style={styles.correctAnswerText}>{getCorrectAnswerText(currentQuestion) || 'Hãy xem lại bài học'}</Text>
-          </View>
-        )}
+      {/* Bottom feedback + CTA */}
+      <View
+        style={[
+          styles.bottomBar,
+          { backgroundColor: isDark ? Colors.dark.background : Colors.light.background },
+        ]}
+      >
         {hasSubmitted && (
-          <View style={styles.lottieContainer}>
-            <LottieView
-              ref={lottieRef}
-              source={currentIsCorrect ? require('../../../assets/animations/happy_mascot.json') : require('../../../assets/animations/confuse_mascot.json')}
-              style={styles.lottie}
-              autoPlay={true}
-              loop={false}
-            />
-          </View>
+          <Animated.View
+            entering={FadeInUp.duration(280).springify()}
+            style={styles.feedbackPanel}
+          >
+            <LinearGradient
+              colors={feedbackGradient}
+              style={styles.feedbackGradient}
+            >
+              {/* Mascot lottie */}
+              <View style={styles.lottieContainer}>
+                <LottieView
+                  ref={lottieRef}
+                  source={
+                    currentIsCorrect
+                      ? require("../../../assets/animations/happy_mascot.json")
+                      : require("../../../assets/animations/confuse_mascot.json")
+                  }
+                  style={styles.lottie}
+                  autoPlay={true}
+                  loop={false}
+                />
+              </View>
+
+              {/* Feedback text */}
+              <View style={styles.feedbackTextGroup}>
+                <View style={styles.feedbackIconRow}>
+                  <Ionicons
+                    name={currentIsCorrect ? "checkmark-circle" : "close-circle"}
+                    size={22}
+                    color={currentIsCorrect ? "#4ADE80" : "#F87171"}
+                  />
+                  <Text
+                    style={[
+                      styles.feedbackLabel,
+                      { color: currentIsCorrect ? "#4ADE80" : "#F87171" },
+                    ]}
+                  >
+                    {currentIsCorrect ? "Chính xác!" : "Chưa đúng"}
+                  </Text>
+                </View>
+                {!currentIsCorrect && correctAnswerText ? (
+                  <>
+                    <Text style={styles.feedbackAnswerLabel}>Đáp án đúng:</Text>
+                    <Text style={styles.feedbackAnswerText}>
+                      {correctAnswerText}
+                    </Text>
+                  </>
+                ) : null}
+              </View>
+            </LinearGradient>
+          </Animated.View>
         )}
+
         <GradientButton
-          title={isSubmitting ? 'ĐANG NỘP BÀI...' : (!hasSubmitted ? 'KIỂM TRA' : (isLastQuestion ? 'HOÀN THÀNH' : 'TIẾP TỤC'))}
+          title={btnLabel}
           onPress={!hasSubmitted ? checkAnswer : moveToNextQuestion}
           disabled={!hasInteracted || isSubmitting}
           style={styles.nextButton}
-          customColors={hasSubmitted ? (currentIsCorrect ? [Colors.success, '#388E3C'] : [Colors.error, '#D32F2F']) : undefined}
+          customColors={
+            hasSubmitted
+              ? currentIsCorrect
+                ? [Colors.success, "#16A34A"]
+                : [Colors.error, "#DC2626"]
+              : undefined
+          }
         />
       </View>
     </SafeAreaView>
@@ -393,86 +696,183 @@ export default function QuizScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
   },
-  redoIntroContainer: {
+  centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.six,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: Spacing.three,
   },
-  redoIntroLottie: {
-    width: 250,
-    height: 250,
-    marginBottom: Spacing.six,
+  loadingText: {
+    fontSize: FontSizes.sm,
+    marginTop: Spacing.three,
   },
-  redoIntroTitle: {
-    fontSize: FontSizes.xxl,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.three,
-    textAlign: 'center',
+  emptyText: {
+    fontSize: FontSizes.md,
   },
-  redoIntroText: {
-    fontSize: FontSizes.lg,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing.eight,
-    lineHeight: 24,
+  orbTL: {
+    position: "absolute",
+    top: -80,
+    left: -80,
+    width: 220,
+    height: 220,
+    borderRadius: 999,
+    backgroundColor: Colors.primary,
+    opacity: 0.06,
   },
-  redoIntroButton: {
-    width: '100%',
-    maxWidth: 300,
+  orbBR: {
+    position: "absolute",
+    bottom: -80,
+    right: -80,
+    width: 260,
+    height: 260,
+    borderRadius: 999,
+    backgroundColor: Colors.secondary,
+    opacity: 0.05,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.six,
   },
   content: {
-    width: '100%',
+    width: "100%",
     maxWidth: 480,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   bottomBar: {
-    paddingHorizontal: Spacing.six,
-    paddingBottom: Spacing.six,
-    backgroundColor: Colors.cream,
+    paddingHorizontal: Spacing.five,
+    paddingBottom: Spacing.five,
+    paddingTop: Spacing.three,
+    gap: Spacing.three,
   },
-  nextButton: {
-    width: '100%',
+  feedbackPanel: {
+    borderRadius: BorderRadius.lg,
+    overflow: "hidden",
+  },
+  feedbackGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.four,
+    gap: Spacing.three,
+    borderRadius: BorderRadius.lg,
   },
   lottieContainer: {
-    position: 'absolute',
-    top: -120,
-    left: 20,
-    width: 100,
-    height: 100,
-    zIndex: 10,
+    width: 64,
+    height: 64,
+    flexShrink: 0,
   },
   lottie: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
-  correctAnswerBanner: {
-    backgroundColor: '#FFEBEE',
-    padding: Spacing.four,
-    borderRadius: 12,
-    marginBottom: Spacing.four,
+  feedbackTextGroup: {
+    flex: 1,
+    gap: 4,
+  },
+  feedbackIconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  feedbackLabel: {
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.extrabold,
+  },
+  feedbackAnswerLabel: {
+    fontSize: FontSizes.xs,
+    color: "rgba(255,255,255,0.5)",
+    fontWeight: FontWeights.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginTop: 2,
+  },
+  feedbackAnswerText: {
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.bold,
+    color: "rgba(255,255,255,0.9)",
+  },
+  nextButton: {
+    width: "100%",
+  },
+  // Redo intro
+  redoIntroContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.six,
+    gap: Spacing.six,
+  },
+  redoIntroLottie: {
+    width: 220,
+    height: 220,
+  },
+  redoTextGroup: {
+    alignItems: "center",
+    gap: Spacing.four,
+    width: "100%",
+  },
+  redoPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
-    borderColor: '#FFCDD2',
   },
-  correctAnswerLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#D32F2F',
-    marginBottom: 4,
-    textTransform: 'uppercase',
+  redoPillText: {
+    fontSize: FontSizes.xs,
+    fontWeight: FontWeights.extrabold,
+    letterSpacing: 1.5,
   },
-  correctAnswerText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#B71C1C',
-  }
+  redoIntroTitle: {
+    fontSize: FontSizes.xxl,
+    fontWeight: FontWeights.extrabold,
+    textAlign: "center",
+  },
+  redoIntroText: {
+    fontSize: FontSizes.md,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  redoIntroButton: {
+    width: "100%",
+    maxWidth: 300,
+    marginTop: Spacing.two,
+  },
+  // Energy popup
+  energyPopupContent: {
+    alignItems: "center",
+    gap: Spacing.four,
+    marginTop: Spacing.three,
+  },
+  energyIconBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  energyIconEmoji: {
+    fontSize: 36,
+  },
+  energyTitle: {
+    fontSize: FontSizes.xl,
+    fontWeight: FontWeights.extrabold,
+    textAlign: "center",
+  },
+  energySubtitle: {
+    fontSize: FontSizes.md,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  adErrorText: {
+    fontSize: FontSizes.sm,
+    color: Colors.error,
+    textAlign: "center",
+  },
+  energyBtnGroup: {
+    width: "100%",
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+  },
 });

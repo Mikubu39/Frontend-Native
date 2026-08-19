@@ -1,9 +1,22 @@
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { AudioButton } from '@/components/ui/audio-button';
-import type { ListeningQuestion } from '@/types';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows } from '@/constants/theme';
-import { useAudio } from '@/hooks/use-audio';
+/**
+ * ListeningQuestion — Impeccable redesign. Theme-aware.
+ */
+
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AudioButton } from "@/components/ui/audio-button";
+import type { ListeningQuestion } from "@/types";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+  Fonts,
+} from "@/constants/theme";
+import { useAudio } from "@/hooks/use-audio";
+import { useTheme } from "@/contexts/theme-context";
 
 interface ListeningQuestionProps {
   question: ListeningQuestion;
@@ -11,36 +24,96 @@ interface ListeningQuestionProps {
   onSelectAnswer: (answerId: string) => void;
 }
 
-export function ListeningQuestionCard({ question, selectedAnswer, onSelectAnswer }: ListeningQuestionProps) {
+export function ListeningQuestionCard({
+  question,
+  selectedAnswer,
+  onSelectAnswer,
+}: ListeningQuestionProps) {
   const { isPlaying, play } = useAudio(question.audioUrl);
+  const { colors, isDark } = useTheme();
 
   useEffect(() => {
     play();
   }, [question, play]);
 
+  const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
+  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
+  const selectedBg = isDark ? Colors.primary + "33" : Colors.primary + "18";
+
   return (
     <View style={styles.container}>
-      <Text style={styles.instruction}>{question.instruction}</Text>
+      <Text
+        style={[
+          styles.instruction,
+          { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary },
+        ]}
+      >
+        {question.instruction}
+      </Text>
 
-      <View style={styles.audioContainer}>
-        <AudioButton variant="speaker" size="large" isPlaying={isPlaying} onPress={() => play()} />
-        <Text style={styles.audioHint}>Chạm để nghe</Text>
+      {/* Audio player */}
+      <View
+        style={[
+          styles.audioCard,
+          {
+            backgroundColor: isDark
+              ? "rgba(139,92,246,0.12)"
+              : Colors.primary + "0F",
+            borderColor: isDark
+              ? "rgba(139,92,246,0.3)"
+              : Colors.primary + "33",
+          },
+        ]}
+      >
+        <AudioButton
+          variant="speaker"
+          size="large"
+          isPlaying={isPlaying}
+          onPress={() => play()}
+        />
+        <Text
+          style={[
+            styles.audioHint,
+            { color: isDark ? "rgba(255,255,255,0.35)" : Colors.textSecondary },
+          ]}
+        >
+          {isPlaying ? "Đang phát..." : "Chạm để nghe"}
+        </Text>
       </View>
 
       <View style={styles.answers}>
         {question.answers.map((answer) => {
           const isSelected = selectedAnswer === answer.id;
           return (
-            <TouchableOpacity
+            <AnimatedPressable
               key={answer.id}
-              style={[styles.answerCard, isSelected && styles.answerSelected]}
+              style={[
+                styles.answerCard,
+                {
+                  backgroundColor: isSelected ? selectedBg : cardBg,
+                  borderColor: isSelected ? Colors.primary : cardBorder,
+                },
+              ]}
               onPress={() => onSelectAnswer(answer.id)}
-              activeOpacity={0.7}
+              pressScale={0.97}
             >
-              <Text style={[styles.answerText, isSelected && styles.answerTextSelected]}>
+              <Text
+                style={[
+                  styles.answerText,
+                  {
+                    color: isSelected
+                      ? isDark
+                        ? Colors.primaryLight
+                        : Colors.primaryDark
+                      : isDark
+                      ? "#F9FAFB"
+                      : Colors.textPrimary,
+                  },
+                ]}
+              >
                 {answer.text}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           );
         })}
       </View>
@@ -50,48 +123,45 @@ export function ListeningQuestionCard({ question, selectedAnswer, onSelectAnswer
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    gap: Spacing.eight,
-    paddingHorizontal: Spacing.four,
+    alignItems: "center",
+    gap: Spacing.six,
+    paddingHorizontal: Spacing.two,
   },
   instruction: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.rounded,
     fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-    textAlign: 'center',
+    textAlign: "center",
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
-  audioContainer: {
-    alignItems: 'center',
+  audioCard: {
+    width: "100%",
+    paddingVertical: Spacing.seven,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    alignItems: "center",
     gap: Spacing.three,
   },
   audioHint: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   answers: {
-    width: '100%',
+    width: "100%",
     gap: Spacing.three,
   },
   answerCard: {
     paddingVertical: Spacing.four,
-    paddingHorizontal: Spacing.six,
+    paddingHorizontal: Spacing.five,
     borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.accentPale,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    alignItems: 'center',
-  },
-  answerSelected: {
-    backgroundColor: Colors.accent,
-    borderColor: Colors.accent,
+    borderWidth: 1.5,
+    borderBottomWidth: 3,
+    alignItems: "center",
   },
   answerText: {
     fontSize: FontSizes.lg,
-    fontWeight: FontWeights.semibold,
-    color: Colors.textPrimary,
-  },
-  answerTextSelected: {
-    color: Colors.textOnDark,
+    fontFamily: Fonts.rounded,
+    fontWeight: FontWeights.bold,
   },
 });

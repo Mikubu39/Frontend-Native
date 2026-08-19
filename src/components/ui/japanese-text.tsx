@@ -1,7 +1,21 @@
-import React, { useState } from 'react';
-import { Text, StyleSheet, Modal, View, TouchableOpacity, type TextStyle } from 'react-native';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows } from '@/constants/theme';
-import * as Haptics from 'expo-haptics';
+import React, { useState } from "react";
+import {
+  Text,
+  StyleSheet,
+  Modal,
+  View,
+  TouchableOpacity,
+  type TextStyle,
+} from "react-native";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+  Shadows,
+} from "@/constants/theme";
+import * as Haptics from "expo-haptics";
 
 interface JapaneseTextProps {
   text: string;
@@ -10,39 +24,44 @@ interface JapaneseTextProps {
 
 // Simple local dictionary for the prototype
 const DICTIONARY: Record<string, string> = {
-  'こんにちは': 'Xin chào (Dùng ban ngày)',
-  'ありがとう': 'Cám ơn',
-  'さようなら': 'Tạm biệt',
-  '先生': 'Giáo viên (Sensei)',
-  'わたし': 'Tôi / Tớ / Mình',
-  '学生': 'Học sinh',
-  'おばあさん': 'Bà ngoại / Bà nội',
-  'おばさん': 'Cô / Dì',
-  'はじめまして': 'Rất hân hạnh được gặp bạn',
-  'です': 'là (kính ngữ)',
-  'これ': 'Đây / Cái này',
-  '本': 'Sách',
-  'にほんご': 'Tiếng Nhật',
-  'いぬ': 'Chó',
-  'がくせい': 'Học sinh',
-  'せんせい': 'Giáo viên',
-  'あなた': 'Bạn / Anh / Chị',
-  'よろしくおねがいします': 'Rất mong nhận được sự giúp đỡ'
+  こんにちは: "Xin chào (Dùng ban ngày)",
+  ありがとう: "Cám ơn",
+  さようなら: "Tạm biệt",
+  先生: "Giáo viên (Sensei)",
+  わたし: "Tôi / Tớ / Mình",
+  学生: "Học sinh",
+  おばあさん: "Bà ngoại / Bà nội",
+  おばさん: "Cô / Dì",
+  はじめまして: "Rất hân hạnh được gặp bạn",
+  です: "là (kính ngữ)",
+  これ: "Đây / Cái này",
+  本: "Sách",
+  にほんご: "Tiếng Nhật",
+  いぬ: "Chó",
+  がくせい: "Học sinh",
+  せんせい: "Giáo viên",
+  あなた: "Bạn / Anh / Chị",
+  よろしくおねがいします: "Rất mong nhận được sự giúp đỡ",
 };
 
 export function JapaneseText({ text, style }: JapaneseTextProps) {
-  const [selectedWord, setSelectedWord] = useState<{word: string, meaning: string} | null>(null);
+  const [selectedWord, setSelectedWord] = useState<{
+    word: string;
+    meaning: string;
+  } | null>(null);
 
   // Parse text into chunks (words that are in dict, and words that aren't)
   const chunks: { text: string; meaning?: string }[] = [];
-  
+
   let currentText = text;
-  
+
   while (currentText.length > 0) {
     let found = false;
     // Check for longest matching word first
-    const sortedWords = Object.keys(DICTIONARY).sort((a, b) => b.length - a.length);
-    
+    const sortedWords = Object.keys(DICTIONARY).sort(
+      (a, b) => b.length - a.length,
+    );
+
     for (const word of sortedWords) {
       if (currentText.startsWith(word)) {
         chunks.push({ text: word, meaning: DICTIONARY[word] });
@@ -51,7 +70,7 @@ export function JapaneseText({ text, style }: JapaneseTextProps) {
         break;
       }
     }
-    
+
     if (!found) {
       // Group non-dict characters together for efficiency
       if (chunks.length > 0 && !chunks[chunks.length - 1].meaning) {
@@ -90,8 +109,17 @@ export function JapaneseText({ text, style }: JapaneseTextProps) {
       </Text>
 
       {/* Tooltip Modal */}
-      <Modal visible={!!selectedWord} transparent animationType="fade" onRequestClose={() => setSelectedWord(null)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setSelectedWord(null)}>
+      <Modal
+        visible={!!selectedWord}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedWord(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setSelectedWord(null)}
+        >
           <View style={styles.tooltipContainer}>
             <Text style={styles.tooltipWord}>{selectedWord?.word}</Text>
             <View style={styles.divider} />
@@ -106,22 +134,22 @@ export function JapaneseText({ text, style }: JapaneseTextProps) {
 const styles = StyleSheet.create({
   clickableWord: {
     color: Colors.accent,
-    textDecorationLine: 'underline',
-    textDecorationStyle: 'dashed',
+    textDecorationLine: "underline",
+    textDecorationStyle: "dashed",
     textDecorationColor: Colors.accent,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   tooltipContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     padding: Spacing.six,
     borderRadius: BorderRadius.xl,
     minWidth: 220,
-    alignItems: 'center',
+    alignItems: "center",
     ...Shadows.xl,
   },
   tooltipWord: {
@@ -131,7 +159,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.four,
   },
   divider: {
-    width: '100%',
+    width: "100%",
     height: 2,
     backgroundColor: Colors.lockedBg,
     marginBottom: Spacing.four,
@@ -140,6 +168,6 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

@@ -3,14 +3,28 @@
  * Smooth color and position transitions when switching tabs.
  */
 
-import React, { useEffect } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
+import React, { useEffect } from "react";
+import {
+  View,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  LayoutChangeEvent,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-} from 'react-native-reanimated';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, AnimationPresets, Shadows } from '@/constants/theme';
+} from "react-native-reanimated";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+  AnimationPresets,
+  Shadows,
+} from "@/constants/theme";
 
 interface TabSwitcherProps {
   tabs: string[];
@@ -34,7 +48,7 @@ export function TabSwitcher({
     if (tabWidth.value > 0) {
       indicatorX.value = withSpring(
         activeIndex * tabWidth.value,
-        AnimationPresets.springSnappy
+        AnimationPresets.springSnappy,
       );
     }
   }, [activeIndex]);
@@ -65,40 +79,46 @@ export function TabSwitcher({
         ]}
       />
 
-      {tabs.map((tab, index) => (
-        <TouchableOpacity
-          key={tab}
-          style={styles.tab}
-          onPress={() => onTabPress(index)}
-          activeOpacity={0.8}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              index === activeIndex ? styles.activeTabText : styles.inactiveTabText,
-            ]}
+      {tabs.map((tab, index) => {
+        const isSelected = index === activeIndex;
+        return (
+          <TouchableOpacity
+            key={tab}
+            style={styles.tab}
+            onPress={() => onTabPress(index)}
+            activeOpacity={0.8}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isSelected }}
+            accessibilityLabel={tab}
           >
-            {tab}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Text
+              style={[
+                styles.tabText,
+                isSelected ? styles.activeTabText : styles.inactiveTabText,
+              ]}
+            >
+              {tab}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderRadius: BorderRadius.xl,
     padding: 4,
-    alignSelf: 'center',
-    position: 'relative',
+    alignSelf: "center",
+    position: "relative",
   },
   indicator: {
-    position: 'absolute',
+    position: "absolute",
     top: 4,
     left: 4,
-    height: '100%',
+    height: "100%",
     borderRadius: BorderRadius.xl,
     ...Shadows.sm,
   },
@@ -106,8 +126,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: Spacing.three,
     borderRadius: BorderRadius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minWidth: 100,
     zIndex: 1,
   },

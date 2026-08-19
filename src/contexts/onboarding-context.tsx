@@ -4,8 +4,19 @@
  * Manages onboarding flow state (goal, interests, level).
  */
 
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { OnboardingGoal, OnboardingLevelId, OnboardingStep, OnboardingState } from '@/types';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
+import type {
+  OnboardingGoal,
+  OnboardingLevelId,
+  OnboardingStep,
+  OnboardingState,
+} from "@/types";
 
 interface OnboardingContextType {
   state: OnboardingState;
@@ -18,13 +29,15 @@ interface OnboardingContextType {
 }
 
 const initialState: OnboardingState = {
-  currentStep: 'goal',
+  currentStep: "goal",
   selectedGoal: null,
   selectedInterests: [],
   selectedLevel: null,
 };
 
-const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
+const OnboardingContext = createContext<OnboardingContextType | undefined>(
+  undefined,
+);
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<OnboardingState>(initialState);
@@ -54,13 +67,22 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setState(initialState);
   }, []);
 
-  const isComplete = state.selectedGoal !== null
-    && state.selectedInterests.length > 0
-    && state.selectedLevel !== null;
+  const isComplete =
+    state.selectedGoal !== null &&
+    state.selectedInterests.length > 0 &&
+    state.selectedLevel !== null;
 
   return (
     <OnboardingContext.Provider
-      value={{ state, setGoal, toggleInterest, setLevel, setStep, isComplete, reset }}
+      value={{
+        state,
+        setGoal,
+        toggleInterest,
+        setLevel,
+        setStep,
+        isComplete,
+        reset,
+      }}
     >
       {children}
     </OnboardingContext.Provider>
@@ -70,7 +92,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 export function useOnboarding(): OnboardingContextType {
   const context = useContext(OnboardingContext);
   if (!context) {
-    throw new Error('useOnboarding must be used within an OnboardingProvider');
+    throw new Error("useOnboarding must be used within an OnboardingProvider");
   }
   return context;
 }

@@ -1,24 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import type { MatchingQuestion } from '@/types';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import type { MatchingQuestion } from "@/types";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+  Fonts,
+} from "@/constants/theme";
 
 interface MatchingQuestionProps {
   question: MatchingQuestion;
   onAnswerChange: (isCorrect: boolean) => void;
 }
 
-export function MatchingQuestionCard({ question, onAnswerChange }: MatchingQuestionProps) {
+export function MatchingQuestionCard({
+  question,
+  onAnswerChange,
+}: MatchingQuestionProps) {
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
   const [selectedRight, setSelectedRight] = useState<string | null>(null);
   const [matchedPairs, setMatchedPairs] = useState<string[]>([]);
-  const [leftItems, setLeftItems] = useState<{id: string, text: string}[]>([]);
-  const [rightItems, setRightItems] = useState<{id: string, text: string}[]>([]);
+  const [leftItems, setLeftItems] = useState<{ id: string; text: string }[]>(
+    [],
+  );
+  const [rightItems, setRightItems] = useState<{ id: string; text: string }[]>(
+    [],
+  );
 
   useEffect(() => {
-    const shuffledLeft = [...question.pairs].sort(() => Math.random() - 0.5).map(p => ({id: p.id, text: p.left}));
-    const shuffledRight = [...question.pairs].sort(() => Math.random() - 0.5).map(p => ({id: p.id, text: p.right}));
+    const shuffledLeft = [...question.pairs]
+      .sort(() => Math.random() - 0.5)
+      .map((p) => ({ id: p.id, text: p.left }));
+    const shuffledRight = [...question.pairs]
+      .sort(() => Math.random() - 0.5)
+      .map((p) => ({ id: p.id, text: p.right }));
     setLeftItems(shuffledLeft);
     setRightItems(shuffledRight);
   }, [question]);
@@ -28,12 +46,12 @@ export function MatchingQuestionCard({ question, onAnswerChange }: MatchingQuest
       if (selectedLeft === selectedRight) {
         const newMatched = [...matchedPairs, selectedLeft];
         setMatchedPairs(newMatched);
-        
+
         if (newMatched.length === question.pairs.length) {
           onAnswerChange(true);
         }
       } else {
-         // Play error haptic but do NOT call onAnswerChange(false) which breaks the quiz flow
+        // Play error haptic but do NOT call onAnswerChange(false) which breaks the quiz flow
       }
       setTimeout(() => {
         setSelectedLeft(null);
@@ -63,7 +81,12 @@ export function MatchingQuestionCard({ question, onAnswerChange }: MatchingQuest
                 onPress={() => setSelectedLeft(item.id)}
                 pressScale={0.97}
               >
-                <Text style={[styles.itemText, (isSelected || isMatched) && styles.itemTextSelected]}>
+                <Text
+                  style={[
+                    styles.itemText,
+                    (isSelected || isMatched) && styles.itemTextSelected,
+                  ]}
+                >
                   {item.text}
                 </Text>
               </AnimatedPressable>
@@ -87,7 +110,12 @@ export function MatchingQuestionCard({ question, onAnswerChange }: MatchingQuest
                 onPress={() => setSelectedRight(item.id)}
                 pressScale={0.97}
               >
-                <Text style={[styles.itemText, (isSelected || isMatched) && styles.itemTextSelected]}>
+                <Text
+                  style={[
+                    styles.itemText,
+                    (isSelected || isMatched) && styles.itemTextSelected,
+                  ]}
+                >
                   {item.text}
                 </Text>
               </AnimatedPressable>
@@ -101,20 +129,21 @@ export function MatchingQuestionCard({ question, onAnswerChange }: MatchingQuest
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.five,
     paddingHorizontal: Spacing.four,
   },
   instruction: {
     fontSize: FontSizes.lg,
+    fontFamily: Fonts.rounded,
     fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-    textAlign: 'center',
+    color: Colors.textSecondary,
+    textAlign: "center",
   },
   columns: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
     gap: Spacing.four,
   },
   column: {
@@ -125,14 +154,16 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.three,
     borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.accentPale,
+    backgroundColor: Colors.surface,
     borderWidth: 2,
-    borderColor: 'transparent',
-    alignItems: 'center',
+    borderBottomWidth: 4,
+    borderColor: Colors.lockedBg,
+    alignItems: "center",
   },
   itemSelected: {
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.accentPale,
     borderColor: Colors.accent,
+    borderBottomWidth: 4,
   },
   itemMatched: {
     backgroundColor: Colors.success,
@@ -141,11 +172,12 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: FontSizes.md,
-    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.rounded,
+    fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   itemTextSelected: {
-    color: Colors.textOnDark,
+    color: Colors.accent,
   },
 });

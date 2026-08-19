@@ -2,11 +2,17 @@
  * LevelSelector - Level selection cards + dropdown for onboarding.
  */
 
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { ONBOARDING_LEVELS } from '@/data';
-import type { OnboardingLevelId } from '@/types';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { ONBOARDING_LEVELS } from "@/data";
+import type { OnboardingLevelId } from "@/types";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
 
 interface LevelSelectorProps {
   selectedLevel: OnboardingLevelId | null;
@@ -25,15 +31,20 @@ export function LevelSelector({ selectedLevel, onSelect }: LevelSelectorProps) {
             onPress={() => onSelect(level.id)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.title, isSelected && styles.titleSelected]}>{level.title}</Text>
+            <Text style={[styles.title, isSelected && styles.titleSelected]}>
+              {level.title}
+            </Text>
             <Text style={styles.description}>{level.description}</Text>
           </TouchableOpacity>
         );
       })}
 
       <TouchableOpacity
-        style={[styles.dropdownCard, selectedLevel === 'jlpt' && styles.cardSelected]}
-        onPress={() => onSelect('jlpt')}
+        style={[
+          styles.dropdownCard,
+          selectedLevel === "jlpt" && styles.cardSelected,
+        ]}
+        onPress={() => onSelect("jlpt")}
         activeOpacity={0.7}
       >
         <Text style={styles.dropdownText}>Chọn trình độ hiện tại của bạn</Text>
@@ -70,9 +81,9 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   dropdownCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: Spacing.four,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.accentPale,

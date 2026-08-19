@@ -3,45 +3,60 @@
  * Figma screen 29 & 30
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
-import { RecordButton, ScoreRing } from '@/components/voice';
-import { GradientButton } from '@/components/ui/gradient-button';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
+import { RecordButton, ScoreRing } from "@/components/voice";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 export default function RecordScreen() {
   const router = useRouter();
-  const [state, setState] = useState<'idle' | 'recording' | 'scored'>('idle');
+  const [state, setState] = useState<"idle" | "recording" | "scored">("idle");
   const [score, setScore] = useState<number>(0);
 
   const phrase = {
-    japanese: 'おはようございます',
-    romaji: 'Ohayou gozaimasu',
-    english: 'Good morning',
+    japanese: "おはようございます",
+    romaji: "Ohayou gozaimasu",
+    english: "Good morning",
   };
 
   const startRecording = () => {
-    setState('recording');
-    
+    setState("recording");
+
     // Simulate recording for 2 seconds, then generate a random high score
     setTimeout(() => {
       const randomScore = Math.floor(Math.random() * 30) + 70; // score between 70 and 99
       setScore(randomScore);
-      setState('scored');
+      setState("scored");
     }, 2000);
   };
 
   const handleTryAgain = () => {
-    setState('idle');
+    setState("idle");
     setScore(0);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => router.back()}
+        >
           <Text style={styles.closeText}>✕ Close</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Pronunciation Practice</Text>
@@ -56,23 +71,25 @@ export default function RecordScreen() {
         </View>
 
         <View style={styles.centerContainer}>
-          {state === 'scored' ? (
+          {state === "scored" ? (
             <View style={styles.scoreContainer}>
               <ScoreRing score={score} />
               <Text style={styles.scoreText}>
-                {score >= 85 ? 'Excellent Pronunciation!' : 'Good effort! Keep practicing.'}
+                {score >= 85
+                  ? "Excellent Pronunciation!"
+                  : "Good effort! Keep practicing."}
               </Text>
             </View>
           ) : (
             <View style={styles.micContainer}>
               <RecordButton
-                isRecording={state === 'recording'}
-                onPress={state === 'idle' ? startRecording : () => {}}
+                isRecording={state === "recording"}
+                onPress={state === "idle" ? startRecording : () => {}}
               />
               <Text style={styles.instruction}>
-                {state === 'recording'
-                  ? 'Speak clearly into your microphone...'
-                  : 'Tap the microphone to start speaking'}
+                {state === "recording"
+                  ? "Speak clearly into your microphone..."
+                  : "Tap the microphone to start speaking"}
               </Text>
             </View>
           )}
@@ -80,9 +97,12 @@ export default function RecordScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        {state === 'scored' ? (
+        {state === "scored" ? (
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.retryButton} onPress={handleTryAgain}>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={handleTryAgain}
+            >
               <Text style={styles.retryText}>TRY AGAIN</Text>
             </TouchableOpacity>
             <GradientButton
@@ -110,9 +130,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
     borderBottomWidth: 1,
@@ -139,16 +159,16 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: Spacing.six,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     gap: Spacing.six,
   },
   phraseCard: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
     padding: Spacing.five,
-    alignItems: 'center',
-    width: '100%',
-    shadowColor: '#000',
+    alignItems: "center",
+    width: "100%",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -169,33 +189,33 @@ const styles = StyleSheet.create({
   englishText: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   centerContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: Spacing.six,
   },
   micContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.four,
   },
   instruction: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     maxWidth: 240,
   },
   scoreContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.four,
   },
   scoreText: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   footer: {
     paddingHorizontal: Spacing.six,
@@ -203,8 +223,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   buttonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.four,
   },
   retryButton: {
@@ -214,8 +234,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.primary,
     backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 52,
   },
   retryText: {
@@ -227,6 +247,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   skipButton: {
-    width: '100%',
+    width: "100%",
   },
 });

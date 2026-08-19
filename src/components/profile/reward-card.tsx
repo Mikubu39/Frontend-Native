@@ -3,10 +3,16 @@
  * Figma screen 24/29
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
-import { ProgressBar } from '../ui/progress-bar';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
+import { ProgressBar } from "../ui/progress-bar";
 
 interface RewardCardProps {
   xp: number;
@@ -15,7 +21,12 @@ interface RewardCardProps {
   streak: number;
 }
 
-export function RewardCard({ xp, maxXp = 1000, levelNumber, streak }: RewardCardProps) {
+export function RewardCard({
+  xp,
+  maxXp = 1000,
+  levelNumber,
+  streak,
+}: RewardCardProps) {
   const progress = xp / maxXp;
   const daysRemaining = 5;
 
@@ -25,21 +36,25 @@ export function RewardCard({ xp, maxXp = 1000, levelNumber, streak }: RewardCard
         <Text style={styles.title}>Weekly Challenge</Text>
         <Text style={styles.badge}>Level {levelNumber}</Text>
       </View>
-      
+
       <Text style={styles.streakText}>🔥 {streak} Days Streak!</Text>
 
       <View style={styles.progressContainer}>
         <View style={styles.xpRow}>
           <Text style={styles.xpLabel}>Progress to next gift</Text>
-          <Text style={styles.xpValue}>{xp} / {maxXp} XP</Text>
+          <Text style={styles.xpValue}>
+            {xp} / {maxXp} XP
+          </Text>
         </View>
-        
+
         {/* Progress bar */}
         <ProgressBar progress={progress} height={12} />
       </View>
 
       <View style={styles.giftRow}>
-        <Text style={styles.giftInfo}>🎁 Get a free online lesson at 1000 XP!</Text>
+        <Text style={styles.giftInfo}>
+          🎁 Get a free online lesson at 1000 XP!
+        </Text>
         <Text style={styles.daysText}>{daysRemaining}d left</Text>
       </View>
     </View>
@@ -51,8 +66,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
     padding: Spacing.five,
-    width: '100%',
-    shadowColor: '#000',
+    width: "100%",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
@@ -61,9 +76,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.three,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   title: {
     fontSize: FontSizes.md,
@@ -89,9 +104,9 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.two,
   },
   xpRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   xpLabel: {
     fontSize: FontSizes.sm,
@@ -103,9 +118,9 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   giftRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderTopWidth: 1,
     borderTopColor: Colors.creamDark,
     paddingTop: Spacing.three,

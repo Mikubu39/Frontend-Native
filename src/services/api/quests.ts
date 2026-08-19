@@ -1,6 +1,6 @@
-import { apiClient } from './client';
-import { API_ENDPOINTS } from './endpoints';
-import { Quest } from '@/types';
+import { apiClient } from "./client";
+import { API_ENDPOINTS } from "./endpoints";
+import { Quest } from "@/types";
 
 export const questApi = {
   getDailyQuests: async (): Promise<Quest[]> => {

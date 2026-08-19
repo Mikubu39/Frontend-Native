@@ -1,14 +1,29 @@
-import { BorderRadius, Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
-import { userService } from '@/services/api/user';
-import { UserSearchResponse } from '@/types/user-api';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  BorderRadius,
+  Colors,
+  FontSizes,
+  FontWeights,
+  Spacing,
+} from "@/constants/theme";
+import { userService } from "@/services/api/user";
+import { UserSearchResponse } from "@/types/user-api";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function FriendsSearchScreen() {
   const router = useRouter();
-  const [keyword, setKeyword] = useState('');
+  const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<UserSearchResponse[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -57,7 +72,11 @@ export default function FriendsSearchScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator style={styles.loader} size="large" color={Colors.primary} />
+        <ActivityIndicator
+          style={styles.loader}
+          size="large"
+          color={Colors.primary}
+        />
       ) : (
         <FlatList
           data={results}
@@ -67,22 +86,26 @@ export default function FriendsSearchScreen() {
             <TouchableOpacity
               style={styles.userCard}
               disabled={false}
-              onPress={() => router.push({
-                pathname: '/friends/view-search-profile',
-                params: {
-                  id: item.id.toString(),
-                  displayName: item.displayName,
-                  avatarUrl: item.avatarUrl || 'null',
-                  level: item.level?.toString() || '1',
-                  isFollowing: item.isFollowing?.toString() || 'false',
-                }
-              })}
+              onPress={() =>
+                router.push({
+                  pathname: "/friends/view-search-profile",
+                  params: {
+                    id: item.id.toString(),
+                    displayName: item.displayName,
+                    avatarUrl: item.avatarUrl || "null",
+                    level: item.level?.toString() || "1",
+                    isFollowing: item.isFollowing?.toString() || "false",
+                  },
+                })
+              }
             >
               {item.avatarUrl ? (
                 <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
               ) : (
                 <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarText}>{item.displayName.charAt(0).toUpperCase()}</Text>
+                  <Text style={styles.avatarText}>
+                    {item.displayName.charAt(0).toUpperCase()}
+                  </Text>
                 </View>
               )}
               <View style={styles.userInfo}>
@@ -90,11 +113,19 @@ export default function FriendsSearchScreen() {
                 <Text style={styles.username}>Lv {item.level}</Text>
               </View>
               <TouchableOpacity
-                style={[styles.followBtn, item.isFollowing && styles.followingBtn]}
+                style={[
+                  styles.followBtn,
+                  item.isFollowing && styles.followingBtn,
+                ]}
                 onPress={() => handleToggleFollow(item.id, index)}
               >
-                <Text style={[styles.followBtnText, item.isFollowing && styles.followingBtnText]}>
-                  {item.isFollowing ? 'Following' : 'Follow'}
+                <Text
+                  style={[
+                    styles.followBtnText,
+                    item.isFollowing && styles.followingBtnText,
+                  ]}
+                >
+                  {item.isFollowing ? "Following" : "Follow"}
                 </Text>
               </TouchableOpacity>
             </TouchableOpacity>
@@ -116,8 +147,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: Spacing.four,
     gap: Spacing.three,
   },
@@ -153,13 +184,13 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
   },
   userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.surface,
     padding: Spacing.four,
     borderRadius: BorderRadius.lg,
     gap: Spacing.four,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -174,9 +205,9 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: Colors.primary + '20',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: Colors.primary + "20",
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarText: {
     fontSize: FontSizes.xl,
@@ -207,7 +238,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.inputBorder,
   },
   followBtnText: {
-    color: 'white',
+    color: "white",
     fontWeight: FontWeights.bold,
     fontSize: FontSizes.sm,
   },
@@ -215,7 +246,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   emptyText: {
-    textAlign: 'center',
+    textAlign: "center",
     color: Colors.textSecondary,
     marginTop: Spacing.eight,
   },

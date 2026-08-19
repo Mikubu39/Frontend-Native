@@ -8,14 +8,28 @@
  *   const { user, isAuthenticated, signIn, signInWithGoogle, signOut } = useAuth();
  */
 
-import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  type ReactNode,
+} from "react";
 import { Alert } from "react-native";
+
+import { GOOGLE_WEB_CLIENT_ID } from "@/config/google-auth";
+
+import { apiClient, TOKEN_KEY } from "@/services/api/client";
+import { authService } from "@/services/api/auth";
+import { AuthResponse } from "@/types/api";
+import { storage } from "@/services/storage/async-storage";
 
 let GoogleSignin: any;
 let statusCodes: any = {
-  SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
-  IN_PROGRESS: 'IN_PROGRESS',
-  PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
+  SIGN_IN_CANCELLED: "SIGN_IN_CANCELLED",
+  IN_PROGRESS: "IN_PROGRESS",
+  PLAY_SERVICES_NOT_AVAILABLE: "PLAY_SERVICES_NOT_AVAILABLE",
 };
 
 try {
@@ -25,7 +39,9 @@ try {
     statusCodes = GoogleSignInModule.statusCodes;
   }
 } catch (e) {
-  console.warn("Google Sign-In native module is not available. Falling back to mock (Expo Go support).");
+  console.warn(
+    "Google Sign-In native module is not available. Falling back to mock (Expo Go support).",
+  );
   GoogleSignin = {
     configure: () => {},
     hasPlayServices: async () => true,
@@ -39,20 +55,13 @@ try {
             email: "mock-expo-go-user@example.com",
             name: "Expo Go Mock User",
             photo: "https://lh3.googleusercontent.com/a/mock-photo",
-          }
-        }
+          },
+        },
       };
     },
     signOut: async () => {},
   };
 }
-
-import { GOOGLE_WEB_CLIENT_ID } from "@/config/google-auth";
-
-import { apiClient, TOKEN_KEY } from "@/services/api/client";
-import { authService } from "@/services/api/auth";
-import { AuthResponse } from "@/types/api";
-import { storage } from "@/services/storage/async-storage";
 
 interface User {
   id: string;
@@ -67,7 +76,11 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    displayName: string,
+  ) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -88,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const loadSession = async () => {
       try {
         const token = await storage.get(TOKEN_KEY);
-        const userDataStr = await storage.get('user_data');
+        const userDataStr = await storage.get("user_data");
         if (token && userDataStr) {
           setUser(JSON.parse(userDataStr));
         }
@@ -113,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         displayName: response.user.displayName || response.user.username,
         roles: [response.user.role],
       };
-      await storage.set('user_data', JSON.stringify(userData));
+      await storage.set("user_data", JSON.stringify(userData));
       setUser(userData);
     } catch (e: any) {
       throw e;
@@ -122,35 +135,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, displayName: string) => {
-    setIsLoading(true);
-    try {
-      const response = await authService.register({
-        email: email,
-        password: password,
-        displayName: displayName,
-      });
-      await storage.set(TOKEN_KEY, response.accessToken);
-      const userData = {
-        id: response.user.id.toString(),
-        email: response.user.email,
-        displayName: response.user.displayName || response.user.username,
-        roles: [response.user.role],
-      };
-      await storage.set('user_data', JSON.stringify(userData));
-      setUser(userData);
-    } catch (e: any) {
-      throw e;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const signUp = useCallback(
+    async (email: string, password: string, displayName: string) => {
+      setIsLoading(true);
+      try {
+        const response = await authService.register({
+          email: email,
+          password: password,
+          displayName: displayName,
+        });
+        await storage.set(TOKEN_KEY, response.accessToken);
+        const userData = {
+          id: response.user.id.toString(),
+          email: response.user.email,
+          displayName: response.user.displayName || response.user.username,
+          roles: [response.user.role],
+        };
+        await storage.set("user_data", JSON.stringify(userData));
+        setUser(userData);
+      } catch (e: any) {
+        throw e;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
   const signInWithGoogle = useCallback(async () => {
     setIsLoading(true);
     try {
       // Check Google Play Services availability
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      await GoogleSignin.hasPlayServices({
+        showPlayServicesUpdateDialog: true,
+      });
 
       // Trigger the Google Sign-In popup
       const response = await GoogleSignin.signIn();
@@ -164,13 +182,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!idToken) {
         console.error("Google Sign-In succeeded but no idToken returned");
-        Alert.alert("Lỗi", "Không nhận được token từ Google. Vui lòng thử lại.");
+        Alert.alert(
+          "Lỗi",
+          "Không nhận được token từ Google. Vui lòng thử lại.",
+        );
         return;
       }
 
-      console.log("\n\n====== GOOGLE ID TOKEN ======\n" + idToken + "\n==============================\n\n");
+      console.log(
+        "\n\n====== GOOGLE ID TOKEN ======\n" +
+          idToken +
+          "\n==============================\n\n",
+      );
       console.log("⚠️ Backend chưa có endpoint /api/v1/auth/google.");
-      console.log("📋 idToken đã sẵn sàng để gửi cho Backend khi endpoint ready.");
+      console.log(
+        "📋 idToken đã sẵn sàng để gửi cho Backend khi endpoint ready.",
+      );
 
       const googleUser = response.data?.user;
       setUser({
@@ -191,9 +218,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (typedError.code === statusCodes.IN_PROGRESS) {
         console.log("Google Sign-In already in progress");
       } else if (typedError.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert("Lỗi", "Google Play Services không khả dụng trên thiết bị này.");
+        Alert.alert(
+          "Lỗi",
+          "Google Play Services không khả dụng trên thiết bị này.",
+        );
       } else {
-        console.error("Google Sign-In error:", typedError.code, typedError.message);
+        console.error(
+          "Google Sign-In error:",
+          typedError.code,
+          typedError.message,
+        );
         Alert.alert(
           "Lỗi đăng nhập Google",
           `Code: ${typedError.code}\nMessage: ${typedError.message}`,
@@ -214,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Ignore errors if user wasn't signed in with Google
       }
       await storage.remove(TOKEN_KEY);
-      await storage.remove('user_data');
+      await storage.remove("user_data");
       setUser(null);
     } finally {
       setIsLoading(false);

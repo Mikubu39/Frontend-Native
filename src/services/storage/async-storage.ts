@@ -12,10 +12,10 @@
  *   const token = await storage.get('token');
  */
 
-import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { Platform } from "react-native";
+import * as SecureStore from "expo-secure-store";
 
-const isWeb = Platform.OS === 'web';
+const isWeb = Platform.OS === "web";
 
 export const storage = {
   async get(key: string): Promise<string | null> {
@@ -25,7 +25,7 @@ export const storage = {
       }
       return await SecureStore.getItemAsync(key);
     } catch (error) {
-      console.warn('Storage get error:', error);
+      console.warn("Storage get error:", error);
       return null;
     }
   },
@@ -38,7 +38,7 @@ export const storage = {
       }
       await SecureStore.setItemAsync(key, value);
     } catch (error) {
-      console.warn('Storage set error:', error);
+      console.warn("Storage set error:", error);
     }
   },
 
@@ -50,7 +50,7 @@ export const storage = {
       }
       await SecureStore.deleteItemAsync(key);
     } catch (error) {
-      console.warn('Storage remove error:', error);
+      console.warn("Storage remove error:", error);
     }
   },
 
@@ -59,6 +59,8 @@ export const storage = {
       window.localStorage.clear();
       return;
     }
-    console.warn('SecureStore does not support native clear(). Please remove specific keys like "auth_token" directly.');
+    console.warn(
+      'SecureStore does not support native clear(). Please remove specific keys like "auth_token" directly.',
+    );
   },
 };

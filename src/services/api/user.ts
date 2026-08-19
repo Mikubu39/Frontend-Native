@@ -1,6 +1,6 @@
-import { apiClient } from './client';
-import { API_ENDPOINTS } from './endpoints';
-import { UserMeResponse } from '@/types/api';
+import { apiClient } from "./client";
+import { API_ENDPOINTS } from "./endpoints";
+import { UserMeResponse } from "@/types/api";
 import {
   UpdatePhoneRequest,
   SyncContactsRequest,
@@ -8,18 +8,20 @@ import {
   UserSearchResponse,
   UserProfileResponse,
   UpdateProfileRequest,
-} from '@/types/user-api';
+} from "@/types/user-api";
 
 export const userService = {
   getMe: async (): Promise<UserMeResponse> => {
-    return apiClient.get(API_ENDPOINTS.USER.ME);
+    return apiClient.get(`${API_ENDPOINTS.USER.ME}?_t=${Date.now()}`);
   },
 
   updatePhoneNumber: async (data: UpdatePhoneRequest): Promise<void> => {
     return apiClient.put(API_ENDPOINTS.USER.UPDATE_PHONE, data);
   },
 
-  syncContacts: async (data: SyncContactsRequest): Promise<UserOverviewResponse[]> => {
+  syncContacts: async (
+    data: SyncContactsRequest,
+  ): Promise<UserOverviewResponse[]> => {
     return apiClient.post(API_ENDPOINTS.USER.SYNC_CONTACTS, data);
   },
 
@@ -31,7 +33,9 @@ export const userService = {
     return apiClient.get(API_ENDPOINTS.USER.SEARCH, { keyword });
   },
 
-  getProfileByUsername: async (username: string): Promise<UserProfileResponse> => {
+  getProfileByUsername: async (
+    username: string,
+  ): Promise<UserProfileResponse> => {
     return apiClient.get(API_ENDPOINTS.USER.PROFILE(username));
   },
 

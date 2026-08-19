@@ -3,10 +3,19 @@
  * Scales + bounces on select with a checkmark entrance.
  */
 
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { AnimationPresets, BorderRadius, Colors, FontSizes, FontWeights, Shadows, Spacing } from '@/constants/theme';
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import {
+  AnimationPresets,
+  BorderRadius,
+  Colors,
+  Fonts,
+  FontSizes,
+  FontWeights,
+  Shadows,
+  Spacing,
+} from "@/constants/theme";
+import React, { useEffect } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -14,14 +23,14 @@ import Animated, {
   withSequence,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 interface OptionCardProps {
   title: string;
   subtitle?: string;
   selected?: boolean;
   onPress: () => void;
-  variant?: 'default' | 'accent';
+  variant?: "default" | "accent";
 }
 
 export function OptionCard({
@@ -29,7 +38,7 @@ export function OptionCard({
   subtitle,
   selected = false,
   onPress,
-  variant = 'default',
+  variant = "default",
 }: OptionCardProps) {
   const selectionAnim = useSharedValue(selected ? 1 : 0);
   const bounceScale = useSharedValue(1);
@@ -40,10 +49,10 @@ export function OptionCard({
       bounceScale.value = withSequence(
         withTiming(0.95, { duration: 80 }),
         withSpring(1.02, AnimationPresets.springTab),
-        withSpring(1, { damping: 20, stiffness: 200 })
+        withSpring(1, { damping: 20, stiffness: 200 }),
       );
-      import('expo-haptics').then(Haptics => {
-        Haptics.selectionAsync().catch(() => { });
+      import("expo-haptics").then((Haptics) => {
+        Haptics.selectionAsync().catch(() => {});
       });
     } else {
       selectionAnim.value = withSpring(0, AnimationPresets.springSnappy);
@@ -54,34 +63,46 @@ export function OptionCard({
     const borderColor = interpolateColor(
       selectionAnim.value,
       [0, 1],
-      ['transparent', Colors.accent]
+      ["transparent", Colors.accent],
     );
     const backgroundColor = interpolateColor(
       selectionAnim.value,
       [0, 1],
-      [Colors.accentPale, Colors.accent]
+      [Colors.accentPale, Colors.accent],
     );
 
     return {
       borderColor,
       backgroundColor,
       borderBottomWidth: selected ? 2.5 : 4,
-      transform: [{ scale: bounceScale.value }, { translateY: selected ? 1.5 : 0 }],
+      transform: [
+        { scale: bounceScale.value },
+        { translateY: selected ? 1.5 : 0 },
+      ],
     };
   });
 
-  const isAccent = variant === 'accent' || selected;
+  const isAccent = variant === "accent" || selected;
 
   return (
     <AnimatedPressable
       onPress={onPress}
-      pressScale={0.97}
+      pressScale={0.95}
       disableAnimation={false}
+      accessibilityRole="checkbox"
+      accessibilityState={{ selected, checked: selected }}
+      accessibilityLabel={`${title}${subtitle ? `, ${subtitle}` : ""}`}
     >
       <Animated.View style={[styles.card, cardAnimStyle]}>
         <View style={styles.content}>
-          <Text style={[styles.title, isAccent && styles.titleAccent]}>{title}</Text>
-          {subtitle && <Text style={[styles.subtitle, isAccent && styles.subtitleAccent]}>{subtitle}</Text>}
+          <Text style={[styles.title, isAccent && styles.titleAccent]}>
+            {title}
+          </Text>
+          {subtitle && (
+            <Text style={[styles.subtitle, isAccent && styles.subtitleAccent]}>
+              {subtitle}
+            </Text>
+          )}
         </View>
         {/* Checkmark */}
         {selected && (
@@ -100,23 +121,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.six,
     borderRadius: BorderRadius.xl,
     backgroundColor: Colors.surface,
-    borderWidth: 2,
-    borderBottomWidth: 4,
-    borderColor: '#E5E7EB',
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...Shadows.sm,
+    borderWidth: 1.5,
+    borderBottomWidth: 3,
+    borderColor: "#E5E7EB",
+    flexDirection: "row",
+    alignItems: "center",
+    ...Shadows.soft,
   },
   content: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.one,
   },
   title: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
-    textAlign: 'center',
+    fontFamily: Fonts.rounded,
+    textAlign: "center",
   },
   titleAccent: {
     color: Colors.textOnDark,
@@ -124,23 +146,24 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: FontSizes.sm,
     color: Colors.textPrimary,
-    textAlign: 'center',
+    fontFamily: Fonts.sans,
+    textAlign: "center",
   },
   subtitleAccent: {
-    color: 'rgba(255,255,255,0.85)',
+    color: "rgba(255,255,255,0.85)",
   },
   checkmark: {
     width: 28,
     height: 28,
     borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
+    backgroundColor: "rgba(255,255,255,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "absolute",
     right: Spacing.four,
   },
   checkmarkText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: FontWeights.extrabold,
   },

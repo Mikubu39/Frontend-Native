@@ -2,18 +2,21 @@
  * PasswordValidator - Checklist showing password requirements.
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 
 interface PasswordValidatorProps {
   password: string;
 }
 
 const RULES = [
-  { label: 'Minimum 8 characters', test: (p: string) => p.length >= 8 },
-  { label: 'An uppercase character', test: (p: string) => /[A-Z]/.test(p) },
-  { label: 'A special character', test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+  { label: "Minimum 8 characters", test: (p: string) => p.length >= 8 },
+  { label: "An uppercase character", test: (p: string) => /[A-Z]/.test(p) },
+  {
+    label: "A special character",
+    test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p),
+  },
 ];
 
 export function PasswordValidator({ password }: PasswordValidatorProps) {
@@ -23,10 +26,14 @@ export function PasswordValidator({ password }: PasswordValidatorProps) {
         const passed = rule.test(password);
         return (
           <View key={rule.label} style={styles.row}>
-            <View style={[styles.checkCircle, passed && styles.checkCirclePassed]}>
+            <View
+              style={[styles.checkCircle, passed && styles.checkCirclePassed]}
+            >
               {passed && <Text style={styles.checkMark}>✓</Text>}
             </View>
-            <Text style={[styles.label, passed && styles.labelPassed]}>{rule.label}</Text>
+            <Text style={[styles.label, passed && styles.labelPassed]}>
+              {rule.label}
+            </Text>
           </View>
         );
       })}
@@ -39,8 +46,8 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.three,
   },
   checkCircle: {
@@ -49,8 +56,8 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     borderWidth: 2,
     borderColor: Colors.lockedBg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   checkCirclePassed: {
     backgroundColor: Colors.checkmark,

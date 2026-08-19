@@ -3,9 +3,15 @@
  * Figma screen 27
  */
 
-import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, Text, StyleSheet, Animated } from 'react-native';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React, { useEffect, useRef } from "react";
+import { TouchableOpacity, Text, StyleSheet, Animated } from "react-native";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
 
 interface ListenButtonProps {
   isPlaying: boolean;
@@ -13,7 +19,11 @@ interface ListenButtonProps {
   size?: number;
 }
 
-export function ListenButton({ isPlaying, onPress, size = 160 }: ListenButtonProps) {
+export function ListenButton({
+  isPlaying,
+  onPress,
+  size = 160,
+}: ListenButtonProps) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -30,7 +40,7 @@ export function ListenButton({ isPlaying, onPress, size = 160 }: ListenButtonPro
             duration: 400,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       ).start();
     } else {
       pulseAnim.setValue(1);
@@ -64,7 +74,9 @@ export function ListenButton({ isPlaying, onPress, size = 160 }: ListenButtonPro
         ]}
       >
         <Text style={styles.icon}>📢</Text>
-        <Text style={styles.text}>{isPlaying ? 'PLAYING...' : 'TAP TO LISTEN'}</Text>
+        <Text style={styles.text}>
+          {isPlaying ? "PLAYING..." : "TAP TO LISTEN"}
+        </Text>
       </Animated.View>
     </TouchableOpacity>
   );
@@ -72,14 +84,14 @@ export function ListenButton({ isPlaying, onPress, size = 160 }: ListenButtonPro
 
 const styles = StyleSheet.create({
   outerContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 184, 0, 0.15)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 184, 0, 0.15)",
     padding: Spacing.two,
   },
   button: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,

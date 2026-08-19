@@ -2,15 +2,15 @@
  * AuthForm - Login/Signup form fields.
  */
 
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { StyledTextInput } from '@/components/ui/text-input';
-import { GradientButton } from '@/components/ui/gradient-button';
-import { PasswordValidator } from '@/components/ui/password-validator';
-import { Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { StyledTextInput } from "@/components/ui/text-input";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { PasswordValidator } from "@/components/ui/password-validator";
+import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 
 interface AuthFormProps {
-  mode: 'login' | 'signup';
+  mode: "login" | "signup";
   username: string;
   email: string;
   password: string;
@@ -38,7 +38,7 @@ export function AuthForm({
   passwordError,
   loading,
 }: AuthFormProps) {
-  const isLogin = mode === 'login';
+  const isLogin = mode === "login";
 
   return (
     <View style={styles.container}>
@@ -79,7 +79,7 @@ export function AuthForm({
       {!isLogin && <PasswordValidator password={password} />}
 
       <GradientButton
-        title={isLogin ? 'Log In' : 'Sign up'}
+        title={isLogin ? "Log In" : "Sign up"}
         onPress={onSubmit}
         loading={loading}
         style={styles.submitButton}
@@ -87,10 +87,10 @@ export function AuthForm({
 
       <View style={styles.toggleRow}>
         <Text style={styles.toggleText}>
-          {isLogin ? 'Already have account? ' : 'Already have account? '}
+          {isLogin ? "Already have account? " : "Already have account? "}
         </Text>
         <TouchableOpacity onPress={onToggleMode}>
-          <Text style={styles.toggleLink}>{isLogin ? 'Log in' : 'Log in'}</Text>
+          <Text style={styles.toggleLink}>{isLogin ? "Log in" : "Log in"}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.six,
   },
   forgotRow: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
   },
   forgotText: {
     color: Colors.secondary,
@@ -114,9 +114,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   toggleRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
   },
   toggleText: {
     fontSize: FontSizes.sm,
@@ -126,6 +126,6 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
     color: Colors.primary,
-    textDecorationLine: 'underline',
+    textDecorationLine: "underline",
   },
 });

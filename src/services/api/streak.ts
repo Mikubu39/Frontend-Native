@@ -1,6 +1,6 @@
-import { apiClient } from './client';
-import { API_ENDPOINTS } from './endpoints';
-import { StreakResponse } from '@/types';
+import { apiClient } from "./client";
+import { API_ENDPOINTS } from "./endpoints";
+import { StreakResponse } from "@/types";
 
 export const streakApi = {
   getStreak: async (): Promise<StreakResponse> => {

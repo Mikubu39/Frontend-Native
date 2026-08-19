@@ -2,7 +2,7 @@
  * Review and progress type definitions.
  */
 
-export type ReviewTab = 'week' | 'stage';
+export type ReviewTab = "week" | "stage";
 
 export interface ReviewWeek {
   id: string;
@@ -17,4 +17,4 @@ export interface SkillProgress {
   totalLessons: number;
 }
 
-export type ProgressTab = 'progress' | 'calendar';
+export type ProgressTab = "progress" | "calendar";

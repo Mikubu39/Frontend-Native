@@ -7,14 +7,18 @@
  * - Lesson nodes arranged in S-curve below the title
  */
 
-import { StyleSheet, View } from 'react-native';
-import { Text } from 'react-native';
+import { StyleSheet, View, Text } from "react-native";
 
-import type { LessonSection } from '@/types';
+import type { LessonSection } from "@/types";
 
-import { LessonNode } from './lesson-node';
-import { PathConnector } from './path-connector';
-import { CARD_BG, CARD_BORDER, TEXT_PRIMARY, getPathOffset } from './lesson-path-constants';
+import { LessonNode } from "./lesson-node";
+import { PathConnector } from "./path-connector";
+import {
+  CARD_BG,
+  CARD_BORDER,
+  TEXT_PRIMARY,
+  getPathOffset,
+} from "./lesson-path-constants";
 
 interface SectionCardProps {
   section: LessonSection;
@@ -63,11 +67,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     color: TEXT_PRIMARY,
     marginBottom: 12,
   },
   pathContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 });

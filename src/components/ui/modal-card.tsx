@@ -3,11 +3,25 @@
  * Card scales in from 0.9 → 1 with a spring, backdrop fades in.
  */
 
-import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, type ViewStyle } from 'react-native';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows, AnimationPresets } from '@/constants/theme';
+import React from "react";
+import {
+  View,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  type ViewStyle,
+} from "react-native";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { BlurView } from "expo-blur";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+  Shadows,
+  AnimationPresets,
+} from "@/constants/theme";
 
 interface ModalCardProps {
   children: React.ReactNode;
@@ -21,13 +35,12 @@ export function ModalCard({ children, onClose, style }: ModalCardProps) {
       entering={FadeIn.duration(AnimationPresets.duration.fast)}
       style={styles.overlayContainer}
     >
-      <BlurView intensity={20} tint="dark" style={styles.overlay} />
+      <BlurView intensity={45} tint="dark" style={styles.overlay} />
       <Animated.View
         entering={FadeInDown.duration(AnimationPresets.duration.normal)
           .springify()
           .damping(AnimationPresets.spring.damping)
-          .stiffness(AnimationPresets.spring.stiffness)
-        }
+          .stiffness(AnimationPresets.spring.stiffness)}
         style={[styles.card, style]}
       >
         {onClose && (
@@ -44,34 +57,34 @@ export function ModalCard({ children, onClose, style }: ModalCardProps) {
 const styles = StyleSheet.create({
   overlayContainer: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: Spacing.six,
     zIndex: 100,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
   card: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xxl,
     padding: Spacing.six,
-    width: '100%',
+    width: "100%",
     maxWidth: 360,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
-    ...Shadows.xl,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.8)",
+    ...Shadows.float,
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: Spacing.four,
     right: Spacing.four,
     zIndex: 1,
     width: 36,
     height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 26,
     backgroundColor: Colors.lockedBg,
   },

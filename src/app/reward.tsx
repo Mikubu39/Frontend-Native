@@ -2,13 +2,13 @@
  * Reward Screen - "Congratulations! You got a free online lesson"
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { GradientButton } from '@/components/ui/gradient-button';
-import { Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 
 export default function RewardScreen() {
   const router = useRouter();
@@ -23,7 +23,9 @@ export default function RewardScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.closeRow}>
           <View style={{ flex: 1 }} />
-          <Text style={styles.closeBtn} onPress={() => router.back()}>✕</Text>
+          <Text style={styles.closeBtn} onPress={() => router.back()}>
+            ✕
+          </Text>
         </View>
 
         <View style={styles.content}>
@@ -63,7 +65,7 @@ const styles = StyleSheet.create({
     padding: Spacing.six,
   },
   closeRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   closeBtn: {
     fontSize: FontSizes.xxl,
@@ -71,8 +73,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.five,
   },
   title: {
@@ -93,7 +95,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.textOnDark,
     opacity: 0.8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   buttons: {
     gap: Spacing.four,

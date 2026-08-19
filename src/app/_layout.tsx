@@ -3,17 +3,34 @@
  * Enhanced with smoother native-like transitions and gesture support.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
-import { Stack } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { AuthProvider } from '@/contexts/auth-context';
-import { OnboardingProvider } from '@/contexts/onboarding-context';
-import { QuizProvider } from '@/contexts/quiz-context';
-import { GamificationProvider } from '@/contexts/gamification-context';
-import { Colors } from '@/constants/theme';
+import React, { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  Easing,
+  Dimensions,
+} from "react-native";
+import { Stack } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { AuthProvider } from "@/contexts/auth-context";
+import { OnboardingProvider } from "@/contexts/onboarding-context";
+import { QuizProvider } from "@/contexts/quiz-context";
+import { GamificationProvider } from "@/contexts/gamification-context";
+import { ToastProvider } from "@/contexts/toast-context";
+import { ThemeProvider, useTheme } from "@/contexts/theme-context";
+import { Colors } from "@/constants/theme";
+import {
+  useFonts,
+  Nunito_400Regular,
+  Nunito_500Medium,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+} from "@expo-google-fonts/nunito";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 function SplashAnimation({ onFinish }: { onFinish: () => void }) {
   const circleScale = useRef(new Animated.Value(0)).current;
@@ -81,7 +98,7 @@ function SplashAnimation({ onFinish }: { onFinish: () => void }) {
         ]}
       >
         <LinearGradient
-          colors={['#FF00FF', '#8B5CF6', '#E88D67', '#FFB800']}
+          colors={["#FF00FF", "#8B5CF6", "#E88D67", "#FFB800"]}
           style={[
             styles.gradientCircle,
             {
@@ -106,7 +123,9 @@ function SplashAnimation({ onFinish }: { onFinish: () => void }) {
         ]}
       >
         <Text style={styles.splashTitle}>Kotodama</Text>
-        <Animated.Text style={[styles.splashSubtitle, { opacity: subtitleOpacity }]}>
+        <Animated.Text
+          style={[styles.splashSubtitle, { opacity: subtitleOpacity }]}
+        >
           Learn Japanese naturally
         </Animated.Text>
       </Animated.View>
@@ -114,44 +133,89 @@ function SplashAnimation({ onFinish }: { onFinish: () => void }) {
   );
 }
 
+function RootNavigation() {
+  const { colors } = useTheme();
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+        animation: "fade", // Simplified transition
+        animationDuration: 250,
+        gestureEnabled: true,
+        fullScreenGestureEnabled: true,
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="welcome" />
+      <Stack.Screen
+        name="(auth)"
+        options={{
+          animation: "slide_from_bottom",
+          gestureDirection: "vertical",
+        }}
+      />
+      <Stack.Screen name="(onboarding)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="lesson" />
+      <Stack.Screen
+        name="quiz"
+        options={{
+          animation: "slide_from_bottom",
+          gestureDirection: "vertical",
+        }}
+      />
+      <Stack.Screen
+        name="voice"
+        options={{
+          animation: "slide_from_bottom",
+          gestureDirection: "vertical",
+        }}
+      />
+      <Stack.Screen name="profile" />
+      <Stack.Screen name="friends" />
+      <Stack.Screen
+        name="reward"
+        options={{ presentation: "transparentModal" }}
+      />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
+
+  const [fontsLoaded] = useFonts({
+    Nunito_400Regular,
+    Nunito_500Medium,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   if (showSplash) {
     return <SplashAnimation onFinish={() => setShowSplash(false)} />;
   }
 
   return (
-    <AuthProvider>
-      <GamificationProvider>
-        <OnboardingProvider>
-          <QuizProvider>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: Colors.cream },
-                  animation: 'fade', // Simplified transition
-                  animationDuration: 250,
-                  gestureEnabled: true,
-                  fullScreenGestureEnabled: true,
-                }}
-              >
-                <Stack.Screen name="index" />
-                <Stack.Screen name="welcome" />
-                <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
-                <Stack.Screen name="(onboarding)" />
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="lesson" />
-                <Stack.Screen name="quiz" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
-                <Stack.Screen name="voice" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
-                <Stack.Screen name="profile" />
-                <Stack.Screen name="friends" />
-                <Stack.Screen name="reward" options={{ presentation: 'transparentModal' }} />
-            </Stack>
-          </QuizProvider>
-        </OnboardingProvider>
-      </GamificationProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <GamificationProvider>
+            <OnboardingProvider>
+              <QuizProvider>
+                <RootNavigation />
+              </QuizProvider>
+            </OnboardingProvider>
+          </GamificationProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }
 
@@ -159,8 +223,8 @@ const styles = StyleSheet.create({
   splashContainer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 1000,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   creamBg: {
     ...StyleSheet.absoluteFillObject,
@@ -168,30 +232,30 @@ const styles = StyleSheet.create({
   },
   circleContainer: {
     ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
+    alignItems: "center",
+    justifyContent: "flex-end",
   },
   gradientCircle: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -200,
   },
   titleContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 12,
     zIndex: 10,
   },
   splashTitle: {
     fontSize: 52,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    fontStyle: 'italic',
-    textShadowColor: 'rgba(0,0,0,0.2)',
+    fontWeight: "800",
+    color: "#FFFFFF",
+    fontStyle: "italic",
+    textShadowColor: "rgba(0,0,0,0.2)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 8,
   },
   splashSubtitle: {
     fontSize: 18,
-    color: 'rgba(255,255,255,0.85)',
-    fontWeight: '500',
+    color: "rgba(255,255,255,0.85)",
+    fontWeight: "500",
   },
 });

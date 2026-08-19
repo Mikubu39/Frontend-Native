@@ -4,19 +4,27 @@
  * Replaces TouchableOpacity for a more premium, app-wide feel.
  */
 
-import { AnimationPresets } from '@/constants/theme';
-import * as Haptics from 'expo-haptics';
-import React from 'react';
-import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { AnimationPresets } from "@/constants/theme";
+import * as Haptics from "expo-haptics";
+import React from "react";
+import {
+  Pressable,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
 
-interface AnimatedPressableComponentProps extends Omit<PressableProps, 'style'> {
+interface AnimatedPressableComponentProps extends Omit<
+  PressableProps,
+  "style"
+> {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   /** Scale factor when pressed (default: 0.97) */
@@ -28,11 +36,13 @@ interface AnimatedPressableComponentProps extends Omit<PressableProps, 'style'> 
 export function AnimatedPressable({
   children,
   style,
-  pressScale = 0.97,
+  pressScale = 0.95,
   disableAnimation = false,
   disabled,
   onPressIn,
   onPressOut,
+  accessibilityRole = "button",
+  accessibilityState,
   ...props
 }: AnimatedPressableComponentProps) {
   const scale = useSharedValue(1);
@@ -47,8 +57,8 @@ export function AnimatedPressable({
     if (!disableAnimation && !disabled) {
       scale.value = withSpring(pressScale, AnimationPresets.springSnappy);
       opacity.value = withSpring(0.85, AnimationPresets.springSnappy);
-      // Trigger light haptic feedback on press
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+      // Trigger medium haptic feedback on press for tactile feel
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
     onPressIn?.(e);
   };
@@ -67,6 +77,12 @@ export function AnimatedPressable({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled}
+      accessible={props.accessible ?? true}
+      accessibilityRole={accessibilityRole}
+      accessibilityState={{
+        disabled: !!disabled,
+        ...(accessibilityState || {}),
+      }}
       {...props}
     >
       {children}

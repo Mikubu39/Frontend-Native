@@ -1,20 +1,26 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { 
-  FadeInDown, 
-  withSpring, 
-  useAnimatedStyle, 
-  useSharedValue, 
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, {
+  FadeInDown,
+  withSpring,
+  useAnimatedStyle,
+  useSharedValue,
   withRepeat,
   withSequence,
   withTiming,
-  Easing
-} from 'react-native-reanimated';
-import { GradientButton } from '@/components/ui/gradient-button';
-import { Colors, FontSizes, FontWeights, Spacing, Shadows } from '@/constants/theme';
-import { useGamification } from '@/contexts/gamification-context';
+  Easing,
+} from "react-native-reanimated";
+import { GradientButton } from "@/components/ui/gradient-button";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  Spacing,
+  Shadows,
+} from "@/constants/theme";
+import { useGamification } from "@/contexts/gamification-context";
 
 export default function StreakExtendedScreen() {
   const router = useRouter();
@@ -30,19 +36,16 @@ export default function StreakExtendedScreen() {
       withSequence(
         withTiming(-5, { duration: 150, easing: Easing.linear }),
         withTiming(5, { duration: 150, easing: Easing.linear }),
-        withTiming(0, { duration: 150, easing: Easing.linear })
+        withTiming(0, { duration: 150, easing: Easing.linear }),
       ),
       -1, // infinite
-      true
+      true,
     );
   }, []);
 
   const animatedFireStyle = useAnimatedStyle(() => {
     return {
-      transform: [
-        { scale: scale.value },
-        { rotate: `${rotation.value}deg` }
-      ]
+      transform: [{ scale: scale.value }, { rotate: `${rotation.value}deg` }],
     };
   });
 
@@ -52,19 +55,27 @@ export default function StreakExtendedScreen() {
         <Animated.View style={[styles.fireContainer, animatedFireStyle]}>
           <Text style={styles.fireEmoji}>🔥</Text>
         </Animated.View>
-        
-        <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.textContainer}>
+
+        <Animated.View
+          entering={FadeInDown.delay(300).springify()}
+          style={styles.textContainer}
+        >
           <Text style={styles.title}>Streak đã tăng!</Text>
           <Text style={styles.streakNumber}>{streak}</Text>
           <Text style={styles.subtitle}>Ngày học liên tiếp</Text>
-          <Text style={styles.description}>Tuyệt vời! Bạn đang giữ lửa rất tốt. Hãy tiếp tục học mỗi ngày nhé!</Text>
+          <Text style={styles.description}>
+            Tuyệt vời! Bạn đang giữ lửa rất tốt. Hãy tiếp tục học mỗi ngày nhé!
+          </Text>
         </Animated.View>
       </View>
 
-      <Animated.View entering={FadeInDown.delay(600).springify()} style={styles.buttonContainer}>
+      <Animated.View
+        entering={FadeInDown.delay(600).springify()}
+        style={styles.buttonContainer}
+      >
         <GradientButton
           title="TUYỆT VỜI"
-          onPress={() => router.replace('/(tabs)')}
+          onPress={() => router.replace("/(tabs)")}
         />
       </Animated.View>
     </SafeAreaView>
@@ -74,33 +85,33 @@ export default function StreakExtendedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FF9600', // Bright orange for fire
+    backgroundColor: "#FF9600", // Bright orange for fire
     padding: Spacing.six,
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   fireContainer: {
     width: 180,
     height: 180,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 90,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: Spacing.eight,
-    ...Shadows.glow('#FFFFFF'),
+    ...Shadows.glow("#FFFFFF"),
   },
   fireEmoji: {
     fontSize: 100,
   },
   textContainer: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     padding: Spacing.six,
     borderRadius: 24,
-    width: '100%',
+    width: "100%",
     ...Shadows.lg,
   },
   title: {
@@ -111,10 +122,10 @@ const styles = StyleSheet.create({
   },
   streakNumber: {
     fontSize: 64,
-    fontWeight: '900',
-    color: '#FF9600',
+    fontWeight: "900",
+    color: "#FF9600",
     marginVertical: Spacing.two,
-    textShadowColor: 'rgba(255, 150, 0, 0.3)',
+    textShadowColor: "rgba(255, 150, 0, 0.3)",
     textShadowOffset: { width: 0, height: 4 },
     textShadowRadius: 8,
   },
@@ -127,7 +138,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
   },
   buttonContainer: {

@@ -1,13 +1,27 @@
-import { AnimationPresets, BorderRadius, Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
-import { TextInput as RNTextInput, StyleSheet, Text, View, TouchableOpacity, type TextInputProps } from 'react-native';
+import {
+  AnimationPresets,
+  BorderRadius,
+  Colors,
+  FontSizes,
+  FontWeights,
+  Spacing,
+} from "@/constants/theme";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
+import {
+  TextInput as RNTextInput,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  type TextInputProps,
+} from "react-native";
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 const AnimatedView = Animated.View;
 
@@ -16,7 +30,13 @@ interface StyledTextInputProps extends TextInputProps {
   error?: string;
 }
 
-export function StyledTextInput({ label, error, style, secureTextEntry, ...props }: StyledTextInputProps) {
+export function StyledTextInput({
+  label,
+  error,
+  style,
+  secureTextEntry,
+  ...props
+}: StyledTextInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const focusAnim = useSharedValue(0);
@@ -33,7 +53,7 @@ export function StyledTextInput({ label, error, style, secureTextEntry, ...props
     const borderColor = interpolateColor(
       focusAnim.value,
       [0, 1],
-      [Colors.inputBorder, Colors.primary]
+      [Colors.inputBorder, Colors.primary],
     );
 
     return {
@@ -53,7 +73,14 @@ export function StyledTextInput({ label, error, style, secureTextEntry, ...props
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <AnimatedView style={[styles.inputWrapper, borderAnimStyle, shadowAnimStyle, error && styles.inputError]}>
+      <AnimatedView
+        style={[
+          styles.inputWrapper,
+          borderAnimStyle,
+          shadowAnimStyle,
+          error && styles.inputError,
+        ]}
+      >
         <View style={styles.inputContainer}>
           <RNTextInput
             style={[styles.input, style, isPassword && { paddingRight: 50 }]}
@@ -69,7 +96,7 @@ export function StyledTextInput({ label, error, style, secureTextEntry, ...props
               onPress={() => setShowPassword(!showPassword)}
             >
               <Ionicons
-                name={showPassword ? 'eye-off' : 'eye'}
+                name={showPassword ? "eye-off" : "eye"}
                 size={24}
                 color={Colors.textSecondary}
               />
@@ -103,8 +130,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.inputBorder,
   },
   inputContainer: {
-    position: 'relative',
-    justifyContent: 'center',
+    position: "relative",
+    justifyContent: "center",
   },
   input: {
     height: 52,
@@ -114,17 +141,17 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
   },
   eyeIcon: {
-    position: 'absolute',
+    position: "absolute",
     right: Spacing.four,
-    height: '100%',
-    justifyContent: 'center',
+    height: "100%",
+    justifyContent: "center",
   },
   inputError: {
     borderColor: Colors.error,
   },
   errorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.one,
   },
   errorIcon: {

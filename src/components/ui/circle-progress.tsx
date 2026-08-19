@@ -3,16 +3,16 @@
  * The progress arc draws smoothly from 0 to the target value on mount.
  */
 
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
   Easing,
-} from 'react-native-reanimated';
-import { Colors, FontSizes, FontWeights } from '@/constants/theme';
+} from "react-native-reanimated";
+import { Colors, FontSizes, FontWeights } from "@/constants/theme";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -44,10 +44,10 @@ export function CircleProgress({
   const animatedProgress = useSharedValue(0);
 
   useEffect(() => {
-    animatedProgress.value = withTiming(
-      Math.min(Math.max(progress, 0), 1),
-      { duration: 800, easing: Easing.out(Easing.cubic) }
-    );
+    animatedProgress.value = withTiming(Math.min(Math.max(progress, 0), 1), {
+      duration: 800,
+      easing: Easing.out(Easing.cubic),
+    });
   }, [progress]);
 
   const animatedProps = useAnimatedProps(() => ({
@@ -89,13 +89,13 @@ export function CircleProgress({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   labelContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
   },
   label: {
     fontSize: FontSizes.xxl,

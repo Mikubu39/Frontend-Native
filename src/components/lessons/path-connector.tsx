@@ -4,9 +4,9 @@
  * Uses the app's gray color for consistency.
  */
 
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from "react-native";
 
-import { LOCKED_GRAY } from './lesson-path-constants';
+import { LOCKED_GRAY } from "./lesson-path-constants";
 
 interface PathConnectorProps {
   fromOffset: number;
@@ -24,10 +24,7 @@ export function PathConnector({ fromOffset, toOffset }: PathConnectorProps) {
         return (
           <View
             key={i}
-            style={[
-              styles.dot,
-              { transform: [{ translateX: x }] },
-            ]}
+            style={[styles.dot, { transform: [{ translateX: x }] }]}
           />
         );
       })}
@@ -37,9 +34,9 @@ export function PathConnector({ fromOffset, toOffset }: PathConnectorProps) {
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
+    alignItems: "center",
     height: 18,
-    justifyContent: 'space-evenly',
+    justifyContent: "space-evenly",
   },
   dot: {
     width: 5,

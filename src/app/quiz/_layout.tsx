@@ -1,5 +1,5 @@
-import { Stack } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { Stack } from "expo-router";
+import { Colors } from "@/constants/theme";
 
 export default function QuizLayout() {
   return (
@@ -7,7 +7,7 @@ export default function QuizLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: Colors.cream },
-        animation: 'slide_from_right',
+        animation: "slide_from_right",
         animationDuration: 300,
       }}
     />

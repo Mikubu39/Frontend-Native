@@ -7,12 +7,16 @@
  * - Current: pink circle with white checkmark + subtle glow
  */
 
-import { useRef, useEffect } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { useRef, useEffect } from "react";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 
-import type { Lesson } from '@/types';
+import type { Lesson } from "@/types";
 
-import { COMPLETED_PINK, CURRENT_PINK, LOCKED_GRAY } from './lesson-path-constants';
+import {
+  COMPLETED_PINK,
+  CURRENT_PINK,
+  LOCKED_GRAY,
+} from "./lesson-path-constants";
 
 interface LessonNodeProps {
   lesson: Lesson;
@@ -34,24 +38,24 @@ const checkmarkStyles = StyleSheet.create({
   container: {
     width: 18,
     height: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   longArm: {
-    position: 'absolute',
+    position: "absolute",
     width: 12,
     height: 3,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 13.5,
-    transform: [{ rotate: '-45deg' }, { translateX: 2 }, { translateY: 1 }],
+    transform: [{ rotate: "-45deg" }, { translateX: 2 }, { translateY: 1 }],
   },
   shortArm: {
-    position: 'absolute',
+    position: "absolute",
     width: 7,
     height: 3,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 13.5,
-    transform: [{ rotate: '45deg' }, { translateX: -3.5 }, { translateY: 2.5 }],
+    transform: [{ rotate: "45deg" }, { translateX: -3.5 }, { translateY: 2.5 }],
   },
 });
 
@@ -61,7 +65,7 @@ export function LessonNode({ lesson, offsetX }: LessonNodeProps) {
 
   // Pulse animation for current lesson
   useEffect(() => {
-    if (lesson.status === 'current') {
+    if (lesson.status === "current") {
       const pulse = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -82,7 +86,7 @@ export function LessonNode({ lesson, offsetX }: LessonNodeProps) {
   }, [lesson.status, pulseAnim]);
 
   const handlePressIn = () => {
-    if (lesson.status === 'locked') return;
+    if (lesson.status === "locked") return;
     Animated.spring(scaleAnim, {
       toValue: 0.85,
       useNativeDriver: true,
@@ -100,11 +104,15 @@ export function LessonNode({ lesson, offsetX }: LessonNodeProps) {
     }).start();
   };
 
-  const isCompleted = lesson.status === 'completed';
-  const isCurrent = lesson.status === 'current';
-  const isLocked = lesson.status === 'locked';
+  const isCompleted = lesson.status === "completed";
+  const isCurrent = lesson.status === "current";
+  const isLocked = lesson.status === "locked";
 
-  const bgColor = isLocked ? LOCKED_GRAY : (isCurrent ? CURRENT_PINK : COMPLETED_PINK);
+  const bgColor = isLocked
+    ? LOCKED_GRAY
+    : isCurrent
+      ? CURRENT_PINK
+      : COMPLETED_PINK;
   const circleSize = 42;
 
   return (
@@ -115,7 +123,7 @@ export function LessonNode({ lesson, offsetX }: LessonNodeProps) {
         onPress={() => {
           if (!isLocked) {
             // TODO: Navigate to lesson
-            console.log('Navigate to lesson:', lesson.id);
+            console.log("Navigate to lesson:", lesson.id);
           }
         }}
         disabled={isLocked}
@@ -129,7 +137,12 @@ export function LessonNode({ lesson, offsetX }: LessonNodeProps) {
               borderRadius: circleSize / 2,
               backgroundColor: bgColor,
               transform: [
-                { scale: Animated.multiply(scaleAnim, isCurrent ? pulseAnim : new Animated.Value(1)) },
+                {
+                  scale: Animated.multiply(
+                    scaleAnim,
+                    isCurrent ? pulseAnim : new Animated.Value(1),
+                  ),
+                },
               ],
             },
             isCurrent && styles.currentShadow,
@@ -144,12 +157,12 @@ export function LessonNode({ lesson, offsetX }: LessonNodeProps) {
 
 const styles = StyleSheet.create({
   wrapper: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 6,
   },
   circle: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   currentShadow: {
     shadowColor: CURRENT_PINK,

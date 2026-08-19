@@ -1,13 +1,22 @@
-﻿/**
- * VocabQuestion - Image + multiple choice answers.
+/**
+ * VocabQuestion — Impeccable redesign. Theme-aware answer cards.
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { AudioButton } from '@/components/ui/audio-button';
-import type { VocabQuestion as VocabQuestionType } from '@/types';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React, { useState } from "react";
+import { View, Text, StyleSheet, Image, Pressable } from "react-native";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AudioButton } from "@/components/ui/audio-button";
+import type { VocabQuestion as VocabQuestionType } from "@/types";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+  Fonts,
+} from "@/constants/theme";
+import { DualText } from "@/components/ui/dual-text";
+import { useTheme } from "@/contexts/theme-context";
 
 interface VocabQuestionProps {
   question: VocabQuestionType;
@@ -15,10 +24,18 @@ interface VocabQuestionProps {
   onSelectAnswer: (answerId: string) => void;
 }
 
-import { DualText } from '@/components/ui/dual-text';
-
-export function VocabQuestionCard({ question, selectedAnswer, onSelectAnswer }: VocabQuestionProps) {
+export function VocabQuestionCard({
+  question,
+  selectedAnswer,
+  onSelectAnswer,
+}: VocabQuestionProps) {
   const [showHint, setShowHint] = useState(false);
+  const { colors, isDark } = useTheme();
+
+  const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
+  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
+  const selectedBg = isDark ? Colors.primary + "33" : Colors.primary + "18";
+  const selectedBorder = Colors.primary;
 
   return (
     <View style={styles.container}>
@@ -31,30 +48,40 @@ export function VocabQuestionCard({ question, selectedAnswer, onSelectAnswer }: 
       </View>
 
       {question.word ? (
-        <Pressable 
-          onLongPress={() => setShowHint(true)} 
+        <Pressable
+          onLongPress={() => setShowHint(true)}
           onPressOut={() => setShowHint(false)}
           delayLongPress={200}
         >
           <View style={styles.wordContainer}>
             {showHint && question.hint && (
               <View style={styles.tooltipContainer}>
-                <View style={styles.tooltipBody}>
+                <View style={[styles.tooltipBody, { backgroundColor: Colors.secondary }]}>
                   <Text style={styles.tooltipText}>{question.hint}</Text>
                 </View>
-                <View style={styles.tooltipArrow} />
+                <View style={[styles.tooltipArrow, { borderTopColor: Colors.secondary }]} />
               </View>
             )}
-            <DualText 
-              text={question.word} 
+            <DualText
+              text={question.word}
               hint={question.hint}
-              mainStyle={styles.word}
+              mainStyle={{
+                ...styles.word,
+                color: isDark ? "#F9FAFB" : Colors.textPrimary,
+              }}
             />
           </View>
         </Pressable>
       ) : null}
 
-      <Text style={styles.instruction}>{question.instruction}</Text>
+      <Text
+        style={[
+          styles.instruction,
+          { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary },
+        ]}
+      >
+        {question.instruction}
+      </Text>
 
       <View style={styles.answers}>
         {question.answers.map((answer) => {
@@ -62,11 +89,30 @@ export function VocabQuestionCard({ question, selectedAnswer, onSelectAnswer }: 
           return (
             <AnimatedPressable
               key={answer.id}
-              style={[styles.answerCard, isSelected && styles.answerSelected]}
+              style={[
+                styles.answerCard,
+                {
+                  backgroundColor: isSelected ? selectedBg : cardBg,
+                  borderColor: isSelected ? selectedBorder : cardBorder,
+                },
+              ]}
               onPress={() => onSelectAnswer(answer.id)}
               pressScale={0.97}
             >
-              <Text style={[styles.answerText, isSelected && styles.answerTextSelected]}>
+              <Text
+                style={[
+                  styles.answerText,
+                  {
+                    color: isSelected
+                      ? isDark
+                        ? Colors.primaryLight
+                        : Colors.primaryDark
+                      : isDark
+                      ? "#F9FAFB"
+                      : Colors.textPrimary,
+                  },
+                ]}
+              >
                 {answer.text}
               </Text>
             </AnimatedPressable>
@@ -79,61 +125,56 @@ export function VocabQuestionCard({ question, selectedAnswer, onSelectAnswer }: 
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
+    alignItems: "center",
+    gap: Spacing.four,
+    paddingHorizontal: Spacing.two,
   },
   image: {
     width: 200,
     height: 140,
     borderRadius: BorderRadius.lg,
-    resizeMode: 'cover',
+    resizeMode: "cover",
   },
   audioRow: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
   },
   instruction: {
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.medium,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing.two,
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.rounded,
+    fontWeight: FontWeights.bold,
+    textAlign: "center",
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
   wordContainer: {
-    position: 'relative',
-    alignItems: 'center',
+    position: "relative",
+    alignItems: "center",
     zIndex: 10,
   },
   word: {
-    fontSize: FontSizes.xxl,
+    fontSize: 42,
+    fontFamily: Fonts.rounded,
     fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  wordHintable: {
-    textDecorationLine: 'underline',
-    textDecorationStyle: 'dotted',
-    textDecorationColor: Colors.textSecondary,
+    textAlign: "center",
   },
   tooltipContainer: {
-    position: 'absolute',
-    top: -50,
-    alignSelf: 'center',
-    alignItems: 'center',
+    position: "absolute",
+    top: -54,
+    alignSelf: "center",
+    alignItems: "center",
     zIndex: 20,
     width: 200,
   },
   tooltipBody: {
-    backgroundColor: Colors.secondary,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: BorderRadius.md,
   },
   tooltipText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
-    textAlign: 'center',
+    textAlign: "center",
   },
   tooltipArrow: {
     width: 0,
@@ -141,34 +182,25 @@ const styles = StyleSheet.create({
     borderLeftWidth: 8,
     borderRightWidth: 8,
     borderTopWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: Colors.secondary,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
   },
   answers: {
-    width: '100%',
+    width: "100%",
     gap: Spacing.three,
   },
   answerCard: {
     paddingVertical: Spacing.four,
-    paddingHorizontal: Spacing.six,
+    paddingHorizontal: Spacing.five,
     borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.accentPale,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  answerSelected: {
-    backgroundColor: Colors.accent,
-    borderColor: Colors.accent,
+    borderWidth: 1.5,
+    borderBottomWidth: 3,
+    alignItems: "center",
   },
   answerText: {
     fontSize: FontSizes.lg,
-    fontWeight: FontWeights.semibold,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  answerTextSelected: {
-    color: Colors.textOnDark,
+    fontFamily: Fonts.rounded,
+    fontWeight: FontWeights.bold,
+    textAlign: "center",
   },
 });
-

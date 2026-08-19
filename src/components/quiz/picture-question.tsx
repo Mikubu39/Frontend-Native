@@ -1,18 +1,25 @@
 /**
- * PictureQuestionCard - Choose the correct picture based on word/audio.
- * Figma screen 14
+ * PictureQuestionCard — Impeccable redesign. Theme-aware.
  */
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
-import Animated, { ZoomIn } from 'react-native-reanimated';
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
-import { AudioButton } from '../ui/audio-button';
-import { useAudio } from '@/hooks/use-audio';
-import type { PictureQuestion } from '@/types';
-
-import { DualText } from '@/components/ui/dual-text';
+import React, { useEffect } from "react";
+import { View, Text, Image, StyleSheet } from "react-native";
+import Animated, { ZoomIn } from "react-native-reanimated";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+  Fonts,
+} from "@/constants/theme";
+import { AudioButton } from "../ui/audio-button";
+import { useAudio } from "@/hooks/use-audio";
+import type { PictureQuestion } from "@/types";
+import { DualText } from "@/components/ui/dual-text";
+import { useTheme } from "@/contexts/theme-context";
+import { Ionicons } from "@expo/vector-icons";
 
 interface PictureQuestionProps {
   question: PictureQuestion;
@@ -21,25 +28,49 @@ interface PictureQuestionProps {
   onSelectAnswer: (answerId: string, isCorrect: boolean) => void;
 }
 
-export function PictureQuestionCard({ question, selectedAnswerId, hasSubmitted, onSelectAnswer }: PictureQuestionProps) {
+export function PictureQuestionCard({
+  question,
+  selectedAnswerId,
+  hasSubmitted,
+  onSelectAnswer,
+}: PictureQuestionProps) {
   const { isPlaying, play } = useAudio(question.audioUrl);
+  const { colors, isDark } = useTheme();
 
   useEffect(() => {
-    // Automatically play sound on mount / question change
     play();
   }, [question]);
 
-  const handleSelect = (optionId: string, isCorrect: boolean) => {
-    onSelectAnswer(optionId, isCorrect);
-  };
+  const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
+  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.instruction}>{question.instruction}</Text>
-      
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: cardBg, borderColor: cardBorder },
+      ]}
+    >
+      <Text
+        style={[
+          styles.instruction,
+          { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary },
+        ]}
+      >
+        {question.instruction}
+      </Text>
+
       <View style={styles.audioRow}>
         <AudioButton isPlaying={isPlaying} onPress={play} size="medium" />
-        <DualText text={question.word} mainStyle={styles.wordText} align="flex-start" containerStyle={{ flexShrink: 1 }} />
+        <DualText
+          text={question.word}
+          mainStyle={{
+            ...styles.wordText,
+            color: isDark ? "#F9FAFB" : Colors.textPrimary,
+          }}
+          align="flex-start"
+          containerStyle={{ flexShrink: 1 }}
+        />
       </View>
 
       <View style={styles.grid}>
@@ -47,45 +78,53 @@ export function PictureQuestionCard({ question, selectedAnswerId, hasSubmitted, 
           const isSelected = selectedAnswerId === img.id;
           const isCorrectAnswer = img.isCorrect;
 
-          let cardStyle: any[] = [styles.optionCard];
+          let borderColor: string = cardBorder;
+          let bgColor: string = isDark ? "rgba(255,255,255,0.04)" : colors.backgroundElement;
           let showCheck = false;
-          let checkStyle: any = styles.checkBadge;
-          let iconText = '✓';
+          let checkBg: string = Colors.accent;
+          let iconName: "checkmark" | "close" = "checkmark";
 
           if (hasSubmitted) {
             if (isCorrectAnswer) {
-              cardStyle.push(styles.optionCardCorrect);
+              borderColor = Colors.success;
+              bgColor = isDark ? "rgba(74,222,128,0.12)" : "#DCFCE7";
               showCheck = true;
-              checkStyle = styles.checkBadgeCorrect;
-              iconText = '✓';
+              checkBg = Colors.success;
+              iconName = "checkmark";
             } else if (isSelected) {
-              cardStyle.push(styles.optionCardWrong);
+              borderColor = Colors.error;
+              bgColor = isDark ? "rgba(248,113,113,0.12)" : "#FEE2E2";
               showCheck = true;
-              checkStyle = styles.checkBadgeWrong;
-              iconText = '✕';
+              checkBg = Colors.error;
+              iconName = "close";
             }
-          } else {
-            if (isSelected) {
-              cardStyle.push(styles.optionCardSelected);
-              showCheck = true;
-              checkStyle = styles.checkBadge;
-              iconText = '✓';
-            }
+          } else if (isSelected) {
+            borderColor = Colors.primary;
+            bgColor = isDark ? Colors.primary + "22" : Colors.primary + "0F";
+            showCheck = true;
+            checkBg = Colors.primary;
+            iconName = "checkmark";
           }
 
           return (
             <AnimatedPressable
               key={img.id}
-              style={cardStyle}
-              onPress={() => handleSelect(img.id, img.isCorrect)}
+              style={[
+                styles.optionCard,
+                { backgroundColor: bgColor, borderColor },
+              ]}
+              onPress={() => onSelectAnswer(img.id, img.isCorrect)}
               pressScale={0.95}
             >
               {img.imageUrl && (
                 <Image source={{ uri: img.imageUrl }} style={styles.image} />
               )}
               {showCheck && (
-                <Animated.View entering={ZoomIn.duration(200).springify()} style={checkStyle}>
-                  <Text style={styles.checkText}>{iconText}</Text>
+                <Animated.View
+                  entering={ZoomIn.duration(200).springify()}
+                  style={[styles.checkBadge, { backgroundColor: checkBg }]}
+                >
+                  <Ionicons name={iconName} size={13} color="#FFF" />
                 </Animated.View>
               )}
             </AnimatedPressable>
@@ -98,111 +137,61 @@ export function PictureQuestionCard({ question, selectedAnswerId, hasSubmitted, 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
+    borderWidth: 1,
     padding: Spacing.four,
-    alignItems: 'center',
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 4,
+    alignItems: "center",
+    width: "100%",
+    gap: Spacing.four,
   },
   instruction: {
     fontSize: FontSizes.sm,
+    fontFamily: Fonts.rounded,
     fontWeight: FontWeights.bold,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.three,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 1,
   },
   audioRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.three,
-    marginBottom: Spacing.four,
-    width: '100%',
+    width: "100%",
   },
   wordText: {
-    fontSize: FontSizes.xl,
+    fontSize: FontSizes.xxl,
+    fontFamily: Fonts.rounded,
     fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
   },
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     gap: Spacing.three,
-    width: '100%',
+    width: "100%",
   },
   optionCard: {
-    width: '47%',
-    height: 110,
+    width: "47%",
+    height: 120,
     borderRadius: BorderRadius.md,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 2,
-    borderColor: Colors.creamDark,
-    backgroundColor: Colors.cream,
-    position: 'relative',
-  },
-  optionCardSelected: {
-    borderColor: Colors.checkmark,
-    borderWidth: 3,
+    borderBottomWidth: 4,
+    position: "relative",
   },
   image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'contain',
+    width: "100%",
+    height: "100%",
+    resizeMode: "contain",
   },
   checkBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: Spacing.two,
     right: Spacing.two,
     width: 24,
     height: 24,
-    borderRadius: 24,
-    backgroundColor: Colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkBadgeCorrect: {
-    position: 'absolute',
-    top: Spacing.two,
-    right: Spacing.two,
-    width: 24,
-    height: 24,
-    borderRadius: 24,
-    backgroundColor: Colors.success,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkBadgeWrong: {
-    position: 'absolute',
-    top: Spacing.two,
-    right: Spacing.two,
-    width: 24,
-    height: 24,
-    borderRadius: 24,
-    backgroundColor: Colors.error,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  optionCardCorrect: {
-    borderColor: Colors.success,
-    borderWidth: 3,
-    backgroundColor: '#E8F5E9',
-  },
-  optionCardWrong: {
-    borderColor: Colors.error,
-    borderWidth: 3,
-    backgroundColor: '#FFEBEE',
-  },
-  checkText: {
-    color: Colors.textOnDark,
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.bold,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
-

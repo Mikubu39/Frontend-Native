@@ -2,12 +2,12 @@
  * GoalSelector - Goal option cards for onboarding.
  */
 
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { OptionCard } from '@/components/ui/option-card';
-import { ONBOARDING_GOALS } from '@/data';
-import type { OnboardingGoal } from '@/types';
-import { Spacing } from '@/constants/theme';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { OptionCard } from "@/components/ui/option-card";
+import { ONBOARDING_GOALS } from "@/data";
+import type { OnboardingGoal } from "@/types";
+import { Spacing } from "@/constants/theme";
 
 interface GoalSelectorProps {
   selectedGoal: OnboardingGoal | null;

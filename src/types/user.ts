@@ -2,7 +2,7 @@
  * User-related type definitions.
  */
 
-export type UserLevel = 'starter' | 'beginner' | 'intermediate' | 'advanced';
+export type UserLevel = "starter" | "beginner" | "intermediate" | "advanced";
 
 export interface UserProfile {
   id: string;

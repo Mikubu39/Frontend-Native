@@ -1,235 +1,484 @@
 /**
- * Quiz Ready Screen - Enhanced with animated entrance,
- * improved card design, and press animation on buttons.
+ * Quiz Ready Screen — Impeccable redesign.
+ * Dark/light theme-aware immersive pre-lesson briefing.
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { GradientButton } from '@/components/ui/gradient-button';
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing, Shadows, AnimationPresets } from '@/constants/theme';
-import { LESSON_TIPS } from '@/data/quiz';
-import { LEARNING_PATH } from '@/data/lessons';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, {
+  FadeInDown,
+  FadeIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
+import { LESSON_TIPS } from "@/data/quiz";
+import { LEARNING_PATH } from "@/data/lessons";
+import { useTheme } from "@/contexts/theme-context";
+
+function ExampleRow({
+  japanese,
+  translation,
+  delay,
+}: {
+  japanese: string;
+  translation: string;
+  delay: number;
+}) {
+  const [revealed, setRevealed] = useState(false);
+  const { colors, isDark } = useTheme();
+
+  return (
+    <Animated.View entering={FadeInDown.delay(delay).duration(350)}>
+      <AnimatedPressable
+        onPress={() => setRevealed(!revealed)}
+        pressScale={0.97}
+        style={[
+          styles.exampleRow,
+          {
+            backgroundColor: isDark
+              ? "rgba(255,255,255,0.05)"
+              : "rgba(0,0,0,0.04)",
+            borderColor: isDark
+              ? "rgba(255,255,255,0.08)"
+              : "rgba(0,0,0,0.07)",
+          },
+        ]}
+      >
+        <View style={styles.exampleContent}>
+          <Text
+            style={[
+              styles.japaneseText,
+              { color: isDark ? "#F9FAFB" : Colors.textPrimary },
+            ]}
+          >
+            {japanese}
+          </Text>
+          <Text
+            style={[
+              styles.translationText,
+              {
+                color: revealed
+                  ? isDark
+                    ? Colors.primaryLight
+                    : Colors.primaryDark
+                  : isDark
+                  ? "rgba(255,255,255,0.25)"
+                  : "rgba(0,0,0,0.2)",
+                fontStyle: "italic",
+              },
+            ]}
+          >
+            {revealed ? translation : "Nhấn để xem nghĩa"}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.revealBtn,
+            {
+              backgroundColor: revealed
+                ? Colors.primary + "33"
+                : isDark
+                ? "rgba(255,255,255,0.08)"
+                : "rgba(0,0,0,0.06)",
+            },
+          ]}
+        >
+          <Ionicons
+            name={revealed ? "eye" : "eye-off"}
+            size={18}
+            color={revealed ? Colors.primaryLight : isDark ? "rgba(255,255,255,0.4)" : Colors.textSecondary}
+          />
+        </View>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+}
 
 export default function QuizReadyScreen() {
   const router = useRouter();
-  const { lessonId = 'lp1' } = useLocalSearchParams<{ lessonId: string }>();
-  const [showTranslation1, setShowTranslation1] = useState(false);
-  const [showTranslation2, setShowTranslation2] = useState(false);
+  const { lessonId = "lp1" } = useLocalSearchParams<{ lessonId: string }>();
+  const { colors, isDark } = useTheme();
 
   const node = LEARNING_PATH.find((n) => n.id === lessonId);
-  const isTheory = node?.nodeType === 'theory' || !node?.nodeType;
+  const isTheory = node?.nodeType === "theory" || !node?.nodeType;
+  const isBoss = node?.nodeType === "boss";
 
-  const tip = LESSON_TIPS[lessonId as keyof typeof LESSON_TIPS] || LESSON_TIPS.lp5;
+  const tip =
+    LESSON_TIPS[lessonId as keyof typeof LESSON_TIPS] || LESSON_TIPS.lp5;
+
+  const nodeTypeIcon = isBoss ? "trophy" : isTheory ? "bulb" : "barbell";
+  const nodeTypeLabel = isBoss
+    ? "KIỂM TRA CHƯƠNG"
+    : isTheory
+    ? "BÀI HỌC"
+    : "LUYỆN TẬP";
+  const ctaLabel = isBoss ? "BẮT ĐẦU KIỂM TRA" : "BẮT ĐẦU";
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Back Button */}
-      <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} pressScale={0.9}>
-        <Text style={styles.backText}>←</Text>
-      </AnimatedPressable>
-
-      <Animated.View
-        entering={FadeInDown.delay(100).duration(400)}
-        style={styles.flag}
-      >
-        <Text style={styles.flagEmoji}>{isTheory ? '💡' : (node?.nodeType === 'boss' ? '🏆' : '💪')}</Text>
-      </Animated.View>
-
-      <Animated.View
-        entering={FadeInDown.delay(200).duration(400)}
-        style={styles.tipHeader}
-      >
-        <Text style={styles.tipSubtitle}>{isTheory ? tip.subtitle : (node?.nodeType === 'boss' ? 'KIỂM TRA CHƯƠNG' : 'LUYỆN TẬP')}</Text>
-        <Text style={styles.tipTitle}>{isTheory ? tip.title : node?.title}</Text>
-      </Animated.View>
-
-      {isTheory && (
-        <Animated.View
-          entering={FadeInDown.delay(350).duration(400)}
-          style={styles.card}
-        >
-          {tip.formula ? (
-            <View style={styles.formulaContainer}>
-              <Text style={styles.formulaText}>{tip.formula}</Text>
-            </View>
-          ) : null}
-
-          <Text style={styles.explanation}>
-            {tip.explanation}
-          </Text>
-
-          <Text style={styles.sectionLabel}>Ví dụ thực hành:</Text>
-
-          {tip.examples.map((ex, index) => {
-            const isShow = index === 0 ? showTranslation1 : showTranslation2;
-            const setIsShow = index === 0 ? setShowTranslation1 : setShowTranslation2;
-            
-            return (
-              <AnimatedPressable 
-                key={index}
-                style={styles.exampleRow} 
-                onPress={() => setIsShow(!isShow)}
-                pressScale={0.98}
-              >
-                <View style={styles.exampleContent}>
-                  <Text style={styles.japaneseText}>{ex.japanese}</Text>
-                  <Text style={styles.translationText}>
-                    {isShow ? ex.translation : 'タップして翻訳を表示 (Nhấp để xem dịch)'}
-                  </Text>
-                </View>
-                <View style={styles.speakerBtn}>
-                  <Text style={styles.speakerEmoji}>🔊</Text>
-                </View>
-              </AnimatedPressable>
-            );
-          })}
-        </Animated.View>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        { backgroundColor: isDark ? Colors.dark.background : Colors.light.background },
+      ]}
+    >
+      {/* Ambient glow orbs — dark mode only */}
+      {isDark && (
+        <>
+          <View style={styles.orbTopLeft} pointerEvents="none" />
+          <View style={styles.orbBottomRight} pointerEvents="none" />
+        </>
       )}
 
-      <Animated.View
-        entering={FadeInDown.delay(isTheory ? 500 : 350).duration(400)}
-        style={{ width: '100%', marginTop: isTheory ? 0 : Spacing.eight }}
+      {/* Back button */}
+      <AnimatedPressable
+        onPress={() => router.back()}
+        style={[
+          styles.backBtn,
+          {
+            backgroundColor: isDark
+              ? "rgba(255,255,255,0.08)"
+              : "rgba(0,0,0,0.06)",
+          },
+        ]}
+        pressScale={0.9}
+        accessibilityLabel="Quay lại"
+        accessibilityRole="button"
       >
-        <GradientButton
-          title={node?.nodeType === 'boss' ? "BẮT ĐẦU KIỂM TRA" : "BẮT ĐẦU LUYỆN TẬP"}
-          onPress={() => router.replace(`/quiz/q1?lessonId=${lessonId}`)}
-          style={styles.button}
+        <Ionicons
+          name="arrow-back"
+          size={20}
+          color={isDark ? "rgba(255,255,255,0.8)" : Colors.textPrimary}
         />
-      </Animated.View>
+      </AnimatedPressable>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Icon badge */}
+        <Animated.View
+          entering={FadeInDown.delay(80).duration(400).springify()}
+          style={styles.iconWrapper}
+        >
+          <LinearGradient
+            colors={[Colors.primary, Colors.secondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.iconGradient}
+          >
+            <Ionicons name={nodeTypeIcon as any} size={30} color="#FFF" />
+          </LinearGradient>
+          {/* Glow ring */}
+          {isDark && <View style={styles.iconGlow} pointerEvents="none" />}
+        </Animated.View>
+
+        {/* Labels */}
+        <Animated.View
+          entering={FadeInDown.delay(160).duration(400)}
+          style={styles.labelGroup}
+        >
+          <View
+            style={[
+              styles.typePill,
+              { backgroundColor: Colors.primary + "22", borderColor: Colors.primary + "55" },
+            ]}
+          >
+            <Text style={[styles.typeText, { color: Colors.primaryLight }]}>
+              {nodeTypeLabel}
+            </Text>
+          </View>
+          <Text
+            style={[
+              styles.title,
+              { color: isDark ? "#F9FAFB" : Colors.textPrimary },
+            ]}
+          >
+            {isTheory ? tip.title : node?.title}
+          </Text>
+        </Animated.View>
+
+        {/* Theory card */}
+        {isTheory && (
+          <Animated.View
+            entering={FadeInDown.delay(280).duration(400)}
+            style={[
+              styles.theoryCard,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.05)"
+                  : Colors.light.card,
+                borderColor: isDark
+                  ? "rgba(255,255,255,0.1)"
+                  : Colors.light.border,
+              },
+            ]}
+          >
+            {/* Accent stripe */}
+            <LinearGradient
+              colors={[Colors.primary, Colors.secondary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.accentStripe}
+            />
+
+            <View style={styles.theoryCardInner}>
+              {tip.formula ? (
+                <View
+                  style={[
+                    styles.formulaBox,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(139,92,246,0.15)"
+                        : Colors.primary + "0F",
+                      borderColor: Colors.primary + "44",
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.formulaText, { color: Colors.primaryLight }]}
+                  >
+                    {tip.formula}
+                  </Text>
+                </View>
+              ) : null}
+
+              <Text
+                style={[
+                  styles.explanation,
+                  {
+                    color: isDark
+                      ? "rgba(255,255,255,0.75)"
+                      : Colors.textPrimary,
+                  },
+                ]}
+              >
+                {tip.explanation}
+              </Text>
+
+              <View style={styles.divider} />
+
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  { color: isDark ? "rgba(255,255,255,0.35)" : Colors.textSecondary },
+                ]}
+              >
+                VÍ DỤ THỰC HÀNH
+              </Text>
+
+              <View style={styles.examplesList}>
+                {tip.examples.map((ex, index) => (
+                  <ExampleRow
+                    key={index}
+                    japanese={ex.japanese}
+                    translation={ex.translation}
+                    delay={350 + index * 80}
+                  />
+                ))}
+              </View>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Spacer */}
+        <View style={{ height: Spacing.six }} />
+
+        {/* CTA */}
+        <Animated.View
+          entering={FadeInDown.delay(isTheory ? 520 : 280).duration(400)}
+          style={styles.ctaWrapper}
+        >
+          <GradientButton
+            title={ctaLabel}
+            onPress={() => router.replace(`/quiz/q1?lessonId=${lessonId}`)}
+            style={styles.ctaBtn}
+          />
+        </Animated.View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: Colors.cream,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: Spacing.six,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    paddingHorizontal: Spacing.six,
+    paddingTop: Spacing.twelve,
+    paddingBottom: Spacing.eight,
     gap: Spacing.five,
   },
+  orbTopLeft: {
+    position: "absolute",
+    top: -60,
+    left: -60,
+    width: 200,
+    height: 200,
+    borderRadius: 999,
+    backgroundColor: Colors.primary,
+    opacity: 0.08,
+  },
+  orbBottomRight: {
+    position: "absolute",
+    bottom: -80,
+    right: -80,
+    width: 260,
+    height: 260,
+    borderRadius: 999,
+    backgroundColor: Colors.secondary,
+    opacity: 0.07,
+  },
   backBtn: {
-    position: 'absolute',
-    top: 50,
-    left: Spacing.six,
-    width: 48,
-    height: 48,
-    borderRadius: 32,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Shadows.md,
+    position: "absolute",
+    top: 52,
+    left: Spacing.five,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
   },
-  backText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
+  iconWrapper: {
+    marginTop: Spacing.six,
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  flag: {
-    width: 56,
-    height: 56,
-    borderRadius: 36,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 40,
-    ...Shadows.md,
+  iconGradient: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  flagEmoji: {
-    fontSize: 28,
+  iconGlow: {
+    position: "absolute",
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.primary,
+    opacity: 0.2,
+    zIndex: -1,
   },
-  tipHeader: {
-    alignItems: 'center',
-    gap: 6,
+  labelGroup: {
+    alignItems: "center",
+    gap: Spacing.three,
   },
-  tipSubtitle: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.bold,
-    color: Colors.primary,
-    letterSpacing: 1.2,
+  typePill: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
   },
-  tipTitle: {
-    fontSize: FontSizes.xl,
+  typeText: {
+    fontSize: FontSizes.xs,
     fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-    textAlign: 'center',
+    letterSpacing: 1.5,
   },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.xxl,
-    padding: Spacing.six,
-    width: '100%',
-    ...Shadows.lg,
+  title: {
+    fontSize: FontSizes.title,
+    fontWeight: FontWeights.extrabold,
+    textAlign: "center",
+    lineHeight: 34,
   },
-  formulaContainer: {
-    backgroundColor: Colors.cream,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: BorderRadius.lg,
-    alignItems: 'center',
-    marginBottom: Spacing.four,
-    borderWidth: 1.5,
-    borderColor: Colors.inputBorder,
+  theoryCard: {
+    width: "100%",
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    overflow: "hidden",
+    flexDirection: "row",
+  },
+  accentStripe: {
+    width: 4,
+  },
+  theoryCardInner: {
+    flex: 1,
+    padding: Spacing.five,
+    gap: Spacing.four,
+  },
+  formulaBox: {
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.four,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    alignItems: "center",
   },
   formulaText: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.extrabold,
-    color: Colors.primaryDark,
+    letterSpacing: 0.5,
   },
   explanation: {
     fontSize: FontSizes.md,
-    color: Colors.textPrimary,
     lineHeight: 22,
-    marginBottom: Spacing.five,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(128,128,128,0.15)",
   },
   sectionLabel: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.bold,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.three,
+    fontSize: FontSizes.xs,
+    fontWeight: FontWeights.extrabold,
+    letterSpacing: 1.5,
+  },
+  examplesList: {
+    gap: Spacing.two,
   },
   exampleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.cream,
-    padding: Spacing.four,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.three,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.four,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    gap: Spacing.three,
   },
   exampleContent: {
     flex: 1,
+    gap: 4,
   },
   japaneseText: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-    marginBottom: 4,
   },
   translationText: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    fontStyle: 'italic',
   },
-  speakerBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 28,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: Spacing.two,
-    ...Shadows.sm,
+  revealBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  speakerEmoji: {
-    fontSize: 18,
+  ctaWrapper: {
+    width: "100%",
   },
-  button: {
-    width: '100%',
+  ctaBtn: {
+    width: "100%",
   },
 });
-

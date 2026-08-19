@@ -5,11 +5,12 @@
  * Customize base URL, headers, interceptors, and error handling here.
  */
 
-import axios, { AxiosInstance } from 'axios';
-import { storage } from '@/services/storage/async-storage';
+import axios, { AxiosInstance } from "axios";
+import { storage } from "@/services/storage/async-storage";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.example.com";
-export const TOKEN_KEY = 'auth_token';
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? "https://api.example.com";
+export const TOKEN_KEY = "auth_token";
 
 class ApiClient {
   private axiosInstance: AxiosInstance;
@@ -18,7 +19,10 @@ class ApiClient {
     this.axiosInstance = axios.create({
       baseURL: baseUrl,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
       },
     });
 
@@ -31,7 +35,7 @@ class ApiClient {
         }
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => Promise.reject(error),
     );
 
     // Response Interceptor: Global error handling
@@ -42,12 +46,13 @@ class ApiClient {
           await storage.remove(TOKEN_KEY);
           // Optional: Trigger event to force user to login screen
         }
-        
+
         // Do not use console.error here as it triggers Expo LogBox for expected errors like 401/403
         // console.error("API Error in Axios interceptor:", error);
-        const errorMessage = error.response?.data?.message || error.message || 'API Error';
+        const errorMessage =
+          error.response?.data?.message || error.message || "API Error";
         return Promise.reject(new Error(errorMessage));
-      }
+      },
     );
   }
 

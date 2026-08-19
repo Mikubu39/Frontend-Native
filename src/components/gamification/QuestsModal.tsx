@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { Colors, Spacing, FontSizes, FontWeights, BorderRadius, Shadows } from '@/constants/theme';
-import { GradientButton } from '@/components/ui/gradient-button';
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { useGamification } from '@/contexts/gamification-context';
-import { Ionicons } from '@expo/vector-icons';
-import { ModalCard } from '@/components/ui/modal-card';
+import React, { useState } from "react";
+import { View, Text, StyleSheet, Modal, ScrollView } from "react-native";
+import { BlurView } from "expo-blur";
+import {
+  Colors,
+  Spacing,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Shadows,
+} from "@/constants/theme";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { useGamification } from "@/contexts/gamification-context";
+import { Ionicons } from "@expo/vector-icons";
+import { ModalCard } from "@/components/ui/modal-card";
 
 interface QuestsModalProps {
   visible: boolean;
@@ -26,12 +33,12 @@ export function QuestsModal({ visible, onClose }: QuestsModalProps) {
     setChestError(null);
     try {
       await openChest();
-      // On success, we know coins are added. The actual amount isn't returned directly by context unless we capture it, 
-      // but wait, openChest in context doesn't return the amount to us easily (it just updates state). 
+      // On success, we know coins are added. The actual amount isn't returned directly by context unless we capture it,
+      // but wait, openChest in context doesn't return the amount to us easily (it just updates state).
       // We can just show a success message.
       setChestReward(1); // placeholder to show success
     } catch (e: any) {
-      setChestError(e?.response?.data?.message || 'Không thể mở rương');
+      setChestError(e?.response?.data?.message || "Không thể mở rương");
     } finally {
       setOpeningChest(false);
     }
@@ -47,31 +54,53 @@ export function QuestsModal({ visible, onClose }: QuestsModalProps) {
               <Ionicons name="close" size={28} color={Colors.textSecondary} />
             </AnimatedPressable>
           </View>
-          
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: Spacing.six }}>
+
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: Spacing.six }}
+          >
             {quests.length === 0 ? (
               <Text style={styles.emptyText}>Chưa có nhiệm vụ nào</Text>
             ) : (
-              quests.map(q => (
+              quests.map((q) => (
                 <View key={q.questId} style={styles.questCard}>
                   <Text style={styles.questIcon}>
-                    {q.questType === 'COMPLETE_LESSONS' ? '📚' : q.questType === 'CORRECT_ANSWERS' ? '✅' : '🌟'}
+                    {q.questType === "COMPLETE_LESSONS"
+                      ? "📚"
+                      : q.questType === "CORRECT_ANSWERS"
+                        ? "✅"
+                        : "🌟"}
                   </Text>
                   <View style={styles.questInfo}>
                     <Text style={styles.questTitle}>{q.title}</Text>
                     <View style={styles.progressContainer}>
-                      <View style={[styles.progressBar, { width: `${Math.min(100, (q.currentProgress / q.targetValue) * 100)}%` }]} />
+                      <View
+                        style={[
+                          styles.progressBar,
+                          {
+                            width: `${Math.min(100, (q.currentProgress / q.targetValue) * 100)}%`,
+                          },
+                        ]}
+                      />
                     </View>
-                    <Text style={styles.progressText}>{q.currentProgress} / {q.targetValue}</Text>
+                    <Text style={styles.progressText}>
+                      {q.currentProgress} / {q.targetValue}
+                    </Text>
                   </View>
-                  {q.completed && <Ionicons name="checkmark-circle" size={24} color={Colors.success} />}
+                  {q.completed && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={24}
+                      color={Colors.success}
+                    />
+                  )}
                 </View>
               ))
             )}
 
             <View style={styles.chestSection}>
               <Text style={styles.chestTitle}>Rương Thưởng</Text>
-              
+
               {chestReward ? (
                 <View style={styles.chestRewardBox}>
                   <Text style={{ fontSize: 40 }}>🎉</Text>
@@ -80,21 +109,31 @@ export function QuestsModal({ visible, onClose }: QuestsModalProps) {
               ) : (
                 <>
                   <Text style={styles.chestIcon}>
-                    {chestStatus?.alreadyOpenedToday ? '📦' : chestStatus?.available ? '🎁' : '🔒'}
+                    {chestStatus?.alreadyOpenedToday
+                      ? "📦"
+                      : chestStatus?.available
+                        ? "🎁"
+                        : "🔒"}
                   </Text>
                   <Text style={styles.chestStatusText}>
-                    {chestStatus?.alreadyOpenedToday 
-                      ? 'Bạn đã mở rương hôm nay. Trở lại vào ngày mai!' 
+                    {chestStatus?.alreadyOpenedToday
+                      ? "Bạn đã mở rương hôm nay. Trở lại vào ngày mai!"
                       : `${chestStatus?.questsCompleted || 0} / ${chestStatus?.questsRequired || 3} nhiệm vụ`}
                   </Text>
-                  
-                  {chestError && <Text style={styles.errorText}>{chestError}</Text>}
-                  
+
+                  {chestError && (
+                    <Text style={styles.errorText}>{chestError}</Text>
+                  )}
+
                   <GradientButton
-                    title={openingChest ? 'ĐANG MỞ...' : 'MỞ RƯƠNG'}
-                    disabled={!chestStatus?.available || chestStatus?.alreadyOpenedToday || openingChest}
+                    title={openingChest ? "ĐANG MỞ..." : "MỞ RƯƠNG"}
+                    disabled={
+                      !chestStatus?.available ||
+                      chestStatus?.alreadyOpenedToday ||
+                      openingChest
+                    }
                     onPress={handleOpenChest}
-                    style={{ marginTop: Spacing.three, width: '100%' }}
+                    style={{ marginTop: Spacing.three, width: "100%" }}
                   />
                 </>
               )}
@@ -109,20 +148,20 @@ export function QuestsModal({ visible, onClose }: QuestsModalProps) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   modalContent: {
     backgroundColor: Colors.cream,
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
-    minHeight: '70%',
+    minHeight: "70%",
     padding: Spacing.five,
     ...Shadows.lg,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.four,
   },
   title: {
@@ -131,13 +170,13 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   emptyText: {
-    textAlign: 'center',
+    textAlign: "center",
     color: Colors.textSecondary,
     marginVertical: Spacing.six,
   },
   questCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.surface,
     padding: Spacing.four,
     borderRadius: BorderRadius.lg,
@@ -163,19 +202,19 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lockedBg,
     borderRadius: 4,
     marginBottom: Spacing.one,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressBar: {
-    height: '100%',
+    height: "100%",
     backgroundColor: Colors.secondary,
   },
   progressText: {
     fontSize: FontSizes.xs,
     color: Colors.textSecondary,
-    textAlign: 'right',
+    textAlign: "right",
   },
   chestSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: Spacing.six,
     padding: Spacing.four,
     backgroundColor: Colors.surface,
@@ -197,16 +236,16 @@ const styles = StyleSheet.create({
   chestStatusText: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.two,
   },
   errorText: {
     color: Colors.error,
     fontSize: FontSizes.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
   chestRewardBox: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: Spacing.four,
   },
   rewardText: {
@@ -214,5 +253,5 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.bold,
     color: Colors.success,
     marginTop: Spacing.two,
-  }
+  },
 });

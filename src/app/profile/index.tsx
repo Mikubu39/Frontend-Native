@@ -2,12 +2,12 @@
  * Profile Screen
  */
 
-import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { ProfileHeader } from '@/components/profile/profile-header';
-import { CompleteProfileCard } from '@/components/profile/complete-profile-card';
-import { Colors, Spacing } from '@/constants/theme';
+import React from "react";
+import { ScrollView, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { ProfileHeader } from "@/components/profile/profile-header";
+import { CompleteProfileCard } from "@/components/profile/complete-profile-card";
+import { Colors, Spacing } from "@/constants/theme";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -21,10 +21,7 @@ export default function ProfileScreen() {
         learningFlag="🇯🇵"
       />
 
-      <CompleteProfileCard
-        completion={65}
-        onContinue={() => {}}
-      />
+      <CompleteProfileCard completion={65} onContinue={() => {}} />
     </ScrollView>
   );
 }

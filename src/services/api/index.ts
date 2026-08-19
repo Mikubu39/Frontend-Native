@@ -13,3 +13,4 @@ export { energyApi } from "./energy";
 export { streakApi } from "./streak";
 export { questApi } from "./quests";
 export { chestApi } from "./chest";
+export { rankApi } from "./rank";

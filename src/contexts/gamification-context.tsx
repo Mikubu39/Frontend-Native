@@ -1,8 +1,21 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
-import { energyApi, streakApi, questApi, chestApi, userService } from '@/services/api';
-import { useAuth } from '@/contexts/auth-context';
-import { Quest, ChestStatus } from '@/types';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useCallback,
+} from "react";
+import { AppState, AppStateStatus } from "react-native";
+import {
+  energyApi,
+  streakApi,
+  questApi,
+  chestApi,
+  userService,
+} from "@/services/api";
+import { useAuth } from "@/contexts/auth-context";
+import { Quest, ChestStatus } from "@/types";
 
 interface GamificationState {
   energy: number;
@@ -14,7 +27,8 @@ interface GamificationState {
   chestStatus: ChestStatus | null;
   lastRecoveryDate: string | null;
   streakFreezeCount: number;
-  currentLeague: string;
+  rankId: number;
+  rankName: string;
 }
 
 interface GamificationContextType extends GamificationState {
@@ -31,7 +45,9 @@ interface GamificationContextType extends GamificationState {
   watchAdToRefill: () => Promise<void>;
 }
 
-const GamificationContext = createContext<GamificationContextType | undefined>(undefined);
+const GamificationContext = createContext<GamificationContextType | undefined>(
+  undefined,
+);
 
 export function GamificationProvider({ children }: { children: ReactNode }) {
   // Temporary initial states until backend provides them globally
@@ -45,7 +61,8 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
     chestStatus: null,
     lastRecoveryDate: null,
     streakFreezeCount: 0,
-    currentLeague: 'BRONZE',
+    rankId: 1,
+    rankName: "Đồng",
   });
 
   const setEnergy = (energy: number) => {
@@ -75,7 +92,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       const quests = await questApi.getDailyQuests();
       setState((prev) => ({ ...prev, quests }));
     } catch (error) {
-      console.error('Failed to fetch quests:', error);
+      console.error("Failed to fetch quests:", error);
     }
   }, []);
 
@@ -84,7 +101,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       const chestStatus = await chestApi.getChestStatus();
       setState((prev) => ({ ...prev, chestStatus }));
     } catch (error) {
-      console.error('Failed to fetch chest status:', error);
+      console.error("Failed to fetch chest status:", error);
     }
   }, []);
 
@@ -95,7 +112,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
         userService.getMe(),
         energyApi.getEnergy(),
       ]);
-      
+
       setState((prev) => ({
         ...prev,
         energy: meRes.currentEnergy,
@@ -104,13 +121,15 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
         exp: meRes.exp,
         coins: meRes.coins,
         streakFreezeCount: meRes.streakFreezeCount,
-        currentLeague: meRes.currentLeague,
+        rankId: meRes.rankId,
+        rankName: meRes.rankName,
         lastRecoveryDate: energyRes.lastRecoveryDate,
       }));
-      
-      await Promise.all([fetchQuests(), fetchChestStatus()]);
+
+      await fetchQuests();
+      await fetchChestStatus();
     } catch (error) {
-      console.error('Failed to fetch gamification data:', error);
+      console.error("Failed to fetch gamification data:", error);
     }
   }, [fetchQuests, fetchChestStatus]);
 
@@ -123,7 +142,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
         maxEnergy: res.maxEnergy,
       }));
     } catch (error) {
-      console.error('Failed to refill energy:', error);
+      console.error("Failed to refill energy:", error);
       throw error;
     }
   }, []);
@@ -137,7 +156,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
         maxEnergy: res.maxEnergy,
       }));
     } catch (error) {
-      console.error('Failed to watch ad for energy:', error);
+      console.error("Failed to watch ad for energy:", error);
       throw error;
     }
   }, []);
@@ -148,7 +167,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       setState((prev) => ({ ...prev, coins: res.currentCoins }));
       await fetchChestStatus();
     } catch (error) {
-      console.error('Failed to open chest:', error);
+      console.error("Failed to open chest:", error);
       throw error;
     }
   }, [fetchChestStatus]);
@@ -156,14 +175,14 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
   const buyStreakFreeze = useCallback(async () => {
     try {
       const res = await streakApi.buyStreakFreeze();
-      setState((prev) => ({ 
-        ...prev, 
+      setState((prev) => ({
+        ...prev,
         streak: res.currentStreak,
         streakFreezeCount: res.streakFreezeCount,
-        coins: Math.max(0, prev.coins - 200)
+        coins: Math.max(0, prev.coins - 200),
       }));
     } catch (error) {
-      console.error('Failed to buy streak freeze:', error);
+      console.error("Failed to buy streak freeze:", error);
       throw error;
     }
   }, []);
@@ -176,11 +195,14 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       fetchGamificationData();
     }
 
-    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active' && isAuthenticated) {
-        fetchGamificationData();
-      }
-    });
+    const subscription = AppState.addEventListener(
+      "change",
+      (nextAppState: AppStateStatus) => {
+        if (nextAppState === "active" && isAuthenticated) {
+          fetchGamificationData();
+        }
+      },
+    );
 
     return () => {
       subscription.remove();
@@ -190,29 +212,35 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
   // Bộ đếm giờ ảo cập nhật năng lượng realtime (Cách 2)
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
-    
+
     if (state.energy < state.maxEnergy && state.lastRecoveryDate) {
       interval = setInterval(() => {
         // Parse date. Fix missing 'Z' if it's implicitly UTC from backend
-        const dateStr = state.lastRecoveryDate!.endsWith('Z') 
-          ? state.lastRecoveryDate! 
-          : state.lastRecoveryDate! + 'Z';
-          
+        const dateStr = state.lastRecoveryDate!.endsWith("Z")
+          ? state.lastRecoveryDate!
+          : state.lastRecoveryDate! + "Z";
+
         const lastRecovery = new Date(dateStr).getTime();
         const now = Date.now();
         const diffMs = now - lastRecovery;
         const ONE_HOUR = 60 * 60 * 1000;
-        
+
         if (diffMs >= ONE_HOUR) {
           const energyToAdd = Math.floor(diffMs / ONE_HOUR) * 5;
           if (energyToAdd > 0) {
-            setState(prev => {
-              const newEnergy = Math.min(prev.maxEnergy, prev.energy + energyToAdd);
-              const newRecoveryDate = new Date(lastRecovery + Math.floor(diffMs / ONE_HOUR) * ONE_HOUR).toISOString();
+            setState((prev) => {
+              const newEnergy = Math.min(
+                prev.maxEnergy,
+                prev.energy + energyToAdd,
+              );
+              const newRecoveryDate = new Date(
+                lastRecovery + Math.floor(diffMs / ONE_HOUR) * ONE_HOUR,
+              ).toISOString();
               return {
                 ...prev,
                 energy: newEnergy,
-                lastRecoveryDate: newEnergy < prev.maxEnergy ? newRecoveryDate : null,
+                lastRecoveryDate:
+                  newEnergy < prev.maxEnergy ? newRecoveryDate : null,
               };
             });
           }
@@ -250,7 +278,9 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
 export function useGamification() {
   const context = useContext(GamificationContext);
   if (context === undefined) {
-    throw new Error('useGamification must be used within a GamificationProvider');
+    throw new Error(
+      "useGamification must be used within a GamificationProvider",
+    );
   }
   return context;
 }

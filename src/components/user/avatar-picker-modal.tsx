@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -6,9 +6,15 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import Slider from '@react-native-community/slider';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+} from "react-native";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  Spacing,
+  BorderRadius,
+  Shadows,
+} from "@/constants/theme";
 import {
   avatarOptions,
   type AvatarConfig,
@@ -17,8 +23,8 @@ import {
   buildAvatarUrl,
   hexToRgb,
   rgbToHex,
-} from '@/data/avatar-options';
-import { AvatarDisplay } from '@/components/user/avatar-display';
+} from "@/data/avatar-options";
+import { AvatarDisplay } from "@/components/user/avatar-display";
 
 interface AvatarPickerModalProps {
   visible: boolean;
@@ -33,7 +39,9 @@ export function AvatarPickerModal({
   onClose,
   onSave,
 }: AvatarPickerModalProps) {
-  const [config, setConfig] = useState<AvatarConfig>(initialConfig ?? DEFAULT_AVATAR_CONFIG);
+  const [config, setConfig] = useState<AvatarConfig>(
+    initialConfig ?? DEFAULT_AVATAR_CONFIG,
+  );
   const wasVisibleRef = useRef(false);
 
   useEffect(() => {
@@ -70,7 +78,12 @@ export function AvatarPickerModal({
               style={[styles.optionChip, isActive && styles.optionChipActive]}
               onPress={() => updateConfig(keyName, item)}
             >
-              <Text style={[styles.optionChipText, isActive && styles.optionChipTextActive]}>
+              <Text
+                style={[
+                  styles.optionChipText,
+                  isActive && styles.optionChipTextActive,
+                ]}
+              >
                 {formatter ? formatter(item) : item}
               </Text>
             </Pressable>
@@ -80,25 +93,47 @@ export function AvatarPickerModal({
     </View>
   );
 
-  const renderColorGroup = (title: string, keyName: keyof AvatarConfig, presets: string[]) => (
+  const renderColorGroup = (
+    title: string,
+    keyName: keyof AvatarConfig,
+    presets: string[],
+  ) => (
     <View style={styles.group} key={keyName}>
       <Text style={styles.groupTitle}>{title}</Text>
       <View style={styles.optionRow}>
         {presets.map((hex) => {
           const isActive = config[keyName] === hex;
           return (
-            <Pressable key={`${keyName}-${hex}`} onPress={() => updateConfig(keyName, hex)} style={styles.colorSwatchWrap}>
-              <View style={[styles.colorSwatch, { backgroundColor: hex }, isActive && styles.colorSwatchActive]} />
+            <Pressable
+              key={`${keyName}-${hex}`}
+              onPress={() => updateConfig(keyName, hex)}
+              style={styles.colorSwatchWrap}
+            >
+              <View
+                style={[
+                  styles.colorSwatch,
+                  { backgroundColor: hex },
+                  isActive && styles.colorSwatchActive,
+                ]}
+              />
             </Pressable>
           );
         })}
       </View>
-      <RgbColorPicker value={config[keyName]} onChange={(hex) => updateConfig(keyName, hex)} />
+      <RgbColorPicker
+        value={config[keyName]}
+        onChange={(hex) => updateConfig(keyName, hex)}
+      />
     </View>
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.headerRow}>
@@ -109,18 +144,42 @@ export function AvatarPickerModal({
           </View>
 
           <View style={styles.previewWrap}>
-            <AvatarDisplay uri={previewUrl} size={126} backgroundColor="#F3E8FF" />
+            <AvatarDisplay
+              uri={previewUrl}
+              size={126}
+              backgroundColor="#F3E8FF"
+            />
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-            {renderColorGroup('Màu da', 'skin', avatarOptions.skin)}
-            {renderOptionGroup('Kiểu tóc', 'hair', avatarOptions.hair, (value) => value.toUpperCase())}
-            {renderOptionGroup('Râu', 'facialHair', avatarOptions.facialHair, (value) =>
-              value === 'none' ? 'KHÔNG' : value.toUpperCase()
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.content}
+          >
+            {renderColorGroup("Màu da", "skin", avatarOptions.skin)}
+            {renderOptionGroup(
+              "Kiểu tóc",
+              "hair",
+              avatarOptions.hair,
+              (value) => value.toUpperCase(),
             )}
-            {renderColorGroup('Màu áo', 'outfit', avatarOptions.outfit)}
-            {renderOptionGroup('Phụ kiện', 'accessory', avatarOptions.accessory, (value) => value.toUpperCase())}
-            {renderColorGroup('Màu nền', 'background', avatarOptions.background)}
+            {renderOptionGroup(
+              "Râu",
+              "facialHair",
+              avatarOptions.facialHair,
+              (value) => (value === "none" ? "KHÔNG" : value.toUpperCase()),
+            )}
+            {renderColorGroup("Màu áo", "outfit", avatarOptions.outfit)}
+            {renderOptionGroup(
+              "Phụ kiện",
+              "accessory",
+              avatarOptions.accessory,
+              (value) => value.toUpperCase(),
+            )}
+            {renderColorGroup(
+              "Màu nền",
+              "background",
+              avatarOptions.background,
+            )}
           </ScrollView>
 
           <Pressable
@@ -142,7 +201,13 @@ export function AvatarPickerModal({
  * Bảng chỉnh màu bằng 3 thanh trượt R/G/B - kéo tay để chỉnh, không cần biết
  * mã màu là gì. Hiện ô preview lớn + giá trị số từng kênh để tham khảo.
  */
-function RgbColorPicker({ value, onChange }: { value: string; onChange: (hex: string) => void }) {
+function RgbColorPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (hex: string) => void;
+}) {
   const [rgb, setRgb] = useState<RgbColor>(() => hexToRgb(value));
 
   // Đồng bộ lại khi value đổi từ bên ngoài (vd bấm 1 ô màu preset có sẵn).
@@ -159,13 +224,30 @@ function RgbColorPicker({ value, onChange }: { value: string; onChange: (hex: st
   return (
     <View style={styles.rgbPicker}>
       <View style={styles.rgbPreviewRow}>
-        <View style={[styles.rgbPreviewBox, { backgroundColor: rgbToHex(rgb) }]} />
+        <View
+          style={[styles.rgbPreviewBox, { backgroundColor: rgbToHex(rgb) }]}
+        />
         <Text style={styles.rgbPreviewText}>{rgbToHex(rgb)}</Text>
       </View>
 
-      <RgbSlider label="R" trackColor="#EF4444" value={rgb.r} onChange={(v) => handleChannelChange('r', v)} />
-      <RgbSlider label="G" trackColor="#22C55E" value={rgb.g} onChange={(v) => handleChannelChange('g', v)} />
-      <RgbSlider label="B" trackColor="#3B82F6" value={rgb.b} onChange={(v) => handleChannelChange('b', v)} />
+      <RgbSlider
+        label="R"
+        trackColor="#EF4444"
+        value={rgb.r}
+        onChange={(v) => handleChannelChange("r", v)}
+      />
+      <RgbSlider
+        label="G"
+        trackColor="#22C55E"
+        value={rgb.g}
+        onChange={(v) => handleChannelChange("g", v)}
+      />
+      <RgbSlider
+        label="B"
+        trackColor="#3B82F6"
+        value={rgb.b}
+        onChange={(v) => handleChannelChange("b", v)}
+      />
     </View>
   );
 }
@@ -181,20 +263,64 @@ function RgbSlider({
   value: number;
   onChange: (value: number) => void;
 }) {
+  const widthRef = useRef(0);
+
+  const handleTouch = (e: any) => {
+    if (widthRef.current > 0) {
+      // locationX is relative to the element receiving the touch
+      let v = (e.nativeEvent.locationX / widthRef.current) * 255;
+      onChange(Math.max(0, Math.min(255, v)));
+    }
+  };
+
   return (
     <View style={styles.rgbSliderRow}>
-      <Text style={[styles.rgbSliderLabel, { color: trackColor }]}>{label}</Text>
-      <Slider
+      <Text style={[styles.rgbSliderLabel, { color: trackColor }]}>
+        {label}
+      </Text>
+
+      <View
         style={styles.rgbSlider}
-        minimumValue={0}
-        maximumValue={255}
-        step={1}
-        value={value}
-        onValueChange={onChange}
-        minimumTrackTintColor={trackColor}
-        maximumTrackTintColor="#E5E7EB"
-        thumbTintColor={trackColor}
-      />
+        onLayout={(e) => (widthRef.current = e.nativeEvent.layout.width)}
+        onStartShouldSetResponder={() => true}
+        onResponderGrant={handleTouch}
+        onResponderMove={handleTouch}
+      >
+        <View
+          style={{
+            height: 6,
+            backgroundColor: "#E5E7EB",
+            borderRadius: 3,
+            justifyContent: "center",
+          }}
+        >
+          <View
+            style={{
+              height: 6,
+              backgroundColor: trackColor,
+              borderRadius: 3,
+              width: `${(value / 255) * 100}%`,
+            }}
+          />
+          <View
+            style={{
+              position: "absolute",
+              width: 18,
+              height: 18,
+              borderRadius: 9,
+              backgroundColor: trackColor,
+              left: `${(value / 255) * 100}%`,
+              transform: [{ translateX: -9 }],
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 3,
+              elevation: 3,
+            }}
+          />
+        </View>
+      </View>
+
       <Text style={styles.rgbSliderValue}>{Math.round(value)}</Text>
     </View>
   );
@@ -203,23 +329,23 @@ function RgbSlider({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
   sheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: Spacing.five,
     paddingTop: Spacing.five,
     paddingBottom: Spacing.six,
-    maxHeight: '85%',
+    maxHeight: "85%",
     ...Shadows.lg,
   },
   headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.four,
   },
   title: {
@@ -233,8 +359,8 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   previewWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: Spacing.three,
   },
   content: {
@@ -250,21 +376,21 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   optionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   optionChip: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
     borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
   optionChipActive: {
     borderColor: Colors.primary,
-    backgroundColor: '#F3E8FF',
+    backgroundColor: "#F3E8FF",
   },
   optionChipText: {
     color: Colors.textSecondary,
@@ -282,7 +408,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 2,
-    borderColor: 'rgba(0,0,0,0.08)',
+    borderColor: "rgba(0,0,0,0.08)",
   },
   colorSwatchActive: {
     borderColor: Colors.primary,
@@ -292,14 +418,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: "#F9FAFB",
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: "#E5E7EB",
     gap: 4,
   },
   rgbPreviewRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     marginBottom: 6,
   },
@@ -308,7 +434,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
+    borderColor: "rgba(0,0,0,0.1)",
   },
   rgbPreviewText: {
     fontSize: 13,
@@ -317,8 +443,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   rgbSliderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   rgbSliderLabel: {
@@ -332,7 +458,7 @@ const styles = StyleSheet.create({
   },
   rgbSliderValue: {
     width: 32,
-    textAlign: 'right',
+    textAlign: "right",
     fontSize: 12,
     color: Colors.textSecondary,
   },
@@ -340,12 +466,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.md,
     paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: Spacing.two,
   },
   saveButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
   },

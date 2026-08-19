@@ -3,10 +3,10 @@
  * Each child fades in + slides up with an incremental delay for a polished list feel.
  */
 
-import React from 'react';
-import { type ViewStyle } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
-import { AnimationPresets } from '@/constants/theme';
+import React from "react";
+import { type ViewStyle } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { AnimationPresets } from "@/constants/theme";
 
 interface StaggeredListProps {
   children: React.ReactNode;
@@ -33,10 +33,9 @@ export function StaggeredList({
       {childArray.map((child, index) => (
         <Animated.View
           key={index}
-          entering={FadeIn
-            .delay(initialDelay + index * staggerDelay)
-            .duration(duration)
-          }
+          entering={FadeIn.delay(initialDelay + index * staggerDelay).duration(
+            duration,
+          )}
           style={style}
         >
           {child}

@@ -6,10 +6,9 @@
  * - Bold category title (e.g. "Grammar", "Reading")
  */
 
-import { StyleSheet, View } from 'react-native';
-import { Text } from 'react-native';
+import { StyleSheet, View, Text } from "react-native";
 
-import { CARD_BG, CARD_BORDER, TEXT_PRIMARY } from './lesson-path-constants';
+import { CARD_BG, CARD_BORDER, TEXT_PRIMARY } from "./lesson-path-constants";
 
 interface SectionHeaderProps {
   title: string;
@@ -36,7 +35,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     color: TEXT_PRIMARY,
   },
 });

@@ -2,10 +2,10 @@
  * ProfileHeader - Avatar + name + level on gradient background.
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 
 interface ProfileHeaderProps {
   displayName: string;
@@ -14,7 +14,12 @@ interface ProfileHeaderProps {
   learningFlag: string;
 }
 
-export function ProfileHeader({ displayName, level, nativeFlag, learningFlag }: ProfileHeaderProps) {
+export function ProfileHeader({
+  displayName,
+  level,
+  nativeFlag,
+  learningFlag,
+}: ProfileHeaderProps) {
   return (
     <LinearGradient
       colors={Colors.gradients.profile}
@@ -52,7 +57,7 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: Spacing.eight,
     paddingHorizontal: Spacing.six,
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.three,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
@@ -64,11 +69,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 48,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.5)',
+    borderColor: "rgba(255,255,255,0.5)",
   },
   avatarEmoji: {
     fontSize: 36,
@@ -79,10 +84,10 @@ const styles = StyleSheet.create({
     color: Colors.textOnDark,
   },
   levelRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   levelBadge: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: "rgba(255,255,255,0.25)",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.one,
     borderRadius: 28,
@@ -93,16 +98,16 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
   },
   flagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.three,
     marginTop: Spacing.two,
   },
   flagPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.two,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: "rgba(255,255,255,0.2)",
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
     borderRadius: 28,

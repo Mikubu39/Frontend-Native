@@ -4,11 +4,17 @@
  * Figma screen 16 & 17
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
-import { AudioButton } from '../ui/audio-button';
-import { useAudio } from '@/hooks/use-audio';
+import React, { useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
+import { AudioButton } from "../ui/audio-button";
+import { useAudio } from "@/hooks/use-audio";
 
 interface CharacterDisplayProps {
   character: string;
@@ -22,7 +28,7 @@ export function CharacterDisplay({
   character,
   romaji,
   meaning,
-  categoryName = 'Hiragana',
+  categoryName = "Hiragana",
   onDrawPracticePress,
 }: CharacterDisplayProps) {
   const { isPlaying, play } = useAudio();
@@ -31,7 +37,7 @@ export function CharacterDisplay({
   return (
     <View style={styles.card}>
       <Text style={styles.category}>{categoryName}</Text>
-      
+
       <View style={styles.characterContainer}>
         <Text style={styles.characterText}>{character}</Text>
         <Text style={styles.romajiText}>{romaji}</Text>
@@ -51,7 +57,7 @@ export function CharacterDisplay({
             activeOpacity={0.7}
           >
             <Text style={[styles.actionIcon, isSaved && styles.savedIcon]}>
-              {isSaved ? '★' : '☆'}
+              {isSaved ? "★" : "☆"}
             </Text>
           </TouchableOpacity>
           <Text style={styles.actionLabel}>Save</Text>
@@ -79,9 +85,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
     padding: Spacing.six,
-    alignItems: 'center',
-    width: '100%',
-    shadowColor: '#000',
+    alignItems: "center",
+    width: "100%",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
@@ -91,13 +97,13 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
     color: Colors.textSecondary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 1.5,
     marginBottom: Spacing.four,
   },
   characterContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginVertical: Spacing.three,
   },
   characterText: {
@@ -115,19 +121,19 @@ const styles = StyleSheet.create({
   meaningText: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     marginTop: Spacing.one,
   },
   actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.six,
     marginTop: Spacing.five,
-    width: '100%',
+    width: "100%",
   },
   audioWrapper: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.one,
   },
   actionIconButton: {
@@ -137,8 +143,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
     borderWidth: 1.5,
     borderColor: Colors.inputBorder,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   actionIcon: {
     fontSize: 20,

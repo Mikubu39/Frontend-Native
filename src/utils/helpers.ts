@@ -7,8 +7,14 @@
 /**
  * Format a number as a currency string.
  */
-export function formatCurrency(amount: number, locale = "vi-VN", currency = "VND"): string {
-  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(amount);
+export function formatCurrency(
+  amount: number,
+  locale = "vi-VN",
+  currency = "VND",
+): string {
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(
+    amount,
+  );
 }
 
 /**
@@ -50,7 +56,7 @@ export function truncate(str: string, maxLength: number): string {
  */
 export function debounce<T extends (...args: unknown[]) => void>(
   fn: T,
-  delay: number
+  delay: number,
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {

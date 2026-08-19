@@ -2,17 +2,26 @@
  * CompleteProfileCard - Yellow progress card with "Continue" action.
  */
 
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { ProgressBar } from '@/components/ui/progress-bar';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
 
 interface CompleteProfileCardProps {
   completion: number; // 0 to 100
   onContinue: () => void;
 }
 
-export function CompleteProfileCard({ completion, onContinue }: CompleteProfileCardProps) {
+export function CompleteProfileCard({
+  completion,
+  onContinue,
+}: CompleteProfileCardProps) {
   return (
     <View style={styles.card}>
       <View style={styles.topRow}>
@@ -36,9 +45,9 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.four,
   },
   topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   title: {
     fontSize: FontSizes.md,
@@ -54,6 +63,6 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
     color: Colors.primary,
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
   },
 });

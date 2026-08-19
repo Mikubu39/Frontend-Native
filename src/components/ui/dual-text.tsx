@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, TextStyle, ViewStyle } from 'react-native';
-import { Colors, FontSizes, FontWeights } from '@/constants/theme';
-import { getDualText } from '@/utils/japanese-converter';
+import React from "react";
+import { View, Text, StyleSheet, TextStyle, ViewStyle } from "react-native";
+import { Colors, FontSizes, FontWeights } from "@/constants/theme";
+import { getDualText } from "@/utils/japanese-converter";
 
 interface DualTextProps {
   text: string;
@@ -9,7 +9,7 @@ interface DualTextProps {
   mainStyle?: TextStyle;
   subStyle?: TextStyle;
   containerStyle?: ViewStyle;
-  align?: 'center' | 'flex-start' | 'flex-end';
+  align?: "center" | "flex-start" | "flex-end";
 }
 
 export function DualText({
@@ -18,7 +18,7 @@ export function DualText({
   mainStyle,
   subStyle,
   containerStyle,
-  align = 'center',
+  align = "center",
 }: DualTextProps) {
   const { mainText, subText } = getDualText(text, hint);
 
@@ -34,13 +34,13 @@ export function DualText({
 
 const styles = StyleSheet.create({
   container: {
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   mainText: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subText: {
     fontSize: FontSizes.xs,
@@ -48,6 +48,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     opacity: 0.7,
     marginTop: 2,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

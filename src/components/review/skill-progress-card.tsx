@@ -2,10 +2,16 @@
  * SkillProgressCard - Skill name + check dots (filled/empty).
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import type { SkillProgress } from '@/types';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import type { SkillProgress } from "@/types";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
 
 interface SkillProgressCardProps {
   skill: SkillProgress;
@@ -21,7 +27,9 @@ export function SkillProgressCard({ skill }: SkillProgressCardProps) {
             key={i}
             style={[
               styles.dot,
-              i < skill.completedLessons ? styles.dotCompleted : styles.dotEmpty,
+              i < skill.completedLessons
+                ? styles.dotCompleted
+                : styles.dotEmpty,
             ]}
           >
             {i < skill.completedLessons && <Text style={styles.check}>✓</Text>}
@@ -47,15 +55,15 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   dots: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.three,
   },
   dot: {
     width: 32,
     height: 32,
     borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   dotCompleted: {
     backgroundColor: Colors.checkmark,

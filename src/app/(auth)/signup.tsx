@@ -2,37 +2,54 @@
  * Signup Screen - Redesigned to match Duolingo style
  */
 
-import { SocialAuthSection } from '@/components/auth/social-auth-section';
-import { StyledTextInput } from '@/components/ui/text-input';
-import { BorderRadius, Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
-import { useAuth } from '@/contexts/auth-context';
-import { useRouter } from 'expo-router';
-import LottieView from 'lottie-react-native';
-import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SocialAuthSection } from "@/components/auth/social-auth-section";
+import { StyledTextInput } from "@/components/ui/text-input";
+import {
+  BorderRadius,
+  Colors,
+  FontSizes,
+  FontWeights,
+  Spacing,
+} from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/contexts/toast-context";
+import { useRouter } from "expo-router";
+import LottieView from "lottie-react-native";
+import React, { useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignupScreen() {
   const router = useRouter();
   const { signUp } = useAuth();
+  const { showError, showWarning } = useToast();
 
-  const [age, setAge] = useState('');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [age, setAge] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
     if (!email || !password) {
-      Alert.alert('Lỗi', 'Vui lòng điền Email và Mật khẩu.');
+      showWarning("Thiếu thông tin", "Vui lòng điền Email và Mật khẩu.");
       return;
     }
     setLoading(true);
     try {
-      await signUp(email, password, name || 'User');
-      router.replace('/(onboarding)/goal');
+      await signUp(email, password, name || "User");
+      router.replace("/(onboarding)/goal");
     } catch (error: any) {
-      Alert.alert('Thất bại', error.message || 'Đăng ký tài khoản thất bại.');
+      showError(
+        "Đăng ký thất bại",
+        error.message || "Không thể tạo tài khoản lúc này.",
+      );
     } finally {
       setLoading(false);
     }
@@ -40,10 +57,16 @@ export default function SignupScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header navigation bar */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.replace('/welcome')} style={styles.closeButton}>
+          <TouchableOpacity
+            onPress={() => router.replace("/welcome")}
+            style={styles.closeButton}
+          >
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Tạo hồ sơ</Text>
@@ -54,7 +77,7 @@ export default function SignupScreen() {
         <View style={styles.titleSection}>
           <View style={styles.mascotContainer}>
             <LottieView
-              source={require('@/assets/animations/hi_mascot.json')}
+              source={require("@/assets/animations/hi_mascot.json")}
               autoPlay
               loop
               style={styles.mascot}
@@ -105,7 +128,7 @@ export default function SignupScreen() {
             <View style={styles.submitButtonShadow} />
             <View style={styles.submitButtonContent}>
               <Text style={styles.submitButtonText}>
-                {loading ? 'ĐANG XỬ LÝ...' : 'TẠO HỒ SƠ'}
+                {loading ? "ĐANG XỬ LÝ..." : "TẠO HỒ SƠ"}
               </Text>
             </View>
           </TouchableOpacity>
@@ -114,16 +137,16 @@ export default function SignupScreen() {
         {/* Social Auth */}
         <SocialAuthSection
           onGooglePress={async () => {
-            await signUp('google@user.com', 'googlepwd', 'Google User');
-            router.replace('/(onboarding)/goal');
+            await signUp("google@user.com", "googlepwd", "Google User");
+            router.replace("/(onboarding)/goal");
           }}
           onFacebookPress={async () => {
-            await signUp('facebook@user.com', 'fbpwd', 'Facebook User');
-            router.replace('/(onboarding)/goal');
+            await signUp("facebook@user.com", "fbpwd", "Facebook User");
+            router.replace("/(onboarding)/goal");
           }}
           onApplePress={async () => {
-            await signUp('apple@user.com', 'applepwd', 'Apple User');
-            router.replace('/(onboarding)/goal');
+            await signUp("apple@user.com", "applepwd", "Apple User");
+            router.replace("/(onboarding)/goal");
           }}
         />
       </ScrollView>
@@ -134,16 +157,16 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   scroll: {
     flexGrow: 1,
     paddingBottom: Spacing.eight,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
     borderBottomWidth: 1,
@@ -152,13 +175,13 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 40,
     height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
+    justifyContent: "center",
+    alignItems: "flex-start",
   },
   closeButtonText: {
     fontSize: 22,
     color: Colors.textSecondary,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   headerTitle: {
     fontSize: FontSizes.md,
@@ -172,7 +195,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.six,
     paddingTop: Spacing.four,
     paddingBottom: Spacing.four,
-    alignItems: 'center',
+    alignItems: "center",
   },
   mascotContainer: {
     width: 140,
@@ -180,50 +203,50 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   mascot: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   titleText: {
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   formContainer: {
     paddingHorizontal: Spacing.six,
     gap: Spacing.four,
   },
   submitButton: {
-    width: '100%',
+    width: "100%",
     height: 52,
     marginTop: Spacing.four,
-    position: 'relative',
+    position: "relative",
   },
   disabledButton: {
     opacity: 0.7,
   },
   submitButtonShadow: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     top: 4,
     bottom: -4,
-    backgroundColor: '#C81B75',
+    backgroundColor: "#C81B75",
     borderRadius: BorderRadius.md,
   },
   submitButtonContent: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
     backgroundColor: Colors.secondary,
     borderRadius: BorderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   submitButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     letterSpacing: 0.8,

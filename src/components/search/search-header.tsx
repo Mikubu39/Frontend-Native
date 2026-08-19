@@ -2,10 +2,22 @@
  * SearchHeader - Search input bar + filter chips.
  */
 
-import React from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { SEARCH_FILTERS } from '@/data';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React from "react";
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+} from "react-native";
+import { SEARCH_FILTERS } from "@/data";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
 
 interface SearchHeaderProps {
   query: string;
@@ -14,7 +26,12 @@ interface SearchHeaderProps {
   onFilterPress: (filterId: string) => void;
 }
 
-export function SearchHeader({ query, onQueryChange, activeFilter, onFilterPress }: SearchHeaderProps) {
+export function SearchHeader({
+  query,
+  onQueryChange,
+  activeFilter,
+  onFilterPress,
+}: SearchHeaderProps) {
   return (
     <View style={styles.container}>
       <View style={styles.searchBar}>
@@ -39,10 +56,12 @@ export function SearchHeader({ query, onQueryChange, activeFilter, onFilterPress
             onPress={() => onFilterPress(filter.id)}
             activeOpacity={0.7}
           >
-            <Text style={[
-              styles.filterText,
-              activeFilter === filter.id && styles.filterTextActive,
-            ]}>
+            <Text
+              style={[
+                styles.filterText,
+                activeFilter === filter.id && styles.filterTextActive,
+              ]}
+            >
               {filter.label}
             </Text>
           </TouchableOpacity>
@@ -58,8 +77,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
   },
   searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
     borderWidth: 1.5,
@@ -77,9 +96,9 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   filters: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.three,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   filterChip: {
     width: 44,
@@ -88,8 +107,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
     borderColor: Colors.inputBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   filterActive: {
     backgroundColor: Colors.primary,

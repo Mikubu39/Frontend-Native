@@ -1,16 +1,32 @@
-import { BorderRadius, Colors, FontSizes, FontWeights, Spacing, Shadows } from '@/constants/theme';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Modal, FlatList, ActivityIndicator, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { StaggeredList } from '@/components/ui/staggered-list';
-
-import { userService } from '@/services/api/user';
-import * as Contacts from 'expo-contacts';
-import { Alert } from 'react-native';
-import { UserOverviewResponse } from '@/types/user-api';
+import {
+  BorderRadius,
+  Colors,
+  FontSizes,
+  FontWeights,
+  Spacing,
+  Shadows,
+} from "@/constants/theme";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Modal,
+  FlatList,
+  ActivityIndicator,
+  Image,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { StaggeredList } from "@/components/ui/staggered-list";
+import { useToast } from "@/contexts/toast-context";
+import { userService } from "@/services/api/user";
+import * as Contacts from "expo-contacts";
+import { UserOverviewResponse } from "@/types/user-api";
 
 interface FriendOption {
   id: string;
@@ -21,23 +37,46 @@ interface FriendOption {
 }
 
 const OPTIONS: FriendOption[] = [
-  { id: 'find', icon: 'search-outline', title: 'Tìm bạn bè', subtitle: 'Tìm đối tác học tập cùng nhau', color: '#3B82F6' },
-  { id: 'sync', icon: 'phone-portrait-outline', title: 'Đồng bộ danh bạ', subtitle: 'Tìm bạn bè từ điện thoại', color: Colors.primary },
-  { id: 'share', icon: 'qr-code-outline', title: 'Mã QR của tôi', subtitle: 'Chia sẻ mã kết bạn', color: '#10B981' },
-  { id: 'voucher', icon: 'gift-outline', title: 'Mã khuyến mãi', subtitle: 'Nhận phần thưởng khi mời', color: '#F59E0B' },
+  {
+    id: "find",
+    icon: "search-outline",
+    title: "Tìm kiếm bạn bè",
+    subtitle: "Tìm theo tên hiển thị hoặc username",
+    color: Colors.primary,
+  },
+  {
+    id: "sync",
+    icon: "phone-portrait-outline",
+    title: "Tìm từ danh bạ",
+    subtitle: "Kết nối với bạn bè trong danh bạ",
+    color: "#10B981",
+  },
+  {
+    id: "share",
+    icon: "qr-code-outline",
+    title: "Chia sẻ mã cá nhân",
+    subtitle: "Quét mã để kết bạn nhanh chóng",
+    color: "#F59E0B",
+  },
 ];
 
 export default function FriendsScreen() {
   const router = useRouter();
-  const [syncResults, setSyncResults] = useState<UserOverviewResponse[] | null>(null);
+  const { showError, showWarning, showInfo } = useToast();
+  const [syncResults, setSyncResults] = useState<UserOverviewResponse[] | null>(
+    null,
+  );
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSyncContacts = async () => {
     try {
       setIsSyncing(true);
       const { status } = await Contacts.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Quyền bị từ chối', 'Ứng dụng cần quyền truy cập danh bạ để tìm bạn bè.');
+      if (status !== "granted") {
+        showWarning(
+          "Quyền bị từ chối",
+          "Ứng dụng cần quyền truy cập danh bạ để tìm bạn bè.",
+        );
         setIsSyncing(false);
         return;
       }
@@ -46,19 +85,25 @@ export default function FriendsScreen() {
       });
       if (data.length > 0) {
         const phoneNumbers = data
-          .map(c => c.phoneNumbers?.[0]?.number)
+          .map((c) => c.phoneNumbers?.[0]?.number)
           .filter(Boolean) as string[];
-        
+
         // Remove spaces and special characters for a clean match
-        const cleanedNumbers = phoneNumbers.map(num => num.replace(/[^a-zA-Z0-9+]/g, ''));
-        
+        const cleanedNumbers = phoneNumbers.map((num) =>
+          num.replace(/[^a-zA-Z0-9+]/g, ""),
+        );
+
         // Send both raw and cleaned formats to maximize matching chance (increased limit to 1000 to not cut off test contacts)
-        const toSync = Array.from(new Set([...phoneNumbers, ...cleanedNumbers])).slice(0, 1000);
-        
+        const toSync = Array.from(
+          new Set([...phoneNumbers, ...cleanedNumbers]),
+        ).slice(0, 1000);
+
         console.log("Found raw contacts:", phoneNumbers.length);
         console.log("Sending to backend:", toSync.length);
 
-        const results = await userService.syncContacts({ phoneNumbers: toSync });
+        const results = await userService.syncContacts({
+          phoneNumbers: toSync,
+        });
         console.log("Backend returned results:", results);
         setSyncResults(results);
       } else {
@@ -66,21 +111,21 @@ export default function FriendsScreen() {
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('Lỗi', 'Không thể đồng bộ danh bạ.');
+      showError("Lỗi", "Không thể đồng bộ danh bạ.");
     } finally {
       setIsSyncing(false);
     }
   };
 
   const handleOptionPress = (id: string) => {
-    if (id === 'find') {
-      router.push('/friends/search');
-    } else if (id === 'sync') {
+    if (id === "find") {
+      router.push("/friends/search");
+    } else if (id === "sync") {
       handleSyncContacts();
-    } else if (id === 'share') {
-      router.push('/profile/qr');
+    } else if (id === "share") {
+      router.push("/profile/qr");
     } else {
-      Alert.alert('Thông báo', 'Tính năng đang phát triển.');
+      showInfo("Thông báo", "Tính năng đang phát triển.");
     }
   };
 
@@ -101,21 +146,30 @@ export default function FriendsScreen() {
               key={option.id}
               style={styles.optionCard}
               onPress={() => handleOptionPress(option.id)}
-              disabled={option.id === 'sync' && isSyncing}
+              disabled={option.id === "sync" && isSyncing}
               pressScale={0.98}
             >
-              <View style={[styles.iconContainer, { backgroundColor: option.color + '15' }]}>
+              <View
+                style={[
+                  styles.iconContainer,
+                  { backgroundColor: option.color + "15" },
+                ]}
+              >
                 <Ionicons name={option.icon} size={24} color={option.color} />
               </View>
               <View style={styles.optionText}>
                 <Text style={styles.optionTitle}>{option.title}</Text>
                 <Text style={styles.optionSubtitle}>{option.subtitle}</Text>
               </View>
-              {option.id === 'sync' && isSyncing ? (
+              {option.id === "sync" && isSyncing ? (
                 <ActivityIndicator size="small" color={Colors.primary} />
               ) : (
                 <View style={styles.arrowContainer}>
-                  <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={Colors.textSecondary}
+                  />
                 </View>
               )}
             </AnimatedPressable>
@@ -123,58 +177,84 @@ export default function FriendsScreen() {
         </StaggeredList>
       </View>
 
-      <Modal visible={syncResults !== null} animationType="slide" transparent={true}>
+      <Modal
+        visible={syncResults !== null}
+        animationType="slide"
+        transparent={true}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Kết quả đồng bộ</Text>
-              <TouchableOpacity onPress={() => setSyncResults(null)} style={styles.closeBtn}>
+              <TouchableOpacity
+                onPress={() => setSyncResults(null)}
+                style={styles.closeBtn}
+              >
                 <Ionicons name="close" size={24} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            
+
             <FlatList
               data={syncResults || []}
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.userCard}
                   onPress={() => {
                     setSyncResults(null);
                     router.push({
-                      pathname: '/profile/view-search-profile',
+                      pathname: "/profile/view-search-profile",
                       params: {
-                        id: item.id?.toString() || '',
+                        id: item.id?.toString() || "",
                         username: (item as any).username || item.id?.toString(),
-                        displayName: item.displayName || 'Người dùng',
-                        avatarUrl: item.avatarUrl || '',
-                        level: item.level?.toString() || '1',
-                        isFollowing: 'false'
-                      }
+                        displayName: item.displayName || "Người dùng",
+                        avatarUrl: item.avatarUrl || "",
+                        level: item.level?.toString() || "1",
+                        isFollowing: "false",
+                      },
                     });
                   }}
                 >
                   {item.avatarUrl ? (
-                    <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+                    <Image
+                      source={{ uri: item.avatarUrl }}
+                      style={styles.avatar}
+                    />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
                       <Text style={styles.avatarText}>
-                        {item.displayName ? String(item.displayName).charAt(0).toUpperCase() : '?'}
+                        {item.displayName
+                          ? String(item.displayName).charAt(0).toUpperCase()
+                          : "?"}
                       </Text>
                     </View>
                   )}
                   <View style={styles.userInfo}>
-                    <Text style={styles.fullName}>{item.displayName || 'Người dùng'}</Text>
+                    <Text style={styles.fullName}>
+                      {item.displayName || "Người dùng"}
+                    </Text>
                     <Text style={styles.userLevel}>Lv {item.level || 1}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={Colors.textSecondary}
+                  />
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <Ionicons name="people-outline" size={48} color={Colors.textSecondary} style={{ marginBottom: Spacing.four }} />
-                  <Text style={styles.emptyText}>Không tìm thấy bạn bè nào dùng ứng dụng này trong danh bạ của bạn.</Text>
+                  <Ionicons
+                    name="people-outline"
+                    size={48}
+                    color={Colors.textSecondary}
+                    style={{ marginBottom: Spacing.four }}
+                  />
+                  <Text style={styles.emptyText}>
+                    Không tìm thấy bạn bè nào dùng ứng dụng này trong danh bạ
+                    của bạn.
+                  </Text>
                 </View>
               }
             />
@@ -191,53 +271,53 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   backBtn: {
     width: 40,
     height: 40,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    alignItems: "flex-start",
+    justifyContent: "center",
   },
   title: {
     flex: 1,
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   options: {
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.six,
   },
   optionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
     padding: Spacing.four,
     borderRadius: BorderRadius.xl,
     marginBottom: Spacing.three,
     ...Shadows.sm,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.03)',
+    borderColor: "rgba(0,0,0,0.03)",
   },
   iconContainer: {
     width: 48,
     height: 48,
     borderRadius: BorderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: Spacing.four,
   },
   optionText: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   optionTitle: {
     fontSize: FontSizes.md,
@@ -254,13 +334,13 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: Colors.creamDark,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
     backgroundColor: Colors.cream,
@@ -268,16 +348,16 @@ const styles = StyleSheet.create({
     borderTopRightRadius: BorderRadius.xl,
     paddingTop: Spacing.four,
     paddingBottom: Spacing.eight,
-    height: '80%',
+    height: "80%",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: Spacing.six,
     paddingBottom: Spacing.four,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   modalTitle: {
     fontSize: FontSizes.lg,
@@ -287,22 +367,22 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 40,
     height: 40,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+    alignItems: "flex-end",
+    justifyContent: "center",
   },
   listContainer: {
     padding: Spacing.four,
   },
   userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
     padding: Spacing.four,
     borderRadius: BorderRadius.xl,
     marginBottom: Spacing.three,
     ...Shadows.sm,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.03)',
+    borderColor: "rgba(0,0,0,0.03)",
   },
   avatar: {
     width: 48,
@@ -314,9 +394,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: Colors.primary + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: Colors.primary + "15",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: Spacing.four,
   },
   avatarText: {
@@ -339,12 +419,12 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.semibold,
   },
   emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingTop: Spacing.sixteen,
   },
   emptyText: {
-    textAlign: 'center',
+    textAlign: "center",
     color: Colors.textSecondary,
     fontSize: FontSizes.sm,
     lineHeight: 20,

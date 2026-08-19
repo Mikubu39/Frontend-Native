@@ -4,29 +4,29 @@
  */
 
 /** Page background — cream/pale yellow */
-export const PAGE_BG = '#FFF8E1';
+export const PAGE_BG = "#FFF8E1";
 
 /** Card border — yellow/gold */
-export const CARD_BORDER = '#FFD54F';
+export const CARD_BORDER = "#FFD54F";
 
 /** Card background — white */
-export const CARD_BG = '#FFFFFF';
+export const CARD_BG = "#FFFFFF";
 
 /** Completed circle — hot pink/magenta with white checkmark */
-export const COMPLETED_PINK = '#E91E8C';
+export const COMPLETED_PINK = "#E91E8C";
 
 /** Locked/incomplete circle — light gray */
-export const LOCKED_GRAY = '#D5D5D5';
+export const LOCKED_GRAY = "#D5D5D5";
 
 /** Current lesson — same pink but with pulsing effect */
-export const CURRENT_PINK = '#E91E8C';
+export const CURRENT_PINK = "#E91E8C";
 
 /** Active tab underline — yellow */
-export const TAB_ACTIVE = '#FFD54F';
+export const TAB_ACTIVE = "#FFD54F";
 
 /** Text colors */
-export const TEXT_PRIMARY = '#1A1A1A';
-export const TEXT_SECONDARY = '#888888';
+export const TEXT_PRIMARY = "#1A1A1A";
+export const TEXT_SECONDARY = "#888888";
 
 /**
  * S-Curve horizontal offsets from center.

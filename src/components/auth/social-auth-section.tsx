@@ -2,10 +2,10 @@
  * SocialAuthSection - "or" divider + social login buttons.
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { SocialButton } from '@/components/ui/social-button';
-import { Colors, FontSizes, Spacing } from '@/constants/theme';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { SocialButton } from "@/components/ui/social-button";
+import { Colors, FontSizes, Spacing } from "@/constants/theme";
 
 interface SocialAuthSectionProps {
   onGooglePress: () => void;
@@ -42,8 +42,8 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.four,
   },
   dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.three,
   },
   dividerLine: {

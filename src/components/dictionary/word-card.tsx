@@ -2,11 +2,17 @@
  * WordCard - Dictionary word card with kanji, romaji, meaning + audio.
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { AudioButton } from '@/components/ui/audio-button';
-import type { DictionaryEntry } from '@/types';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { AudioButton } from "@/components/ui/audio-button";
+import type { DictionaryEntry } from "@/types";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
 
 interface WordCardProps {
   entry: DictionaryEntry;
@@ -36,9 +42,9 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   kanji: {
     fontSize: FontSizes.xxl,
@@ -50,7 +56,7 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.medium,
     color: Colors.textSecondary,
     flex: 1,
-    textAlign: 'right',
+    textAlign: "right",
     marginRight: Spacing.three,
   },
   divider: {

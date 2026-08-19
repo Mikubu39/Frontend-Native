@@ -1,17 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
-import { FontAwesome5 } from '@expo/vector-icons';
-import type { SpeakingQuestion } from '@/types';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
-import { JapaneseText } from '../ui/japanese-text';
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withSequence,
+} from "react-native-reanimated";
+import { FontAwesome5 } from "@expo/vector-icons";
+import type { SpeakingQuestion } from "@/types";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
+import { JapaneseText } from "../ui/japanese-text";
 
 interface SpeakingQuestionProps {
   question: SpeakingQuestion;
   onAnswerChange: (isCorrect: boolean) => void;
 }
 
-export function SpeakingQuestionCard({ question, onAnswerChange }: SpeakingQuestionProps) {
+export function SpeakingQuestionCard({
+  question,
+  onAnswerChange,
+}: SpeakingQuestionProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
   const pulseScale = useSharedValue(1);
@@ -21,12 +36,12 @@ export function SpeakingQuestionCard({ question, onAnswerChange }: SpeakingQuest
       pulseScale.value = withRepeat(
         withSequence(
           withTiming(1.2, { duration: 500 }),
-          withTiming(1, { duration: 500 })
+          withTiming(1, { duration: 500 }),
         ),
         -1,
-        true
+        true,
       );
-      
+
       // Mock recording duration
       const timer = setTimeout(() => {
         setIsRecording(false);
@@ -54,18 +69,36 @@ export function SpeakingQuestionCard({ question, onAnswerChange }: SpeakingQuest
       </View>
 
       <View style={styles.recordContainer}>
-        <Animated.View style={[styles.pulseRing, animatedStyle, isRecording && styles.pulseRingActive]} />
+        <Animated.View
+          style={[
+            styles.pulseRing,
+            animatedStyle,
+            isRecording && styles.pulseRingActive,
+          ]}
+        />
         <TouchableOpacity
-          style={[styles.recordButton, isRecording && styles.recordButtonActive, hasRecorded && styles.recordButtonDone]}
+          style={[
+            styles.recordButton,
+            isRecording && styles.recordButtonActive,
+            hasRecorded && styles.recordButtonDone,
+          ]}
           onPress={() => !hasRecorded && setIsRecording(true)}
           disabled={isRecording || hasRecorded}
           activeOpacity={0.8}
         >
-          <FontAwesome5 name={hasRecorded ? "check" : "microphone"} size={32} color="#FFF" />
+          <FontAwesome5
+            name={hasRecorded ? "check" : "microphone"}
+            size={32}
+            color="#FFF"
+          />
         </TouchableOpacity>
-        
+
         <Text style={styles.recordHint}>
-          {hasRecorded ? "Đã ghi âm thành công!" : (isRecording ? "Đang ghi âm..." : "Chạm để nói")}
+          {hasRecorded
+            ? "Đã ghi âm thành công!"
+            : isRecording
+              ? "Đang ghi âm..."
+              : "Chạm để nói"}
         </Text>
       </View>
     </View>
@@ -74,7 +107,7 @@ export function SpeakingQuestionCard({ question, onAnswerChange }: SpeakingQuest
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.eight,
     paddingHorizontal: Spacing.four,
   },
@@ -82,34 +115,34 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   textContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.two,
   },
   textToSpeak: {
     fontSize: FontSizes.title,
     fontWeight: FontWeights.extrabold,
     color: Colors.primaryDark,
-    textAlign: 'center',
+    textAlign: "center",
   },
   translation: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
-    fontStyle: 'italic',
-    textAlign: 'center',
+    fontStyle: "italic",
+    textAlign: "center",
   },
   recordContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: Spacing.four,
-    position: 'relative',
+    position: "relative",
     height: 140,
     width: 140,
   },
   pulseRing: {
-    position: 'absolute',
+    position: "absolute",
     width: 100,
     height: 100,
     borderRadius: 50,
@@ -124,8 +157,8 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     zIndex: 2,
   },
   recordButtonActive: {
@@ -135,10 +168,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.success,
   },
   recordHint: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -20,
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     fontWeight: FontWeights.bold,
-  }
+  },
 });

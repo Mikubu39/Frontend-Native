@@ -11,7 +11,8 @@ export interface StreakResponse {
   streakFreezeCount: number;
 }
 
-export type QuestType = 'COMPLETE_LESSONS' | 'CORRECT_ANSWERS' | 'PERFECT_LESSON';
+export type QuestType =
+  "COMPLETE_LESSONS" | "CORRECT_ANSWERS" | "PERFECT_LESSON";
 
 export interface Quest {
   questId: number;

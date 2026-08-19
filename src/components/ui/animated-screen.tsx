@@ -3,21 +3,21 @@
  * Provides fluid fade-in + slide effects with refined spring physics.
  */
 
-import React from 'react';
-import { StyleSheet, ViewStyle } from 'react-native';
+import React from "react";
+import { StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   FadeIn,
   FadeInDown,
   FadeInUp,
   SlideInUp,
-} from 'react-native-reanimated';
-import { AnimationPresets } from '@/constants/theme';
+} from "react-native-reanimated";
+import { AnimationPresets } from "@/constants/theme";
 
 interface AnimatedScreenProps {
   children: React.ReactNode;
   style?: ViewStyle;
   /** Animation variant: 'fade' | 'slideUp' | 'fadeSlide' | 'fadeDown' */
-  variant?: 'fade' | 'slideUp' | 'fadeSlide' | 'fadeDown';
+  variant?: "fade" | "slideUp" | "fadeSlide" | "fadeDown";
   /** Duration in ms (default: 300) */
   duration?: number;
 }
@@ -25,23 +25,23 @@ interface AnimatedScreenProps {
 export function AnimatedScreen({
   children,
   style,
-  variant = 'fade',
+  variant = "fade",
   duration = 300,
 }: AnimatedScreenProps) {
   const getEnteringAnimation = () => {
     const { damping, stiffness } = AnimationPresets.spring;
 
     switch (variant) {
-      case 'slideUp':
+      case "slideUp":
         return SlideInUp.duration(duration)
           .springify()
           .damping(damping)
           .stiffness(stiffness);
-      case 'fadeDown':
+      case "fadeDown":
         return FadeIn.duration(duration); // Changed from FadeInDown to FadeIn for snappier load
-      case 'fadeSlide':
+      case "fadeSlide":
         return FadeIn.duration(duration); // Changed from FadeInDown to FadeIn for snappier load
-      case 'fade':
+      case "fade":
       default:
         return FadeIn.duration(duration);
     }

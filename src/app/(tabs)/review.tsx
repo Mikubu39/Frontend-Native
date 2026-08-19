@@ -1,12 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { StaggeredList } from '@/components/ui/staggered-list';
-import { Colors, FontSizes, FontWeights, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import React from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { useTheme } from "@/contexts/theme-context";
+import { StaggeredList } from "@/components/ui/staggered-list";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  Spacing,
+  BorderRadius,
+  Shadows,
+} from "@/constants/theme";
 
 interface PracticeItem {
   id: string;
@@ -20,92 +28,126 @@ interface PracticeItem {
 
 export default function PracticeHubScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const [mistakeCount, setMistakeCount] = React.useState<number>(0);
+  const [loading, setLoading] = React.useState<boolean>(true);
+
+  React.useEffect(() => {
+    import("@/services/api/mistakes").then(({ mistakesApi }) => {
+      mistakesApi
+        .getSummary()
+        .then((res) => {
+          setMistakeCount(res.activeCount);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    });
+  }, []);
 
   const primaryItems: PracticeItem[] = [
     {
-      id: 'p1',
-      title: 'Luyện tập Lỗi Sai',
-      description: 'Xem lại và giải quyết các câu bạn từng làm sai.',
-      icon: 'warning-outline',
-      route: '/quiz/ready?lessonId=lp5',
-      badge: 'Cần thiết',
+      id: "p1",
+      title: "Luyện tập Lỗi Sai",
+      description: "Xem lại và giải quyết các câu bạn từng làm sai.",
+      icon: "warning-outline",
+      route: "/review/mistakes",
+      badge: loading
+        ? "..."
+        : mistakeCount > 0
+          ? `${mistakeCount} lỗi`
+          : undefined,
       color: Colors.error,
     },
     {
-      id: 'p2',
-      title: 'Sổ tay Từ điển',
-      description: 'Ôn tập và kiểm tra từ vựng bạn đã mở khóa.',
-      icon: 'book-outline',
-      route: '/dictionary',
+      id: "p2",
+      title: "Sổ tay Từ điển",
+      description: "Ôn tập và kiểm tra từ vựng bạn đã mở khóa.",
+      icon: "book-outline",
+      route: "/dictionary",
       color: Colors.primary,
     },
   ];
 
   const additionalItems: PracticeItem[] = [
     {
-      id: 'p3',
-      title: 'Thử thách thời gian',
-      description: 'Luyện phản xạ nhanh để giành thêm Đá quý.',
-      icon: 'flash-outline',
-      route: '/quiz/ready?lessonId=lp1',
+      id: "p3",
+      title: "Thử thách thời gian",
+      description: "Luyện phản xạ nhanh để giành thêm Đá quý.",
+      icon: "flash-outline",
+      route: "/quiz/ready?lessonId=lp1",
       color: Colors.accent,
     },
     {
-      id: 'p4',
-      title: 'Luyện phát âm chuyên sâu',
-      description: 'Nghe giọng bản xứ và tập nói lại chuẩn xác.',
-      icon: 'mic-outline',
-      route: '/voice/record',
-      color: '#10B981',
+      id: "p4",
+      title: "Luyện phát âm chuyên sâu",
+      description: "Nghe giọng bản xứ và tập nói lại chuẩn xác.",
+      icon: "mic-outline",
+      route: "/voice/record",
+      color: "#10B981",
     },
   ];
 
   const renderCard = (item: PracticeItem) => (
     <AnimatedPressable
       key={item.id}
-      style={styles.card}
+      style={[
+        styles.card,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
       onPress={() => router.push(item.route as any)}
       pressScale={0.97}
     >
-      <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
+      <View
+        style={[styles.iconContainer, { backgroundColor: item.color + "15" }]}
+      >
         <Ionicons name={item.icon} size={28} color={item.color} />
       </View>
       <View style={styles.cardContent}>
         <View style={styles.titleRow}>
-          <Text style={styles.itemTitle}>{item.title}</Text>
+          <Text style={[styles.itemTitle, { color: colors.text }]}>{item.title}</Text>
           {item.badge ? (
             <View style={[styles.badge, { backgroundColor: item.color }]}>
               <Text style={styles.badgeText}>{item.badge}</Text>
             </View>
           ) : null}
         </View>
-        <Text style={styles.itemDesc}>{item.description}</Text>
+        <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>{item.description}</Text>
       </View>
       <View style={styles.arrowContainer}>
-        <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+        <Ionicons
+          name="chevron-forward"
+          size={20}
+          color={Colors.textSecondary}
+        />
       </View>
     </AnimatedPressable>
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Trung tâm luyện tập</Text>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Trung tâm luyện tập</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Intro Banner */}
         <Animated.View
           entering={FadeIn.duration(400)}
-          style={styles.introBanner}
+          style={[
+            styles.introBanner,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
         >
           <View style={styles.introIconContainer}>
-             <Ionicons name="barbell" size={32} color={Colors.primary} />
+            <Ionicons name="barbell" size={32} color={Colors.primary} />
           </View>
           <View style={styles.introInfo}>
-            <Text style={styles.introTitle}>Nâng cao phản xạ</Text>
-            <Text style={styles.introDesc}>
+            <Text style={[styles.introTitle, { color: colors.text }]}>Nâng cao phản xạ</Text>
+            <Text style={[styles.introDesc, { color: colors.textSecondary }]}>
               Ôn luyện hằng ngày giúp bạn nhớ lâu hơn gấp 4 lần.
             </Text>
           </View>
@@ -140,14 +182,11 @@ export default function PracticeHubScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
   },
   header: {
-    backgroundColor: '#FFFFFF',
     paddingVertical: Spacing.four,
-    alignItems: 'center',
+    alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   headerTitle: {
     fontSize: FontSizes.xl,
@@ -160,24 +199,22 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   introBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: BorderRadius.xxl,
     padding: Spacing.four,
     marginBottom: Spacing.six,
     gap: Spacing.four,
     ...Shadows.sm,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.03)',
   },
   introIconContainer: {
     width: 60,
     height: 60,
     borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.primary + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: Colors.primary + "15",
+    alignItems: "center",
+    justifyContent: "center",
   },
   introInfo: {
     flex: 1,
@@ -197,39 +234,37 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
     color: Colors.textSecondary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: Spacing.three,
     marginLeft: Spacing.two,
   },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: BorderRadius.xl,
     padding: Spacing.four,
     marginBottom: Spacing.three,
     ...Shadows.sm,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.03)',
   },
   iconContainer: {
     width: 50,
     height: 50,
     borderRadius: BorderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: Spacing.three,
   },
   cardContent: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   itemTitle: {
     fontSize: FontSizes.md,
@@ -242,7 +277,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 10,
     fontWeight: FontWeights.extrabold,
     letterSpacing: 0.3,
@@ -257,9 +292,8 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.creamDark,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(139, 92, 246, 0.1)", // Primary with opacity
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
-

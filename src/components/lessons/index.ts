@@ -2,16 +2,16 @@
  * Barrel export for lesson components.
  */
 
-export { LessonsHeader } from './lessons-header';
-export { ProgressTabs } from './progress-tabs';
-export { SectionCard } from './section-card';
-export { SectionHeader } from './section-header';
-export { LessonNode } from './lesson-node';
-export { PathConnector } from './path-connector';
-export { LessonGrid } from './lesson-grid';
-export { CharacterDisplay } from './character-display';
-export { WritingCanvas } from './writing-canvas';
-export { getPathOffset } from './lesson-path-constants';
+export { LessonsHeader } from "./lessons-header";
+export { ProgressTabs } from "./progress-tabs";
+export { SectionCard } from "./section-card";
+export { SectionHeader } from "./section-header";
+export { LessonNode } from "./lesson-node";
+export { PathConnector } from "./path-connector";
+export { LessonGrid } from "./lesson-grid";
+export { CharacterDisplay } from "./character-display";
+export { WritingCanvas } from "./writing-canvas";
+export { getPathOffset } from "./lesson-path-constants";
 export {
   PAGE_BG,
   CARD_BG,
@@ -22,4 +22,4 @@ export {
   TAB_ACTIVE,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
-} from './lesson-path-constants';
+} from "./lesson-path-constants";

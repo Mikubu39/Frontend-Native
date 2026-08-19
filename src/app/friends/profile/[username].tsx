@@ -1,11 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
-import { userService } from '@/services/api/user';
-import { UserProfileResponse } from '@/types/user-api';
-import { GradientButton } from '@/components/ui/gradient-button';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
+import { userService } from "@/services/api/user";
+import { UserProfileResponse } from "@/types/user-api";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 export default function UserProfileScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
@@ -59,7 +73,10 @@ export default function UserProfileScreen() {
     return (
       <SafeAreaView style={[styles.container, styles.centered]}>
         <Text style={styles.errorText}>User not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ marginTop: 20 }}
+        >
           <Text style={{ color: Colors.primary }}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -82,7 +99,9 @@ export default function UserProfileScreen() {
             <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarText}>{profile.username.charAt(0).toUpperCase()}</Text>
+              <Text style={styles.avatarText}>
+                {profile.username.charAt(0).toUpperCase()}
+              </Text>
             </View>
           )}
           <Text style={styles.fullName}>{profile.displayName}</Text>
@@ -96,8 +115,8 @@ export default function UserProfileScreen() {
           </View>
 
           <View style={styles.actionContainer}>
-            <GradientButton 
-              title={profile.isFollowing ? 'Following' : 'Follow'}
+            <GradientButton
+              title={profile.isFollowing ? "Following" : "Follow"}
               onPress={handleToggleFollow}
               disabled={toggling}
             />
@@ -114,18 +133,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: Spacing.four,
   },
   backBtn: {
     width: 40,
     height: 40,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   backText: {
     fontSize: FontSizes.xxl,
@@ -133,7 +152,7 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
@@ -142,11 +161,11 @@ const styles = StyleSheet.create({
     padding: Spacing.six,
   },
   profileHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: Colors.surface,
     padding: Spacing.six,
     borderRadius: BorderRadius.xl,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -162,9 +181,9 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: Colors.primary + '20',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: Colors.primary + "20",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.four,
   },
   avatarText: {
@@ -186,18 +205,18 @@ const styles = StyleSheet.create({
   bio: {
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.six,
   },
   stats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.six,
-    width: '100%',
+    width: "100%",
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
   },
   statNumber: {
@@ -216,7 +235,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lockedBg,
   },
   actionContainer: {
-    width: '100%',
+    width: "100%",
   },
   errorText: {
     fontSize: FontSizes.lg,

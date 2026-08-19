@@ -1,25 +1,30 @@
-import { GradientButton } from '@/components/ui/gradient-button';
-import { StyledTextInput } from '@/components/ui/text-input';
-import { Colors, FontSizes, FontWeights, Spacing } from '@/constants/theme';
-import { useAuth } from '@/contexts/auth-context';
-import { userService } from '@/services/api/user';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { GradientButton } from "@/components/ui/gradient-button";
+import { StyledTextInput } from "@/components/ui/text-input";
+import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/contexts/toast-context";
+import { userService } from "@/services/api/user";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { showSuccess, showError, showWarning } = useToast();
 
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
-  const [username, setUsername] = useState(user?.email?.split('@')[0] || '');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [displayName, setDisplayName] = useState(user?.displayName || "");
+  const [username, setUsername] = useState(user?.email?.split("@")[0] || "");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
     if (!displayName || !username) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ tên hiển thị và username.');
+      showWarning(
+        "Thiếu thông tin",
+        "Vui lòng điền đầy đủ tên hiển thị và username.",
+      );
       return;
     }
 
@@ -31,14 +36,17 @@ export default function EditProfileScreen() {
       });
 
       if (phoneNumber.trim()) {
-        await userService.updatePhoneNumber({ phoneNumber: phoneNumber.trim() });
+        await userService.updatePhoneNumber({
+          phoneNumber: phoneNumber.trim(),
+        });
       }
-      Alert.alert('Thành công', 'Cập nhật hồ sơ thành công!', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
+      showSuccess("Thành công!", "Cập nhật hồ sơ thành công!");
+      setTimeout(() => {
+        router.back();
+      }, 500);
       // Note: We'd normally also update the user context here if the backend returns the new token/user.
     } catch (e: any) {
-      Alert.alert('Lỗi', e.message || 'Có lỗi xảy ra khi cập nhật.');
+      showError("Lỗi cập nhật", e.message || "Có lỗi xảy ra khi cập nhật.");
     } finally {
       setLoading(false);
     }
@@ -47,7 +55,9 @@ export default function EditProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.backBtn} onPress={() => router.back()}>←</Text>
+        <Text style={styles.backBtn} onPress={() => router.back()}>
+          ←
+        </Text>
         <Text style={styles.headerTitle}>Chỉnh sửa Hồ sơ</Text>
         <View style={{ width: 40 }} />
       </View>
@@ -70,7 +80,9 @@ export default function EditProfileScreen() {
             onChangeText={setUsername}
             autoCapitalize="none"
           />
-          <Text style={styles.hint}>Dùng để kết bạn và hiển thị trên mã QR.</Text>
+          <Text style={styles.hint}>
+            Dùng để kết bạn và hiển thị trên mã QR.
+          </Text>
         </View>
 
         <View style={styles.formGroup}>
@@ -85,7 +97,7 @@ export default function EditProfileScreen() {
         </View>
 
         <GradientButton
-          title={loading ? 'Đang cập nhật...' : 'Lưu thay đổi'}
+          title={loading ? "Đang cập nhật..." : "Lưu thay đổi"}
           onPress={handleSave}
           disabled={loading}
         />
@@ -100,11 +112,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: Spacing.four,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: Colors.lockedBg,
   },
@@ -132,5 +144,5 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     marginTop: -4,
-  }
+  },
 });

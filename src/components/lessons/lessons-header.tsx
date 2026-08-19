@@ -7,9 +7,9 @@
  * - Right: profile avatar circle
  */
 
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { TEXT_PRIMARY, TEXT_SECONDARY } from './lesson-path-constants';
+import { TEXT_PRIMARY, TEXT_SECONDARY } from "./lesson-path-constants";
 
 export function LessonsHeader() {
   return (
@@ -33,9 +33,9 @@ export function LessonsHeader() {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
@@ -43,21 +43,21 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 24,
-    backgroundColor: '#E53935',
+    backgroundColor: "#E53935",
   },
   levelPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     borderWidth: 1.5,
-    borderColor: '#D5D5D5',
+    borderColor: "#D5D5D5",
     borderRadius: 28,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   levelText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: TEXT_PRIMARY,
   },
   dropdownArrow: {
@@ -68,12 +68,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 26,
-    backgroundColor: '#9E9E9E',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#9E9E9E",
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarIcon: {
     fontSize: 18,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
 });

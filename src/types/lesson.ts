@@ -2,9 +2,15 @@
  * Lesson-related type definitions.
  */
 
-export type LessonStatus = 'completed' | 'current' | 'locked';
+export type LessonStatus = "completed" | "current" | "locked";
 
-export type LessonCategory = 'hiragana' | 'katakana' | 'kanji' | 'vocabulary' | 'pronunciation' | 'grammar';
+export type LessonCategory =
+  | "hiragana"
+  | "katakana"
+  | "kanji"
+  | "vocabulary"
+  | "pronunciation"
+  | "grammar";
 
 export interface Lesson {
   id: string;
@@ -46,5 +52,5 @@ export interface LearningPathNode {
   total: number;
   isLocked: boolean;
   icon?: string;
-  nodeType?: 'theory' | 'practice' | 'boss';
+  nodeType?: "theory" | "practice" | "boss";
 }

@@ -1,17 +1,30 @@
-import { AnimatedPressable } from '@/components/ui/animated-pressable';
-import { AvatarDisplay } from '@/components/user/avatar-display';
-import { AvatarPickerModal } from '@/components/user/avatar-picker-modal';
-import { BorderRadius, Colors, Shadows, Spacing } from '@/constants/theme';
-import { useAuth } from '@/contexts/auth-context';
-import { useGamification } from '@/contexts/gamification-context';
-import { buildAvatarUrl, DEFAULT_AVATAR_CONFIG, parseAvatarUrl, type AvatarConfig } from '@/data/avatar-options';
-import { avatarApi } from '@/services/api/avatar';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AvatarDisplay } from "@/components/user/avatar-display";
+import { AvatarPickerModal } from "@/components/user/avatar-picker-modal";
+import { BorderRadius, Colors, Shadows, Spacing } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
+import { useGamification } from "@/contexts/gamification-context";
+import { useTheme } from "@/contexts/theme-context";
+import {
+  buildAvatarUrl,
+  DEFAULT_AVATAR_CONFIG,
+  parseAvatarUrl,
+  type AvatarConfig,
+} from "@/data/avatar-options";
+import { avatarApi } from "@/services/api/avatar";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Kích thước avatar chính trên Profile - đổi 1 chỗ này để đồng bộ mọi nơi liên quan.
 const AVATAR_SIZE = 132;
@@ -24,14 +37,19 @@ const AVATAR_SIZE = 132;
 function getJoinYear(createdAt?: string | null): number {
   if (!createdAt) return new Date().getFullYear();
   const parsed = new Date(createdAt);
-  return Number.isNaN(parsed.getTime()) ? new Date().getFullYear() : parsed.getFullYear();
+  return Number.isNaN(parsed.getTime())
+    ? new Date().getFullYear()
+    : parsed.getFullYear();
 }
 
 export default function ProfileTabScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { streak, exp, coins } = useGamification();
-  const [avatarUrl, setAvatarUrl] = useState<string>(buildAvatarUrl(DEFAULT_AVATAR_CONFIG));
+  const { colors, isDark } = useTheme();
+  const [avatarUrl, setAvatarUrl] = useState<string>(
+    buildAvatarUrl(DEFAULT_AVATAR_CONFIG),
+  );
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isLoadingAvatar, setIsLoadingAvatar] = useState(true);
 
@@ -70,38 +88,62 @@ export default function ProfileTabScreen() {
   const joinYear = getJoinYear((user as any)?.createdAt);
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView
+      edges={["top"]}
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <StatusBar style={isDark ? "light" : "dark"} />
       <AvatarPickerModal
         visible={isModalVisible}
         initialConfig={parseAvatarUrl(avatarUrl)}
         onClose={() => setIsModalVisible(false)}
         onSave={handleSaveAvatar}
       />
-      
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={true}>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+      >
         {/* TOP SECTION */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{user?.displayName || 'Dương Gia Đắc'}</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            {user?.displayName || "Dương Gia Đắc"}
+          </Text>
           <View style={styles.headerActions}>
-            <AnimatedPressable onPress={() => router.push('/profile/qr')} pressScale={0.9}>
-              <Ionicons name="share-outline" size={26} color={Colors.textPrimary} />
+            <AnimatedPressable
+              onPress={() => router.push("/profile/qr")}
+              pressScale={0.9}
+            >
+              <Ionicons name="share-outline" size={26} color={colors.text} />
             </AnimatedPressable>
-            <AnimatedPressable onPress={() => router.push('/settings')} pressScale={0.9}>
-              <Ionicons name="settings-outline" size={26} color={Colors.textPrimary} />
+            <AnimatedPressable
+              onPress={() => router.push("/settings")}
+              pressScale={0.9}
+            >
+              <Ionicons name="settings-outline" size={26} color={colors.text} />
             </AnimatedPressable>
           </View>
         </View>
 
         {/* Profile Card */}
-        <View style={styles.profileCard}>
+        <View
+          style={[
+            styles.profileCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           {/* Avatar - bấm vào để mở modal chỉnh sửa, có badge bút chì báo hiệu */}
           <Pressable onPress={() => setIsModalVisible(true)} hitSlop={8}>
             <View style={styles.avatarWrap}>
               {isLoadingAvatar ? (
                 <ActivityIndicator size="small" color={Colors.primary} />
               ) : (
-                <AvatarDisplay uri={avatarUrl} size={AVATAR_SIZE} backgroundColor="#F5ECFF" />
+                <AvatarDisplay
+                  uri={avatarUrl}
+                  size={AVATAR_SIZE}
+                  backgroundColor={isDark ? "#2A2A3E" : "#F5ECFF"}
+                />
               )}
             </View>
             <View style={styles.editBadge}>
@@ -111,27 +153,38 @@ export default function ProfileTabScreen() {
 
           {/* User Info Row */}
           <View style={styles.userInfoRow}>
-            <Text style={styles.userHandle}>
-              @{user?.email?.split('@')[0].toUpperCase() || 'USER'} • THAM GIA TỪ {joinYear}
+            <Text style={[styles.userHandle, { color: colors.textSecondary }]}>
+              @{user?.email?.split("@")[0].toUpperCase() || "USER"} • THAM GIA
+              TỪ {joinYear}
             </Text>
           </View>
 
           {/* Follower Stats */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>3</Text>
-              <Text style={styles.statLabel}>Đang theo dõi</Text>
+              <Text style={[styles.statNumber, { color: colors.text }]}>3</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Đang theo dõi
+              </Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>4</Text>
-              <Text style={styles.statLabel}>Người theo dõi</Text>
+              <Text style={[styles.statNumber, { color: colors.text }]}>4</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Người theo dõi
+              </Text>
             </View>
           </View>
 
           {/* Add Friend Button */}
-          <AnimatedPressable 
-            style={styles.addFriendBtn} 
-            onPress={() => router.push('/friends/search')}
+          <AnimatedPressable
+            style={[
+              styles.addFriendBtn,
+              {
+                backgroundColor: colors.card,
+                borderColor: Colors.primary,
+              },
+            ]}
+            onPress={() => router.push("/friends/search")}
             pressScale={0.97}
           >
             <Ionicons name="person-add" size={20} color={Colors.primary} />
@@ -140,43 +193,95 @@ export default function ProfileTabScreen() {
         </View>
 
         {/* OVERVIEW SECTION */}
-        <Text style={styles.sectionTitle}>TỔNG QUAN</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          TỔNG QUAN
+        </Text>
         <View style={styles.overviewGrid}>
-          <View style={[styles.overviewItem, styles.overviewCard]}>
+          <View
+            style={[
+              styles.overviewItem,
+              styles.overviewCard,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
             <Text style={styles.overviewIcon}>🔥</Text>
             <View>
-              <Text style={styles.overviewText}>
+              <Text style={[styles.overviewText, { color: colors.text }]}>
                 {streak} ngày
               </Text>
-              <Text style={styles.overviewLabel}>Streak</Text>
+              <Text
+                style={[styles.overviewLabel, { color: colors.textSecondary }]}
+              >
+                Streak
+              </Text>
             </View>
           </View>
-          <View style={[styles.overviewItem, styles.overviewCard]}>
+          <View
+            style={[
+              styles.overviewItem,
+              styles.overviewCard,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
             <Text style={styles.overviewIcon}>⚡</Text>
             <View>
-              <Text style={styles.overviewText}>{exp} KN</Text>
-              <Text style={styles.overviewLabel}>Tổng KN</Text>
+              <Text style={[styles.overviewText, { color: colors.text }]}>
+                {exp} KN
+              </Text>
+              <Text
+                style={[styles.overviewLabel, { color: colors.textSecondary }]}
+              >
+                Tổng KN
+              </Text>
             </View>
           </View>
-          <View style={[styles.overviewItem, styles.overviewCard]}>
+          <View
+            style={[
+              styles.overviewItem,
+              styles.overviewCard,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
             <Text style={styles.overviewIcon}>🪙</Text>
             <View>
-              <Text style={styles.overviewText}>{coins} Xu</Text>
-              <Text style={styles.overviewLabel}>Tổng Xu</Text>
+              <Text style={[styles.overviewText, { color: colors.text }]}>
+                {coins} Xu
+              </Text>
+              <Text
+                style={[styles.overviewLabel, { color: colors.textSecondary }]}
+              >
+                Tổng Xu
+              </Text>
             </View>
           </View>
-          <View style={[styles.overviewItem, styles.overviewCard]}>
+          <View
+            style={[
+              styles.overviewItem,
+              styles.overviewCard,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
             <Text style={styles.overviewIcon}>🏅</Text>
             <View>
-              <Text style={styles.overviewText}>0 lần</Text>
-              <Text style={styles.overviewLabel}>Top 3</Text>
+              <Text style={[styles.overviewText, { color: colors.text }]}>
+                0 lần
+              </Text>
+              <Text
+                style={[styles.overviewLabel, { color: colors.textSecondary }]}
+              >
+                Top 3
+              </Text>
             </View>
           </View>
         </View>
 
         {/* FRIENDS STREAK SECTION */}
         <Text style={styles.sectionTitle}>STREAK BẠN BÈ</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
           {[1, 2, 3, 4, 5].map((_, i) => (
             <View key={i} style={styles.dashedCircle}>
               <Ionicons name="add" size={32} color={Colors.locked} />
@@ -187,11 +292,22 @@ export default function ProfileTabScreen() {
         {/* MONTHLY CHALLENGE BADGES */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>HUY HIỆU THỬ THÁCH THÁNG</Text>
-          <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={Colors.textSecondary}
+          />
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-          {['🐻', '🐸', '🐙', '👻'].map((emoji, i) => (
-            <View key={i} style={[styles.badgeCircle, { opacity: i === 3 ? 0.3 : 1 }]}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
+          {["🐻", "🐸", "🐙", "👻"].map((emoji, i) => (
+            <View
+              key={i}
+              style={[styles.badgeCircle, { opacity: i === 3 ? 0.3 : 1 }]}
+            >
               <Text style={styles.badgeEmoji}>{emoji}</Text>
             </View>
           ))}
@@ -200,10 +316,18 @@ export default function ProfileTabScreen() {
         {/* ACHIEVEMENTS */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>THÀNH TÍCH</Text>
-          <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={Colors.textSecondary}
+          />
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-          {['🥇', '🏆', '🎯', '🌟'].map((emoji, i) => (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
+          {["🥇", "🏆", "🎯", "🌟"].map((emoji, i) => (
             <View key={i} style={styles.achievementContainer}>
               <View style={styles.badgeCircle}>
                 <Text style={styles.badgeEmoji}>{emoji}</Text>
@@ -211,7 +335,9 @@ export default function ProfileTabScreen() {
               <View style={styles.levelBadge}>
                 <Text style={styles.levelBadgeText}>MỚI</Text>
               </View>
-              <Text style={styles.achievementNumber}>{i === 0 ? '25' : i === 1 ? '500' : '20000'}</Text>
+              <Text style={styles.achievementNumber}>
+                {i === 0 ? "25" : i === 1 ? "500" : "20000"}
+              </Text>
             </View>
           ))}
         </ScrollView>
@@ -231,52 +357,52 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Important for bottom tab bar clearance
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 15,
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: "800",
     color: Colors.textPrimary,
   },
   headerActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 15,
   },
   profileCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: BorderRadius.xl,
     padding: Spacing.five,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 30,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: "rgba(0,0,0,0.05)",
     ...Shadows.md,
   },
   avatarWrap: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: '#F5ECFF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F5ECFF",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.four,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   editBadge: {
-    position: 'absolute',
+    position: "absolute",
     bottom: Spacing.four + 2,
     right: 2,
     width: 32,
     height: 32,
     borderRadius: 16,
     backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderColor: "#FFFFFF",
     ...Shadows.sm,
   },
   avatarEmoji: {
@@ -284,71 +410,71 @@ const styles = StyleSheet.create({
     lineHeight: 60,
   },
   userInfoRow: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 24,
   },
   userHandle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.textSecondary,
     letterSpacing: 0.5,
   },
   statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 24,
     gap: 40,
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statNumber: {
     color: Colors.textPrimary,
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 4,
   },
   statLabel: {
     color: Colors.textSecondary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   addFriendBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: Colors.surface,
     borderWidth: 2,
     borderColor: Colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
-    width: '100%',
+    width: "100%",
     gap: 10,
     ...Shadows.sm,
   },
   addFriendText: {
     color: Colors.primary,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   sectionTitle: {
     color: Colors.textPrimary,
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: "800",
     marginBottom: 16,
   },
   overviewGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginBottom: 30,
     gap: 10,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   overviewItem: {
-    width: '48%',
-    flexDirection: 'row',
-    alignItems: 'center',
+    width: "48%",
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
     gap: 12,
   },
@@ -357,7 +483,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: "rgba(0,0,0,0.05)",
     ...Shadows.sm,
   },
   overviewIcon: {
@@ -366,12 +492,12 @@ const styles = StyleSheet.create({
   overviewText: {
     color: Colors.textPrimary,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   overviewLabel: {
     color: Colors.textSecondary,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   horizontalScroll: {
     gap: 16,
@@ -382,19 +508,19 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   shopItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: Colors.surface,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: "rgba(0,0,0,0.05)",
     ...Shadows.sm,
   },
   shopItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
     gap: 12,
   },
@@ -403,13 +529,13 @@ const styles = StyleSheet.create({
   },
   shopItemTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.textPrimary,
   },
   shopItemDesc: {
     fontSize: 12,
     color: Colors.textSecondary,
-    maxWidth: '90%',
+    maxWidth: "90%",
   },
   dashedCircle: {
     width: 70,
@@ -417,15 +543,15 @@ const styles = StyleSheet.create({
     borderRadius: 35,
     borderWidth: 2,
     borderColor: Colors.locked,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: Colors.surface,
   },
   sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   badgeCircle: {
@@ -433,22 +559,22 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: "rgba(0,0,0,0.05)",
     ...Shadows.sm,
   },
   badgeEmoji: {
     fontSize: 40,
   },
   achievementContainer: {
-    alignItems: 'center',
-    position: 'relative',
+    alignItems: "center",
+    position: "relative",
     width: 90,
   },
   levelBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: -5,
     right: 5,
     backgroundColor: Colors.secondary,
@@ -458,17 +584,17 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   levelBadgeText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: "900",
   },
   achievementNumber: {
     color: Colors.accent,
     fontSize: 22,
-    fontWeight: '900',
-    position: 'absolute',
+    fontWeight: "900",
+    position: "absolute",
     bottom: -8,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },

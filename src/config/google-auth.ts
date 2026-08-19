@@ -15,4 +15,5 @@
  * 2. Find or create an OAuth 2.0 Client ID of type "Web application"
  * 3. Copy the Client ID (looks like: xxx.apps.googleusercontent.com)
  */
-export const GOOGLE_WEB_CLIENT_ID = "80954200956-4icfk20o6he928rr9oqipunclmnkbifr.apps.googleusercontent.com";
+export const GOOGLE_WEB_CLIENT_ID =
+  "80954200956-4icfk20o6he928rr9oqipunclmnkbifr.apps.googleusercontent.com";

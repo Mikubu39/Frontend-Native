@@ -4,37 +4,39 @@
 
 // Basic Romaji to Hiragana dictionary for vocabulary in app
 const ROMAJI_TO_KANA_MAP: Record<string, string> = {
-  watashi: 'わたし',
-  wa: 'は',
-  gakusei: 'がくせい',
-  desu: 'です',
-  inu: 'いぬ',
-  neko: 'ねこ',
-  ringo: 'りんご',
-  tsukue: 'つくえ',
-  kare: 'かれ',
-  kanojo: 'かのじょ',
-  kore: 'これ',
-  sore: 'それ',
-  are: 'あれ',
-  hon: 'ほん',
-  sensei: 'せんせい',
-  nihon: 'にほん',
-  go: 'ご',
-  ohayou: 'おはよう',
-  konnichiwa: 'こんにちは',
-  konbanwa: 'こんばんは',
-  arigatou: 'ありがとう',
-  sayounara: 'さようなら',
+  watashi: "わたし",
+  wa: "は",
+  gakusei: "がくせい",
+  desu: "です",
+  inu: "いぬ",
+  neko: "ねこ",
+  ringo: "りんご",
+  tsukue: "つくえ",
+  kare: "かれ",
+  kanojo: "かのじょ",
+  kore: "これ",
+  sore: "それ",
+  are: "あれ",
+  hon: "ほん",
+  sensei: "せんせい",
+  nihon: "にほん",
+  go: "ご",
+  ohayou: "おはよう",
+  konnichiwa: "こんにちは",
+  konbanwa: "こんばんは",
+  arigatou: "ありがとう",
+  sayounara: "さようなら",
 };
 
 // Reverse map (Hiragana to Romaji)
-const KANA_TO_ROMAJI_MAP: Record<string, string> = Object.entries(ROMAJI_TO_KANA_MAP).reduce(
+const KANA_TO_ROMAJI_MAP: Record<string, string> = Object.entries(
+  ROMAJI_TO_KANA_MAP,
+).reduce(
   (acc, [romaji, kana]) => {
     acc[kana] = romaji;
     return acc;
   },
-  {} as Record<string, string>
+  {} as Record<string, string>,
 );
 
 /**
@@ -48,7 +50,10 @@ export function isJapanese(text: string): boolean {
  * Converts a romaji word/phrase to Hiragana if available.
  */
 export function toKana(romaji: string): string | null {
-  const clean = romaji.trim().toLowerCase().replace(/[.,!?]/g, '');
+  const clean = romaji
+    .trim()
+    .toLowerCase()
+    .replace(/[.,!?]/g, "");
   if (ROMAJI_TO_KANA_MAP[clean]) {
     return ROMAJI_TO_KANA_MAP[clean];
   }
@@ -56,7 +61,7 @@ export function toKana(romaji: string): string | null {
   const words = clean.split(/\s+/);
   const converted = words.map((w) => ROMAJI_TO_KANA_MAP[w] || w);
   if (converted.some((w, i) => w !== words[i])) {
-    return converted.join(' ');
+    return converted.join(" ");
   }
   return null;
 }
@@ -79,9 +84,9 @@ export function toRomaji(kana: string): string | null {
  */
 export function getDualText(
   text: string,
-  hint?: string
+  hint?: string,
 ): { mainText: string; subText?: string } {
-  if (!text) return { mainText: '' };
+  if (!text) return { mainText: "" };
 
   const cleanText = text.trim();
   const isJp = isJapanese(cleanText);

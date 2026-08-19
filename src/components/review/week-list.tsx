@@ -2,10 +2,16 @@
  * WeekList - Yellow week rows with arrow buttons.
  */
 
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import type { ReviewWeek } from '@/types';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import type { ReviewWeek } from "@/types";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
 
 interface WeekListProps {
   weeks: ReviewWeek[];
@@ -36,9 +42,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: Colors.accentPale,
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.six,

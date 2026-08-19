@@ -2,12 +2,7 @@
  * Onboarding flow type definitions.
  */
 
-export type OnboardingGoal =
-  | 'jlpt'
-  | 'hobby'
-  | 'traveling'
-  | 'talk'
-  | 'work';
+export type OnboardingGoal = "jlpt" | "hobby" | "traveling" | "talk" | "work";
 
 export interface OnboardingGoalOption {
   id: OnboardingGoal;
@@ -20,7 +15,7 @@ export interface OnboardingInterest {
   imageUrl: string;
 }
 
-export type OnboardingLevelId = 'starter' | 'beginner' | 'jlpt';
+export type OnboardingLevelId = "starter" | "beginner" | "jlpt";
 
 export interface OnboardingLevelOption {
   id: OnboardingLevelId;
@@ -28,7 +23,7 @@ export interface OnboardingLevelOption {
   description: string;
 }
 
-export type OnboardingStep = 'goal' | 'interests' | 'level';
+export type OnboardingStep = "goal" | "interests" | "level";
 
 export interface OnboardingState {
   currentStep: OnboardingStep;

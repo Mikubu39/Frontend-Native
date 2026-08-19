@@ -3,30 +3,45 @@
  * Figma screen 27 & 28
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
-import { ListenButton } from '@/components/voice';
-import { useAudio } from '@/hooks/use-audio';
-import { GradientButton } from '@/components/ui/gradient-button';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
+import { ListenButton } from "@/components/voice";
+import { useAudio } from "@/hooks/use-audio";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 export default function ListeningScreen() {
   const router = useRouter();
-  const { isPlaying, play } = useAudio('');
+  const { isPlaying, play } = useAudio("");
   const [showDescription, setShowDescription] = useState(false);
 
   const phrase = {
-    japanese: 'おはようございます',
-    romaji: 'Ohayou gozaimasu',
-    english: 'Good morning',
+    japanese: "おはようございます",
+    romaji: "Ohayou gozaimasu",
+    english: "Good morning",
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => router.back()}
+        >
           <Text style={styles.closeText}>✕ Close</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Listening Exercise</Text>
@@ -36,9 +51,10 @@ export default function ListeningScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.centerContainer}>
           <ListenButton isPlaying={isPlaying} onPress={play} />
-          
+
           <Text style={styles.instructionText}>
-            Listen carefully to the audio and try to understand the pronunciation.
+            Listen carefully to the audio and try to understand the
+            pronunciation.
           </Text>
         </View>
 
@@ -60,7 +76,9 @@ export default function ListeningScreen() {
             style={styles.seeDescriptionButton}
             onPress={() => setShowDescription(true)}
           >
-            <Text style={styles.seeDescriptionText}>See Description & Translation</Text>
+            <Text style={styles.seeDescriptionText}>
+              See Description & Translation
+            </Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -82,9 +100,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
     borderBottomWidth: 1,
@@ -111,24 +129,24 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: Spacing.six,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   centerContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.six,
     paddingVertical: Spacing.eight,
   },
   instructionText: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
     maxWidth: 280,
   },
   seeDescriptionButton: {
-    alignSelf: 'center',
+    alignSelf: "center",
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.five,
     borderRadius: BorderRadius.full,
@@ -148,7 +166,7 @@ const styles = StyleSheet.create({
     padding: Spacing.five,
     borderWidth: 2,
     borderColor: Colors.inputBorder,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -156,16 +174,16 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.four,
   },
   sheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.two,
   },
   sheetTitle: {
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
     color: Colors.textSecondary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   sheetClose: {
     color: Colors.primary,
@@ -192,7 +210,7 @@ const styles = StyleSheet.create({
   englishText: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   footer: {
     paddingHorizontal: Spacing.six,
@@ -200,6 +218,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   continueButton: {
-    width: '100%',
+    width: "100%",
   },
 });

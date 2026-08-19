@@ -1,10 +1,23 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
-import { userService } from '@/services/api/user';
-import { GradientButton } from '@/components/ui/gradient-button';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
+import { userService } from "@/services/api/user";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 export default function ViewSearchProfileScreen() {
   const params = useLocalSearchParams<{
@@ -14,11 +27,11 @@ export default function ViewSearchProfileScreen() {
     level: string;
     isFollowing: string;
   }>();
-  
+
   const router = useRouter();
-  
-  const id = parseInt(params.id || '0', 10);
-  const [isFollowing, setIsFollowing] = useState(params.isFollowing === 'true');
+
+  const id = parseInt(params.id || "0", 10);
+  const [isFollowing, setIsFollowing] = useState(params.isFollowing === "true");
   const [toggling, setToggling] = useState(false);
 
   const handleToggleFollow = async () => {
@@ -46,12 +59,12 @@ export default function ViewSearchProfileScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profileHeader}>
-          {params.avatarUrl && params.avatarUrl !== 'null' ? (
+          {params.avatarUrl && params.avatarUrl !== "null" ? (
             <Image source={{ uri: params.avatarUrl }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
               <Text style={styles.avatarText}>
-                {params.displayName?.charAt(0).toUpperCase() || '?'}
+                {params.displayName?.charAt(0).toUpperCase() || "?"}
               </Text>
             </View>
           )}
@@ -59,14 +72,14 @@ export default function ViewSearchProfileScreen() {
 
           <View style={styles.stats}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>Lv {params.level || '1'}</Text>
+              <Text style={styles.statNumber}>Lv {params.level || "1"}</Text>
               <Text style={styles.statLabel}>Level</Text>
             </View>
           </View>
 
           <View style={styles.actionContainer}>
-            <GradientButton 
-              title={isFollowing ? 'Đang Theo dõi' : 'Theo dõi'}
+            <GradientButton
+              title={isFollowing ? "Đang Theo dõi" : "Theo dõi"}
               onPress={handleToggleFollow}
               disabled={toggling}
             />
@@ -83,14 +96,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: Spacing.four,
   },
   backBtn: {
     width: 40,
     height: 40,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   backText: {
     fontSize: FontSizes.xxl,
@@ -98,7 +111,7 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
@@ -107,11 +120,11 @@ const styles = StyleSheet.create({
     padding: Spacing.six,
   },
   profileHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: Colors.surface,
     padding: Spacing.six,
     borderRadius: BorderRadius.xl,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -127,9 +140,9 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: Colors.primary + '20',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: Colors.primary + "20",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.four,
   },
   avatarText: {
@@ -144,14 +157,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.four,
   },
   stats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.six,
-    width: '100%',
+    width: "100%",
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
   },
   statNumber: {
@@ -165,6 +178,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.one,
   },
   actionContainer: {
-    width: '100%',
+    width: "100%",
   },
 });

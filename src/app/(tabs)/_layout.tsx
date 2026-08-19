@@ -1,181 +1,234 @@
 /**
- * Tab Layout - Redesigned with larger kawaii icons, active labels,
- * refined tab bar styling with rounded corners and better shadows.
+ * Tab Layout – Custom bottom navigation bar.
+ *
+ * Design philosophy (impeccable):
+ *  - Edge-to-edge solid bar anchored to the bottom — no floating pill artifact.
+ *  - Active tab: icon + label inside a tight tinted capsule.
+ *  - Inactive tab: icon only, slightly muted — keeps the bar lean.
+ *  - Thin 1px brand-tinted top border grounds the bar without a heavy shadow.
+ *  - BlurView on iOS for the native frosted look; solid on Android.
+ *  - Motion: tight spring, no carnival bounce.
  */
 
-import React, { useState } from 'react';
-import { StyleSheet, Platform } from 'react-native';
-import { Tabs } from 'expo-router';
-import { BlurView } from 'expo-blur';
-import { AnimatedTabIcon } from '@/components/ui/animated-tab-icon';
-import { MoreBottomSheet } from '@/components/ui/more-bottom-sheet';
-import { Colors, FontWeights, Shadows, BorderRadius, Spacing } from '@/constants/theme';
+import React, { useState } from "react";
+import { StyleSheet, View, Platform } from "react-native";
+import { Tabs } from "expo-router";
+import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { BlurView } from "expo-blur";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TabItem } from "@/components/ui/tab-item";
+import { MoreBottomSheet } from "@/components/ui/more-bottom-sheet";
+import { useTheme } from "@/contexts/theme-context";
+import { Colors, Spacing } from "@/constants/theme";
 
-// Tab icon sizes
-const ICON_SIZE = 28;
+// ------------------------------------------------------------------
+// Tab meta — order determines visual order in the bar
+// ------------------------------------------------------------------
+const TABS = [
+  {
+    name: "index",
+    label: "Học",
+    icon: "home-outline" as const,
+    iconActive: "home" as const,
+  },
+  {
+    name: "leaderboard",
+    label: "Xếp hạng",
+    icon: "trophy-outline" as const,
+    iconActive: "trophy" as const,
+  },
+  {
+    name: "search",
+    label: "Cửa hàng",
+    icon: "storefront-outline" as const,
+    iconActive: "storefront" as const,
+  },
+  {
+    name: "quests",
+    label: "Nhiệm vụ",
+    icon: "flag-outline" as const,
+    iconActive: "flag" as const,
+  },
+  {
+    name: "feed",
+    label: "Bạn bè",
+    icon: "people-outline" as const,
+    iconActive: "people" as const,
+  },
+  {
+    name: "more",
+    label: "Thêm",
+    icon: "grid-outline" as const,
+    iconActive: "grid" as const,
+  },
+] as const;
 
+// ------------------------------------------------------------------
+// CustomTabBar — receives React Navigation state from <Tabs tabBar>
+// ------------------------------------------------------------------
+interface CustomTabBarInternalProps extends BottomTabBarProps {
+  onMorePress: () => void;
+}
+
+function CustomTabBar({
+  state,
+  navigation,
+  onMorePress,
+}: CustomTabBarInternalProps) {
+  const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  const barPaddingBottom = Math.max(insets.bottom, 8);
+  const barHeight = 56 + barPaddingBottom;
+
+  return (
+    <View
+      style={[
+        styles.barWrapper,
+        { height: barHeight, paddingBottom: barPaddingBottom },
+      ]}
+      accessibilityRole="tablist"
+    >
+      {/* Background layer */}
+      {Platform.OS === "ios" ? (
+        <BlurView
+          tint={isDark ? "systemChromeMaterialDark" : "systemChromeMaterial"}
+          intensity={90}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: colors.tabBarBg },
+          ]}
+        />
+      )}
+
+      {/* Top rule */}
+      <View
+        style={[
+          styles.topBorder,
+          {
+            backgroundColor: isDark
+              ? colors.border
+              : Colors.primary + "28",
+          },
+        ]}
+      />
+
+      {/* Tab items */}
+      <View style={styles.itemsRow}>
+        {TABS.map((tab) => {
+          // Find the matching React Navigation route
+          const routeIndex = state.routes.findIndex((r) =>
+            r.name === tab.name,
+          );
+          const focused = routeIndex !== -1 && state.index === routeIndex;
+
+          const handlePress = () => {
+            if (tab.name === "more") {
+              onMorePress();
+              return;
+            }
+
+            const event = navigation.emit({
+              type: "tabPress",
+              target: state.routes[routeIndex]?.key ?? tab.name,
+              canPreventDefault: true,
+            });
+
+            if (!focused && !event.defaultPrevented && routeIndex !== -1) {
+              navigation.navigate(tab.name);
+            }
+          };
+
+          const handleLongPress = () => {
+            if (routeIndex !== -1) {
+              navigation.emit({
+                type: "tabLongPress",
+                target: state.routes[routeIndex]?.key ?? tab.name,
+              });
+            }
+          };
+
+          return (
+            <TabItem
+              key={tab.name}
+              iconName={tab.icon}
+              iconNameActive={tab.iconActive}
+              label={tab.label}
+              focused={focused}
+              onPress={handlePress}
+              onLongPress={handleLongPress}
+            />
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+// ------------------------------------------------------------------
+// Layout
+// ------------------------------------------------------------------
 export default function TabLayout() {
   const [moreSheetVisible, setMoreSheetVisible] = useState(false);
 
   return (
     <>
       <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: Colors.tabActive,
-        tabBarInactiveTintColor: Colors.tabInactive,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarStyle: styles.tabBar,
-        tabBarBackground: () => (
-          <BlurView 
-            tint="light" 
-            intensity={60} 
-            style={styles.blurBackground} 
+        screenOptions={{ headerShown: false }}
+        tabBar={(props) => (
+          <CustomTabBar
+            {...props}
+            onMorePress={() => setMoreSheetVisible(true)}
           />
-        ),
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Học',
-          tabBarIcon: ({ focused }) => (
-            <AnimatedTabIcon
-              iconName="home"
-              focused={focused}
-              size={ICON_SIZE}
-            />
-          ),
-        }}
+        )}
+      >
+        {/* Visible tabs */}
+        {TABS.map((tab) => (
+          <Tabs.Screen
+            key={tab.name}
+            name={tab.name}
+            options={{ title: tab.label }}
+          />
+        ))}
+
+        {/* Hidden — not in the bar */}
+        <Tabs.Screen name="review" options={{ href: null }} />
+        <Tabs.Screen name="characters" options={{ href: null }} />
+        <Tabs.Screen name="profile" options={{ href: null }} />
+        <Tabs.Screen name="dictionary" options={{ href: null }} />
+      </Tabs>
+
+      <MoreBottomSheet
+        visible={moreSheetVisible}
+        onClose={() => setMoreSheetVisible(false)}
       />
-      <Tabs.Screen
-        name="leaderboard"
-        options={{
-          title: 'Xếp hạng',
-          tabBarIcon: ({ focused }) => (
-            <AnimatedTabIcon
-              iconName="shield-alt"
-              focused={focused}
-              size={ICON_SIZE}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Cửa hàng',
-          tabBarIcon: ({ focused }) => (
-            <AnimatedTabIcon
-              iconName="store"
-              focused={focused}
-              size={ICON_SIZE}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="quests"
-        options={{
-          title: 'Nhiệm vụ',
-          tabBarIcon: ({ focused }) => (
-            <AnimatedTabIcon
-              iconName="gift"
-              focused={focused}
-              size={ICON_SIZE}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="feed"
-        options={{
-          title: 'Bảng tin',
-          tabBarIcon: ({ focused }) => (
-            <AnimatedTabIcon
-              iconName="user-friends"
-              focused={focused}
-              size={ICON_SIZE}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: 'Khác',
-          tabBarIcon: ({ focused }) => (
-            <AnimatedTabIcon
-              iconName="ellipsis-h"
-              focused={focused}
-              size={ICON_SIZE}
-            />
-          ),
-        }}
-        listeners={() => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            setMoreSheetVisible(true);
-          },
-        })}
-      />
-      {/* Hide internal screens from bottom tab bar */}
-      <Tabs.Screen
-        name="review"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="characters"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="dictionary"
-        options={{
-          href: null,
-        }}
-      />
-    </Tabs>
-    <MoreBottomSheet visible={moreSheetVisible} onClose={() => setMoreSheetVisible(false)} />
     </>
   );
 }
 
+// ------------------------------------------------------------------
+// Styles
+// ------------------------------------------------------------------
 const styles = StyleSheet.create({
-  tabBar: {
-    position: 'absolute',
-    bottom: Platform.select({ ios: Spacing.six, android: Spacing.four }),
-    left: Spacing.four,
-    right: Spacing.four,
-    height: 68,
-    borderRadius: BorderRadius.xl,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderTopWidth: 0,
-    ...Shadows.lg,
-    // Ensure shadow doesn't get cut off on Android
-    overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
+  barWrapper: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: "hidden",
   },
-  blurBackground: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+  topBorder: {
+    height: 1,
+    width: "100%",
   },
-  tabLabel: {
-    fontSize: 10,
-    fontWeight: FontWeights.bold,
-    marginTop: -4,
-    marginBottom: 6,
+  itemsRow: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.two,
   },
 });

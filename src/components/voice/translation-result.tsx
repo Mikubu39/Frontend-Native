@@ -3,11 +3,17 @@
  * Figma screen 34
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Colors, FontSizes, FontWeights, BorderRadius, Spacing } from '@/constants/theme';
-import { AudioButton } from '../ui/audio-button';
-import { useAudio } from '@/hooks/use-audio';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import {
+  Colors,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+  Spacing,
+} from "@/constants/theme";
+import { AudioButton } from "../ui/audio-button";
+import { useAudio } from "@/hooks/use-audio";
 
 interface TranslationResultProps {
   sourceText: string;
@@ -19,10 +25,10 @@ interface TranslationResultProps {
 
 export function TranslationResult({
   sourceText,
-  sourceLangName = 'English',
+  sourceLangName = "English",
   translatedText,
   translatedRomaji,
-  targetLangName = 'Japanese',
+  targetLangName = "Japanese",
 }: TranslationResultProps) {
   const { isPlaying, play } = useAudio();
 
@@ -40,7 +46,9 @@ export function TranslationResult({
           <Text style={styles.langLabel}>{targetLangName}</Text>
           <AudioButton isPlaying={isPlaying} onPress={play} size="small" />
         </View>
-        <Text style={[styles.mainText, styles.targetText]}>{translatedText}</Text>
+        <Text style={[styles.mainText, styles.targetText]}>
+          {translatedText}
+        </Text>
         {translatedRomaji && (
           <Text style={styles.romajiText}>{translatedRomaji}</Text>
         )}
@@ -51,7 +59,7 @@ export function TranslationResult({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
     gap: Spacing.four,
   },
   card: {
@@ -60,7 +68,7 @@ const styles = StyleSheet.create({
     padding: Spacing.five,
     borderWidth: 1.5,
     borderColor: Colors.creamDark,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -68,19 +76,19 @@ const styles = StyleSheet.create({
   },
   targetCard: {
     borderColor: Colors.primaryLight,
-    backgroundColor: '#FAF5FF', // slight violet tint
+    backgroundColor: "#FAF5FF", // slight violet tint
   },
   targetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.two,
   },
   langLabel: {
     fontSize: FontSizes.xs,
     fontWeight: FontWeights.bold,
     color: Colors.textSecondary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: Spacing.one,
   },
