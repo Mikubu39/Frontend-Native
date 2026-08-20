@@ -18,6 +18,7 @@ import {
 } from "@/constants/theme";
 import { userService } from "@/services/api/user";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function ViewSearchProfileScreen() {
   const params = useLocalSearchParams<{
@@ -29,6 +30,7 @@ export default function ViewSearchProfileScreen() {
   }>();
 
   const router = useRouter();
+  const colors = useTheme();
 
   const id = parseInt(params.id || "0", 10);
   const [isFollowing, setIsFollowing] = useState(params.isFollowing === "true");
@@ -48,17 +50,17 @@ export default function ViewSearchProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
+          <Text style={[styles.backText, { color: colors.text }]}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Hồ Sơ</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Hồ Sơ</Text>
         <View style={styles.backBtn} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.profileHeader}>
+        <View style={[styles.profileHeader, { backgroundColor: colors.card, shadowColor: "transparent", borderWidth: 1, borderColor: colors.borderSubtle, elevation: 0 }]}>
           {params.avatarUrl && params.avatarUrl !== "null" ? (
             <Image source={{ uri: params.avatarUrl }} style={styles.avatar} />
           ) : (
@@ -68,11 +70,11 @@ export default function ViewSearchProfileScreen() {
               </Text>
             </View>
           )}
-          <Text style={styles.fullName}>{params.displayName}</Text>
+          <Text style={[styles.fullName, { color: colors.text }]}>{params.displayName}</Text>
 
           <View style={styles.stats}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>Lv {params.level || "1"}</Text>
+              <Text style={[styles.statNumber, { color: colors.text }]}>Lv {params.level || "1"}</Text>
               <Text style={styles.statLabel}>Level</Text>
             </View>
           </View>

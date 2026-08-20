@@ -22,9 +22,11 @@ import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const colors = useTheme();
   const { signIn, signInWithGoogle } = useAuth();
   const { showError, showWarning } = useToast();
   const [emailOrUser, setEmailOrUser] = useState("");
@@ -54,21 +56,21 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
         {/* Header navigation bar */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
           <AnimatedPressable
             onPress={() => router.replace("/welcome")}
-            style={styles.closeButton}
+            style={[styles.closeButton, { backgroundColor: colors.cardElevated }]}
             pressScale={0.9}
           >
-            <Text style={styles.closeButtonText}>✕</Text>
+            <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
           </AnimatedPressable>
-          <Text style={styles.headerTitle}>Đăng nhập</Text>
+          <Text style={[styles.headerTitle, { color: colors.textSecondary }]}>Đăng nhập</Text>
           <View style={styles.headerPlaceholder} />
         </View>
 
@@ -85,7 +87,7 @@ export default function LoginScreen() {
               style={styles.mascot}
             />
           </View>
-          <Text style={styles.titleText}>Đăng nhập</Text>
+          <Text style={[styles.titleText, { color: colors.text }]}>Đăng nhập</Text>
         </Animated.View>
 
         {/* Inputs */}

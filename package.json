@@ -60,7 +60,7 @@
     "jest": "^30.4.2",
     "jest-expo": "~54.0.0",
     "prettier": "^3.9.6",
-    "react-test-renderer": "^19.2.8",
+    "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
   },
   "scripts": {
@@ -69,6 +69,7 @@
     "android": "node ./scripts/set-local-ip.js && expo run:android",
     "ios": "node ./scripts/set-local-ip.js && expo run:ios",
     "web": "node ./scripts/set-local-ip.js && expo start --web",
+    "build:apk": "node ./scripts/set-local-ip.js && npx eas-cli build -p android --profile preview",
     "lint": "expo lint",
     "test": "jest",
     "format": "prettier --write ."

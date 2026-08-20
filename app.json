@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.tungdzai123.Frontend"
+      "package": "com.tungdzai123.Frontend",
+      "usesCleartextTraffic": true
     },
     "web": {
       "output": "static",
@@ -46,7 +47,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "f5481f98-74b8-4e57-893b-e9116b3bb374"
+        "projectId": "f83a1304-58f3-4e6a-b91c-28ccb024b5b9"
       }
     }
   }

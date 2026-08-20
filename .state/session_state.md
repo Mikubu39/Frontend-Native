@@ -34,6 +34,7 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
 
 ## Progress
 
+- Done: Fixed React list unique key warning in Quests tab (`quests.tsx`).
 - Done: **Full impeccable redesign of Lesson Map** (`src/app/(tabs)/index.tsx`).
   - World: "Game World Traversal" — dark background (#0F0F1A), violet–magenta palette.
   - Hexagon nodes (SVG polygon) replacing circle-progress widgets.
@@ -48,6 +49,16 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
   - New `TabItem` component: pill-expand active pattern (icon → icon + label).
   - New `_layout.tsx`: edge-to-edge, BlurView on iOS, solid on Android, thin brand-tint top border.
   - Uses React Navigation `BottomTabBarProps` for reliable focus state.
+
+- Done: Added "Incomplete Profile" banner on Profile screen.
+  - Checks if user's display name is missing, matches their email, or is a default placeholder.
+  - Displays a prominent banner directing the user to `/profile/edit`.
+  - Used `Ionicons` and `AnimatedPressable` for interaction.
+
+- Done: Added Shop Core enhancements.
+  - Implemented real-time Countdown Timer for active Power-ups (Double XP, etc.) based on `expiresAt`.
+  - Replaced native toast with full-screen "Chưa đủ xu!" Dialog (ModalCard) with smart routing to go learn and earn coins when buying fails.
+  - TypeScript checks passed successfully.
 
 ## Next Steps
 

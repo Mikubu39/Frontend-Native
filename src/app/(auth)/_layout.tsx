@@ -1,12 +1,14 @@
 import { Stack } from "expo-router";
-import { Colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function AuthLayout() {
+  const theme = useTheme();
+
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: Colors.cream },
+        contentStyle: { backgroundColor: theme.background },
         animation: "ios_from_right",
         animationDuration: 280,
         gestureEnabled: true,

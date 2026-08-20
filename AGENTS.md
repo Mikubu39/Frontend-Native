@@ -97,10 +97,14 @@ Before marking ANY React Native task complete or concluding your turn after edit
 - **Code & Syntax Integrity:**
   - **No Duplicate Imports:** Never import the same identifier multiple times in a single file (e.g., `import { Spacing, Spacing } from ...`). Always verify the import block after editing.
   - **JSX & Scope Integrity:** Ensure all JSX tags (`<View>`, `</View>`), brackets `{ ... }`, and parentheses are properly matched and closed.
-- **Mandatory Static Verification:**
+- **Mandatory Static Verification (ZERO EXCEPTIONS):**
   - Run `npx tsc --noEmit` immediately after modifying any `.ts` or `.tsx` file.
-  - Run `npm run lint` and `npm test` (if applicable).
-  - You MUST NOT conclude your turn or inform the user that work is complete until `npx tsc --noEmit` passes with 0 errors.
+  - You MUST NOT conclude your turn or inform the user that work is complete until `npx tsc --noEmit` passes with 0 errors. If it fails, read the error and fix it immediately.
+- **Mandatory E2E / Integration Testing:**
+  - When creating a new feature, a new UI component, or connecting to a new API, you MUST write an integration test using `@testing-library/react-native`.
+  - The test must simulate real user interactions (e.g., `fireEvent.press`, `fireEvent.changeText`) and mock the API responses.
+  - Run `npm test` (or the specific test file using `npx jest path/to/file`) and ensure it passes (green). DO NOT mark the task complete if the test fails.
+  - Run `npm run lint`.
 - If direct execution is unavailable, summarize type-check/test status and request manual verification on emulator/device.
 
 ## No API/Data Guessing

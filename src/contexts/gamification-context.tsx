@@ -29,6 +29,7 @@ interface GamificationState {
   streakFreezeCount: number;
   rankId: number;
   rankName: string;
+  activeEffects: { effectType: string; expiresAt: string }[];
 }
 
 interface GamificationContextType extends GamificationState {
@@ -63,6 +64,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
     streakFreezeCount: 0,
     rankId: 1,
     rankName: "Đồng",
+    activeEffects: [],
   });
 
   const setEnergy = (energy: number) => {
@@ -124,6 +126,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
         rankId: meRes.rankId,
         rankName: meRes.rankName,
         lastRecoveryDate: energyRes.lastRecoveryDate,
+        activeEffects: meRes.activeEffects || [],
       }));
 
       await fetchQuests();
@@ -215,12 +218,8 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
 
     if (state.energy < state.maxEnergy && state.lastRecoveryDate) {
       interval = setInterval(() => {
-        // Parse date. Fix missing 'Z' if it's implicitly UTC from backend
-        const dateStr = state.lastRecoveryDate!.endsWith("Z")
-          ? state.lastRecoveryDate!
-          : state.lastRecoveryDate! + "Z";
-
-        const lastRecovery = new Date(dateStr).getTime();
+        // Parse date directly to respect local time from BE
+        const lastRecovery = new Date(state.lastRecoveryDate!).getTime();
         const now = Date.now();
         const diffMs = now - lastRecovery;
         const ONE_HOUR = 60 * 60 * 1000;

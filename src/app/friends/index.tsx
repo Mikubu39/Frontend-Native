@@ -27,6 +27,7 @@ import { useToast } from "@/contexts/toast-context";
 import { userService } from "@/services/api/user";
 import * as Contacts from "expo-contacts";
 import { UserOverviewResponse } from "@/types/user-api";
+import { useTheme } from "@/hooks/use-theme";
 
 interface FriendOption {
   id: string;
@@ -62,6 +63,7 @@ const OPTIONS: FriendOption[] = [
 
 export default function FriendsScreen() {
   const router = useRouter();
+  const themeColors = useTheme();
   const { showError, showWarning, showInfo } = useToast();
   const [syncResults, setSyncResults] = useState<UserOverviewResponse[] | null>(
     null,
@@ -130,12 +132,12 @@ export default function FriendsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <View style={[styles.header, { backgroundColor: themeColors.card, borderBottomColor: themeColors.borderSubtle }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={themeColors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Thêm Bạn Bè</Text>
+        <Text style={[styles.title, { color: themeColors.text }]}>Thêm Bạn Bè</Text>
         <View style={styles.backBtn} />
       </View>
 
@@ -144,7 +146,7 @@ export default function FriendsScreen() {
           {OPTIONS.map((option) => (
             <AnimatedPressable
               key={option.id}
-              style={styles.optionCard}
+              style={[styles.optionCard, { backgroundColor: themeColors.card, borderColor: themeColors.borderSubtle }]}
               onPress={() => handleOptionPress(option.id)}
               disabled={option.id === "sync" && isSyncing}
               pressScale={0.98}
@@ -158,7 +160,7 @@ export default function FriendsScreen() {
                 <Ionicons name={option.icon} size={24} color={option.color} />
               </View>
               <View style={styles.optionText}>
-                <Text style={styles.optionTitle}>{option.title}</Text>
+                <Text style={[styles.optionTitle, { color: themeColors.text }]}>{option.title}</Text>
                 <Text style={styles.optionSubtitle}>{option.subtitle}</Text>
               </View>
               {option.id === "sync" && isSyncing ? (
@@ -183,9 +185,9 @@ export default function FriendsScreen() {
         transparent={true}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Kết quả đồng bộ</Text>
+          <View style={[styles.modalContent, { backgroundColor: themeColors.background }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: themeColors.borderSubtle }]}>
+              <Text style={[styles.modalTitle, { color: themeColors.text }]}>Kết quả đồng bộ</Text>
               <TouchableOpacity
                 onPress={() => setSyncResults(null)}
                 style={styles.closeBtn}
@@ -200,7 +202,7 @@ export default function FriendsScreen() {
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={styles.userCard}
+                  style={[styles.userCard, { backgroundColor: themeColors.card, borderColor: themeColors.borderSubtle }]}
                   onPress={() => {
                     setSyncResults(null);
                     router.push({
@@ -231,7 +233,7 @@ export default function FriendsScreen() {
                     </View>
                   )}
                   <View style={styles.userInfo}>
-                    <Text style={styles.fullName}>
+                    <Text style={[styles.fullName, { color: themeColors.text }]}>
                       {item.displayName || "Người dùng"}
                     </Text>
                     <Text style={styles.userLevel}>Lv {item.level || 1}</Text>

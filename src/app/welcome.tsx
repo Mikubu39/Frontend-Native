@@ -16,6 +16,7 @@ import {
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
+import { useTheme } from "@/hooks/use-theme";
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
@@ -30,6 +31,7 @@ const { width } = Dimensions.get("window");
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const colors = useTheme();
 
   const mascotScale = useSharedValue(0);
   const mascotRotate = useSharedValue(0); // Set initial rotation to 0 to prevent tilting
@@ -50,7 +52,7 @@ export default function WelcomeScreen() {
   }));
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         {/* Mascot & Brand Header */}
         <View style={styles.mascotContainer}>
@@ -67,7 +69,7 @@ export default function WelcomeScreen() {
 
           <Animated.Text
             entering={FadeInDown.delay(600).duration(500)}
-            style={styles.brandSubtitle}
+            style={[styles.brandSubtitle, { color: colors.textSecondary }]}
           >
             Học tiếng Nhật tự nhiên, miễn phí và hiệu quả!
           </Animated.Text>
@@ -94,8 +96,8 @@ export default function WelcomeScreen() {
             onPress={() => router.push("/(auth)/login")}
             pressScale={0.97}
           >
-            <View style={styles.secondaryButtonShadow} />
-            <View style={styles.secondaryButtonContent}>
+            <View style={[styles.secondaryButtonShadow, { backgroundColor: colors.borderSubtle }]} />
+            <View style={[styles.secondaryButtonContent, { backgroundColor: colors.backgroundElement, borderColor: colors.borderSubtle }]}>
               <Text style={styles.secondaryButtonText}>
                 TÔI ĐÃ CÓ TÀI KHOẢN
               </Text>

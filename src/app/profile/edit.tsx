@@ -8,11 +8,13 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { showSuccess, showError, showWarning } = useToast();
+  const colors = useTheme();
 
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [username, setUsername] = useState(user?.email?.split("@")[0] || "");
@@ -53,18 +55,18 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.backBtn} onPress={() => router.back()}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.borderSubtle }]}>
+        <Text style={[styles.backBtn, { color: colors.text }]} onPress={() => router.back()}>
           ←
         </Text>
-        <Text style={styles.headerTitle}>Chỉnh sửa Hồ sơ</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Chỉnh sửa Hồ sơ</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Tên hiển thị</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Tên hiển thị</Text>
           <StyledTextInput
             placeholder="Tên hiển thị"
             value={displayName}
@@ -73,7 +75,7 @@ export default function EditProfileScreen() {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Username</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Username</Text>
           <StyledTextInput
             placeholder="Username"
             value={username}
@@ -86,7 +88,7 @@ export default function EditProfileScreen() {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Số điện thoại</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Số điện thoại</Text>
           <StyledTextInput
             placeholder="Số điện thoại mới"
             value={phoneNumber}

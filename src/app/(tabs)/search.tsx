@@ -38,9 +38,39 @@ import { useTheme } from "@/contexts/theme-context";
 import { shopApi } from "@/services/api/shop";
 import { ShopItemDto, InventoryItemDto, ItemType } from "@/types/api";
 
+import { ModalCard } from "@/components/ui/modal-card";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { useRouter } from "expo-router";
+
+const CountdownTimer = ({ expiresAt }: { expiresAt: string }) => {
+  const [timeLeft, setTimeLeft] = useState<string>("");
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      
+      if (diff <= 0) {
+        setTimeLeft("Đã hết hạn");
+        return;
+      }
+
+      const m = Math.floor(diff / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${m}p ${s}s`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  return <Text style={{ color: Colors.warning, fontWeight: "bold", fontSize: FontSizes.xs, marginTop: 4 }}>⏳ Đang kích hoạt: còn {timeLeft}</Text>;
+};
+
 export default function ShopScreen() {
+  const router = useRouter();
   const buttonPulse = useSharedValue(1);
-  const { coins, setGamificationState, fetchGamificationData } =
+  const { coins, activeEffects, setGamificationState, fetchGamificationData } =
     useGamification();
   const { showSuccess, showError } = useToast();
   const { colors, isDark } = useTheme();
@@ -52,6 +82,8 @@ export default function ShopScreen() {
   });
   const [inventory, setInventory] = useState<InventoryItemDto[]>([]);
   const [buyingId, setBuyingId] = useState<number | null>(null);
+  const [showNoCoinModal, setShowNoCoinModal] = useState(false);
+  const [missingCoins, setMissingCoins] = useState(0);
 
   const fetchData = async () => {
     try {
@@ -83,6 +115,11 @@ export default function ShopScreen() {
   }, []);
 
   const handleBuy = async (item: ShopItemDto) => {
+    if (coins < item.priceCoins) {
+      setMissingCoins(item.priceCoins - coins);
+      setShowNoCoinModal(true);
+      return;
+    }
     setBuyingId(item.id);
     try {
       const res = await shopApi.buyItem(item.id);
@@ -183,6 +220,14 @@ export default function ShopScreen() {
                       {inv.equipped ? "(Đang dùng)" : ""}
                     </Text>
                   )}
+                  {(() => {
+                    const activeEffect = activeEffects.find(
+                      (e) => e.effectType === item.effectType
+                    );
+                    return activeEffect ? (
+                      <CountdownTimer expiresAt={activeEffect.expiresAt} />
+                    ) : null;
+                  })()}
                 </View>
 
                 <View style={{ gap: Spacing.two, alignItems: "flex-end" }}>
@@ -307,6 +352,51 @@ export default function ShopScreen() {
             {renderSection("Bùa Lợi (Power-ups)", shopItems.POWERUP)}
             {renderSection("Trang Trí (Cosmetics)", shopItems.COSMETIC)}
           </ScrollView>
+        )}
+
+        {/* No Coin Modal */}
+        {showNoCoinModal && (
+          <ModalCard onClose={() => setShowNoCoinModal(false)}>
+            <View style={{ alignItems: "center", gap: Spacing.four, marginTop: Spacing.four }}>
+              <Text style={{ fontSize: 52 }}>🪙</Text>
+              <Text
+                style={{
+                  fontSize: FontSizes.xl,
+                  fontWeight: FontWeights.extrabold,
+                  color: Colors.textPrimary,
+                  textAlign: "center",
+                }}
+              >
+                Chưa đủ xu!
+              </Text>
+              <Text
+                style={{
+                  fontSize: FontSizes.md,
+                  color: Colors.textSecondary,
+                  textAlign: "center",
+                  lineHeight: 22,
+                }}
+              >
+                Bạn còn thiếu {missingCoins} xu nữa để mua vật phẩm này. Hãy làm bài học hoặc mở rương để kiếm thêm nhé!
+              </Text>
+              <View style={{ width: "100%", gap: Spacing.two, marginTop: Spacing.two }}>
+                <GradientButton
+                  title="ĐI HỌC BÀI"
+                  onPress={() => {
+                    setShowNoCoinModal(false);
+                    router.push("/(tabs)");
+                  }}
+                  style={{ width: "100%" }}
+                />
+                <GradientButton
+                  title="ĐÓNG"
+                  variant="outline"
+                  onPress={() => setShowNoCoinModal(false)}
+                  style={{ width: "100%", borderWidth: 0 }}
+                />
+              </View>
+            </View>
+          </ModalCard>
         )}
       </SafeAreaView>
     </AnimatedScreen>

@@ -98,6 +98,10 @@ export interface UserMeResponse {
   currentStreak: number;
   longestStreak: number;
   streakFreezeCount: number;
+  activeEffects?: {
+    effectType: string;
+    expiresAt: string;
+  }[];
 }
 
 // ============== ROADMAP DTOs ==============

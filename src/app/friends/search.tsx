@@ -20,9 +20,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function FriendsSearchScreen() {
   const router = useRouter();
+  const colors = useTheme();
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<UserSearchResponse[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,13 +54,14 @@ export default function FriendsSearchScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
+          <Text style={[styles.backText, { color: colors.text }]}>←</Text>
         </TouchableOpacity>
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { backgroundColor: colors.card, borderColor: colors.borderSubtle, color: colors.text }]}
+          placeholderTextColor={colors.textSecondary}
           placeholder="Search by username..."
           value={keyword}
           onChangeText={setKeyword}
@@ -84,7 +87,7 @@ export default function FriendsSearchScreen() {
           contentContainerStyle={styles.listContainer}
           renderItem={({ item, index }) => (
             <TouchableOpacity
-              style={styles.userCard}
+              style={[styles.userCard, { backgroundColor: colors.card, borderColor: colors.borderSubtle, elevation: 0, shadowOpacity: 0, borderWidth: 1 }]}
               disabled={false}
               onPress={() =>
                 router.push({
@@ -109,22 +112,22 @@ export default function FriendsSearchScreen() {
                 </View>
               )}
               <View style={styles.userInfo}>
-                <Text style={styles.fullName}>{item.displayName}</Text>
+                <Text style={[styles.fullName, { color: colors.text }]}>{item.displayName}</Text>
                 <Text style={styles.username}>Lv {item.level}</Text>
               </View>
-              <TouchableOpacity
-                style={[
-                  styles.followBtn,
-                  item.isFollowing && styles.followingBtn,
-                ]}
-                onPress={() => handleToggleFollow(item.id, index)}
-              >
-                <Text
+                <TouchableOpacity
                   style={[
-                    styles.followBtnText,
-                    item.isFollowing && styles.followingBtnText,
+                    styles.followBtn,
+                    item.isFollowing && [styles.followingBtn, { backgroundColor: colors.background, borderColor: colors.borderSubtle }],
                   ]}
+                  onPress={() => handleToggleFollow(item.id, index)}
                 >
+                  <Text
+                    style={[
+                      styles.followBtnText,
+                      item.isFollowing && [styles.followingBtnText, { color: colors.text }],
+                    ]}
+                  >
                   {item.isFollowing ? "Following" : "Follow"}
                 </Text>
               </TouchableOpacity>

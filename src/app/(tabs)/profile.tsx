@@ -12,6 +12,7 @@ import {
   type AvatarConfig,
 } from "@/data/avatar-options";
 import { avatarApi } from "@/services/api/avatar";
+import { storage } from "@/services/storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -52,6 +53,7 @@ export default function ProfileTabScreen() {
   );
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isLoadingAvatar, setIsLoadingAvatar] = useState(true);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -73,7 +75,19 @@ export default function ProfileTabScreen() {
       }
     };
 
+    const loadBannerState = async () => {
+      try {
+        const dismissed = await storage.get("profile_banner_dismissed");
+        if (isMounted && dismissed === "true") {
+          setIsBannerDismissed(true);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
     loadAvatar();
+    loadBannerState();
     return () => {
       isMounted = false;
     };
@@ -86,6 +100,20 @@ export default function ProfileTabScreen() {
   };
 
   const joinYear = getJoinYear((user as any)?.createdAt);
+
+  const isProfileIncomplete =
+    (!user?.displayName ||
+      user?.displayName === user?.email ||
+      user?.displayName === "Dương Gia Đắc" ||
+      user?.displayName === "Google User" ||
+      user?.displayName.includes("Mock User") ||
+      !(user as any)?.phoneNumber) &&
+    !isBannerDismissed;
+
+  const handleDismissBanner = async () => {
+    setIsBannerDismissed(true);
+    await storage.set("profile_banner_dismissed", "true");
+  };
 
   return (
     <SafeAreaView
@@ -125,6 +153,40 @@ export default function ProfileTabScreen() {
             </AnimatedPressable>
           </View>
         </View>
+
+        {/* INCOMPLETE PROFILE BANNER */}
+        {isProfileIncomplete && (
+          <View
+            style={[
+              styles.incompleteBanner,
+              { backgroundColor: "#FFF4E5", borderColor: "#FFB74D" },
+            ]}
+          >
+            <AnimatedPressable
+              style={styles.incompleteBannerContent}
+              onPress={() => router.push("/profile/edit")}
+              pressScale={0.97}
+            >
+              <Ionicons name="alert-circle" size={32} color="#F57C00" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.incompleteBannerTitle}>
+                  Tài khoản chưa hoàn tất
+                </Text>
+                <Text style={styles.incompleteBannerDesc}>
+                  Bạn còn thiếu thông tin (số điện thoại, tên). Cập nhật ngay!
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#F57C00" />
+            </AnimatedPressable>
+            <Pressable
+              style={styles.dismissBtn}
+              onPress={handleDismissBanner}
+              hitSlop={15}
+            >
+              <Ionicons name="close" size={20} color="#F57C00" />
+            </Pressable>
+          </View>
+        )}
 
         {/* Profile Card */}
         <View
@@ -380,6 +442,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.05)",
     ...Shadows.md,
+  },
+  incompleteBanner: {
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.four,
+    marginBottom: Spacing.four,
+    borderWidth: 1,
+    ...Shadows.sm,
+  },
+  incompleteBannerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.three,
+  },
+  incompleteBannerTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#E65100",
+    marginBottom: 2,
+  },
+  incompleteBannerDesc: {
+    fontSize: 13,
+    color: "#E65100",
+    opacity: 0.8,
+  },
+  dismissBtn: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    padding: 4,
+    zIndex: 10,
   },
   avatarWrap: {
     width: AVATAR_SIZE,

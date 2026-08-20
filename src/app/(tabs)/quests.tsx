@@ -159,7 +159,7 @@ export default function QuestsTabScreen() {
               Không có nhiệm vụ hôm nay
             </Text>
           ) : (
-            quests.map((q: any) => {
+            quests.map((q: any, index: number) => {
               const pct =
                 q.targetValue > 0
                   ? Math.min(
@@ -169,7 +169,7 @@ export default function QuestsTabScreen() {
                   : 0;
               return (
                 <View
-                  key={q.id}
+                  key={q.id ? `quest-${q.id}-${index}` : `quest-${index}`}
                   style={[
                     styles.dailyQuestRow,
                     {
