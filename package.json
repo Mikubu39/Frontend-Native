@@ -61,6 +61,7 @@
     "jest-expo": "~54.0.0",
     "prettier": "^3.9.6",
     "react-test-renderer": "19.1.0",
+    "test-renderer": "^1.2.0",
     "typescript": "~5.9.2"
   },
   "scripts": {
@@ -72,7 +73,13 @@
     "build:apk": "node ./scripts/set-local-ip.js && npx eas-cli build -p android --profile preview",
     "lint": "expo lint",
     "test": "jest",
+    "e2e": "maestro test .maestro/flows",
+    "seed:alphabets": "node ./scripts/generate-alphabet-seed.js",
     "format": "prettier --write ."
+  },
+  "overrides": {
+    "jest-mock": "30.4.1",
+    "jest-environment-node": "30.4.1"
   },
   "private": true
 }

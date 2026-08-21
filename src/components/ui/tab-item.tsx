@@ -94,7 +94,7 @@ export function TabItem({
     transform: [{ scale: scale.value }],
   }));
 
-  const inactiveColor = colors.textSecondary;
+  const inactiveColor = colors.text + "B3"; // ~70% opacity — clear but still secondary to the active tab
 
   return (
     <AnimatedPressable
@@ -115,7 +115,7 @@ export function TabItem({
         <Animated.View style={iconStyle}>
           <Ionicons
             name={focused ? iconNameActive : iconName}
-            size={22}
+            size={24}
             color={focused ? ACTIVE_COLOR : inactiveColor}
           />
         </Animated.View>

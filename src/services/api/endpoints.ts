@@ -62,6 +62,13 @@ export const API_ENDPOINTS = {
     EQUIP: (inventoryId: number | string) =>
       `/api/v1/users/me/shop/inventory/${inventoryId}/equip`,
   },
+  ALPHABETS: {
+    GET_ALL: (type: string) => `/api/v1/alphabets?type=${type}`,
+    PRACTICE_START: "/api/v1/alphabets/practice/start",
+    PRACTICE_SUBMIT: "/api/v1/alphabets/practice/submit",
+    ADMIN_CREATE: "/api/v1/admin/alphabets",
+    ADMIN_BULK_CREATE: "/api/v1/admin/alphabets/bulk",
+  },
   MISTAKES: {
     SUMMARY: "/api/v1/reviews/mistakes/summary",
     START: "/api/v1/reviews/mistakes/start",

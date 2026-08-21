@@ -1,156 +1,126 @@
 /**
- * Characters / Học Chữ Cái Screen - Enhanced with animated tab switching,
- * cell press animations, and animated preview panel entrance.
+ * Characters / Học Chữ Cái Screen
+ *
+ * Ma trận bảng chữ cái lấy từ backend (`GET /api/v1/alphabets?type=...`),
+ * tô màu theo `masteryLevel` và mở màn luyện tập spaced-repetition.
  */
 
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeIn, Layout } from "react-native-reanimated";
+import React, { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import { useFocusEffect, useRouter } from "expo-router";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { useTheme } from "@/contexts/theme-context";
+import { GradientButton } from "@/components/ui/gradient-button";
 import {
+  AlphabetGrid,
+  CharacterPreviewPanel,
+  clampMasteryLevel,
+} from "@/components/alphabet";
+import { useTheme } from "@/contexts/theme-context";
+import { useAudio } from "@/hooks/use-audio";
+import { alphabetApi } from "@/services/api/alphabets";
+import {
+  AlphabetCharacter,
+  AlphabetGroup,
+  AlphabetType,
+  MAX_MASTERY_LEVEL,
+} from "@/types/alphabet";
+import {
+  BorderRadius,
   Colors,
   FontSizes,
   FontWeights,
-  Spacing,
-  BorderRadius,
   Shadows,
-  AnimationPresets,
+  Spacing,
 } from "@/constants/theme";
 
 const { width } = Dimensions.get("window");
-const GRID_CELL_SIZE = (width - 48 - 24) / 5; // 5 columns layout
+const COLUMNS = 5;
+const GRID_GAP = 6;
+/** Bề rộng dự phòng trước khi lưới được đo thật bằng onLayout. */
+const FALLBACK_GRID_WIDTH = width - Spacing.five * 2;
+/** Khớp với CustomTabBar trong (tabs)/_layout.tsx: 56 + max(insets.bottom, 8). */
+const TAB_BAR_BASE_HEIGHT = 56;
+/** Chiều cao footer chứa nút "Bắt đầu luyện tập" (padding + nút gradient). */
+const FOOTER_HEIGHT = 80;
 
-interface Character {
-  kana: string;
-  romaji: string;
-}
-
-const HIRAGANA_DATA: Character[] = [
-  { kana: "あ", romaji: "a" },
-  { kana: "い", romaji: "i" },
-  { kana: "う", romaji: "u" },
-  { kana: "え", romaji: "e" },
-  { kana: "お", romaji: "o" },
-  { kana: "か", romaji: "ka" },
-  { kana: "き", romaji: "ki" },
-  { kana: "く", romaji: "ku" },
-  { kana: "け", romaji: "ke" },
-  { kana: "こ", romaji: "ko" },
-  { kana: "さ", romaji: "sa" },
-  { kana: "し", romaji: "shi" },
-  { kana: "す", romaji: "su" },
-  { kana: "せ", romaji: "se" },
-  { kana: "そ", romaji: "so" },
-  { kana: "た", romaji: "ta" },
-  { kana: "ち", romaji: "chi" },
-  { kana: "つ", romaji: "tsu" },
-  { kana: "て", romaji: "te" },
-  { kana: "と", romaji: "to" },
-  { kana: "な", romaji: "na" },
-  { kana: "に", romaji: "ni" },
-  { kana: "ぬ", romaji: "nu" },
-  { kana: "ね", romaji: "ne" },
-  { kana: "の", romaji: "no" },
-  { kana: "は", romaji: "ha" },
-  { kana: "ひ", romaji: "hi" },
-  { kana: "ふ", romaji: "fu" },
-  { kana: "へ", romaji: "he" },
-  { kana: "ほ", romaji: "ho" },
-  { kana: "ま", romaji: "ma" },
-  { kana: "み", romaji: "mi" },
-  { kana: "む", romaji: "mu" },
-  { kana: "め", romaji: "me" },
-  { kana: "も", romaji: "mo" },
-  { kana: "や", romaji: "ya" },
-  { kana: "", romaji: "" },
-  { kana: "ゆ", romaji: "yu" },
-  { kana: "", romaji: "" },
-  { kana: "よ", romaji: "yo" },
-  { kana: "ら", romaji: "ra" },
-  { kana: "り", romaji: "ri" },
-  { kana: "る", romaji: "ru" },
-  { kana: "れ", romaji: "re" },
-  { kana: "ろ", romaji: "ro" },
-  { kana: "わ", romaji: "wa" },
-  { kana: "", romaji: "" },
-  { kana: "", romaji: "" },
-  { kana: "", romaji: "" },
-  { kana: "を", romaji: "wo" },
-  { kana: "ん", romaji: "n" },
-];
-
-const KATAKANA_DATA: Character[] = [
-  { kana: "ア", romaji: "a" },
-  { kana: "イ", romaji: "i" },
-  { kana: "ウ", romaji: "u" },
-  { kana: "エ", romaji: "e" },
-  { kana: "オ", romaji: "o" },
-  { kana: "カ", romaji: "ka" },
-  { kana: "キ", romaji: "ki" },
-  { kana: "ク", romaji: "ku" },
-  { kana: "ケ", romaji: "ke" },
-  { kana: "コ", romaji: "ko" },
-  { kana: "サ", romaji: "sa" },
-  { kana: "シ", romaji: "shi" },
-  { kana: "ス", romaji: "su" },
-  { kana: "セ", romaji: "se" },
-  { kana: "ソ", romaji: "so" },
-  { kana: "タ", romaji: "ta" },
-  { kana: "チ", romaji: "chi" },
-  { kana: "ツ", romaji: "tsu" },
-  { kana: "テ", romaji: "te" },
-  { kana: "ト", romaji: "to" },
-  { kana: "ナ", romaji: "na" },
-  { kana: "ニ", romaji: "ni" },
-  { kana: "ヌ", romaji: "nu" },
-  { kana: "ネ", romaji: "ne" },
-  { kana: "ノ", romaji: "no" },
-  { kana: "ハ", romaji: "ha" },
-  { kana: "ヒ", romaji: "hi" },
-  { kana: "フ", romaji: "fu" },
-  { kana: "ヘ", romaji: "he" },
-  { kana: "ホ", romaji: "ho" },
-  { kana: "マ", romaji: "ma" },
-  { kana: "ミ", romaji: "mi" },
-  { kana: "ム", romaji: "mu" },
-  { kana: "メ", romaji: "me" },
-  { kana: "モ", romaji: "mo" },
-  { kana: "ヤ", romaji: "ya" },
-  { kana: "", romaji: "" },
-  { kana: "ユ", romaji: "yu" },
-  { kana: "", romaji: "" },
-  { kana: "ヨ", romaji: "yo" },
-  { kana: "ラ", romaji: "ra" },
-  { kana: "リ", romaji: "ri" },
-  { kana: "ル", romaji: "ru" },
-  { kana: "レ", romaji: "re" },
-  { kana: "ロ", romaji: "ro" },
-  { kana: "ワ", romaji: "wa" },
-  { kana: "", romaji: "" },
-  { kana: "", romaji: "" },
-  { kana: "", romaji: "" },
-  { kana: "ヲ", romaji: "wo" },
-  { kana: "ン", romaji: "n" },
+const TABS: { type: AlphabetType; label: string }[] = [
+  { type: "HIRAGANA", label: "Hiragana (あ)" },
+  { type: "KATAKANA", label: "Katakana (ア)" },
 ];
 
 export default function CharactersScreen() {
   const { colors, isDark } = useTheme();
-  const [activeTab, setActiveTab] = useState<"hiragana" | "katakana">(
-    "hiragana",
-  );
-  const [selectedChar, setSelectedChar] = useState<Character | null>(null);
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isPlaying, play } = useAudio();
 
-  const currentData = activeTab === "hiragana" ? HIRAGANA_DATA : KATAKANA_DATA;
+  // Thanh tab nổi đè lên đáy màn hình -> footer phải kê lên đúng bằng chiều cao đó.
+  const tabBarHeight = TAB_BAR_BASE_HEIGHT + Math.max(insets.bottom, 8);
+  // Đo bề rộng thật thay vì tính từ Dimensions: đủ 5 ô mỗi hàng trên mọi bề
+  // rộng màn hình (kể cả web, tablet, chia đôi màn hình).
+  const [gridWidth, setGridWidth] = useState(FALLBACK_GRID_WIDTH);
+  const cellSize = Math.floor((gridWidth - GRID_GAP * (COLUMNS - 1)) / COLUMNS);
+
+  const [activeType, setActiveType] = useState<AlphabetType>("HIRAGANA");
+  const [groups, setGroups] = useState<AlphabetGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<AlphabetCharacter | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await alphabetApi.getAlphabets(activeType);
+      setGroups(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setGroups([]);
+      setError(e instanceof Error ? e.message : "Không tải được bảng chữ cái.");
+    } finally {
+      setLoading(false);
+    }
+  }, [activeType]);
+
+  // Tải lại mỗi khi màn hình được focus để tiến độ cập nhật ngay sau khi luyện tập.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const characters = groups.flatMap((group) => group.characters);
+  const levels = characters.map((character) =>
+    clampMasteryLevel(character.masteryLevel),
+  );
+  // "Đã học" = đã luyện ít nhất 1 lần (viền bắt đầu sáng), "thành thạo" = mức tối đa.
+  const learnedCount = levels.filter((level) => level > 0).length;
+  const masteredCount = levels.filter(
+    (level) => level >= MAX_MASTERY_LEVEL,
+  ).length;
+
+  const handleSelect = (character: AlphabetCharacter) => {
+    setSelected(character);
+    if (character.audioUrl) play(character.audioUrl);
+  };
 
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={["top"]}
     >
-      {/* Header Tabs */}
       <View
         style={[
           styles.header,
@@ -163,125 +133,57 @@ export default function CharactersScreen() {
             { backgroundColor: isDark ? "#232338" : Colors.cream },
           ]}
         >
-          <AnimatedPressable
-            style={[
-              styles.tabButton,
-              activeTab === "hiragana" && [
-                styles.activeTabButton,
-                { backgroundColor: colors.card },
-              ],
-            ]}
-            onPress={() => {
-              setActiveTab("hiragana");
-              setSelectedChar(null);
-            }}
-            pressScale={0.97}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                { color: colors.textSecondary },
-                activeTab === "hiragana" && styles.activeTabText,
-              ]}
-            >
-              Hiragana (あ)
-            </Text>
-          </AnimatedPressable>
-
-          <AnimatedPressable
-            style={[
-              styles.tabButton,
-              activeTab === "katakana" && [
-                styles.activeTabButton,
-                { backgroundColor: colors.card },
-              ],
-            ]}
-            onPress={() => {
-              setActiveTab("katakana");
-              setSelectedChar(null);
-            }}
-            pressScale={0.97}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                { color: colors.textSecondary },
-                activeTab === "katakana" && styles.activeTabText,
-              ]}
-            >
-              Katakana (ア)
-            </Text>
-          </AnimatedPressable>
+          {TABS.map((tab) => {
+            const active = activeType === tab.type;
+            return (
+              <AnimatedPressable
+                key={tab.type}
+                style={[
+                  styles.tabButton,
+                  active && [
+                    styles.activeTabButton,
+                    { backgroundColor: colors.card },
+                  ],
+                ]}
+                onPress={() => {
+                  setActiveType(tab.type);
+                  setSelected(null);
+                }}
+                pressScale={0.97}
+                accessibilityState={{ selected: active }}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    { color: colors.textSecondary },
+                    active && styles.activeTabText,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </AnimatedPressable>
+            );
+          })}
         </View>
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: tabBarHeight + FOOTER_HEIGHT + Spacing.five },
+        ]}
+        onLayout={(event) =>
+          setGridWidth(event.nativeEvent.layout.width - Spacing.five * 2)
+        }
         showsVerticalScrollIndicator={false}
       >
-        {/* Character Detail Preview Panel */}
-        {selectedChar ? (
-          <Animated.View
-            entering={FadeIn.duration(300)}
-            style={[
-              styles.previewPanel,
-              { backgroundColor: colors.card, borderColor: Colors.primary },
-            ]}
-          >
-            <View
-              style={[
-                styles.previewHeader,
-                { borderBottomColor: colors.borderSubtle },
-              ]}
-            >
-              <Text style={styles.previewLabel}>KÝ TỰ ĐANG CHỌN</Text>
-              <AnimatedPressable
-                onPress={() => setSelectedChar(null)}
-                pressScale={0.9}
-              >
-                <View
-                  style={[
-                    styles.closeCircle,
-                    { backgroundColor: isDark ? "#2A2A3E" : Colors.lockedBg },
-                  ]}
-                >
-                  <Ionicons
-                    name="close"
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                </View>
-              </AnimatedPressable>
-            </View>
-            <View style={styles.previewBody}>
-              <View
-                style={[
-                  styles.bigCharContainer,
-                  { backgroundColor: isDark ? "#232338" : Colors.cream },
-                ]}
-              >
-                <Text style={styles.bigChar}>{selectedChar.kana}</Text>
-              </View>
-              <View style={styles.charInfo}>
-                <Text style={[styles.romajiLabel, { color: colors.text }]}>
-                  Phiên âm: /{selectedChar.romaji}/
-                </Text>
-                <AnimatedPressable
-                  style={styles.audioBtn}
-                  onPress={() => {}}
-                  pressScale={0.95}
-                >
-                  <Ionicons
-                    name="volume-medium"
-                    size={18}
-                    color="#FFFFFF"
-                    style={{ marginRight: 4 }}
-                  />
-                  <Text style={styles.audioEmoji}>Nghe phát âm</Text>
-                </AnimatedPressable>
-              </View>
-            </View>
-          </Animated.View>
+        {selected ? (
+          <CharacterPreviewPanel
+            character={selected}
+            isPlaying={isPlaying}
+            onPlayAudio={() => play(selected.audioUrl ?? undefined)}
+            onClose={() => setSelected(null)}
+          />
         ) : (
           <Animated.View
             entering={FadeIn.duration(300)}
@@ -295,59 +197,67 @@ export default function CharactersScreen() {
           >
             <Ionicons name="bulb" size={28} color={Colors.accent} />
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              Chạm vào bất kỳ chữ cái nào để xem chi tiết cách phiên âm, nghe
-              phát âm mẫu và học viết!
+              Chạm vào một chữ cái để nghe phát âm. Viền càng sáng nghĩa là bạn
+              càng thông thạo chữ đó.
             </Text>
           </Animated.View>
         )}
 
-        {/* Character Grid */}
-        <View style={styles.grid}>
-          {currentData.map((item, index) => {
-            if (!item.kana) {
-              // Empty spacer cell
-              return <View key={`empty-${index}`} style={styles.emptyCell} />;
-            }
-
-            const isSelected = selectedChar?.kana === item.kana;
-
-            return (
-              <AnimatedPressable
-                key={item.kana}
-                style={[
-                  styles.cell,
-                  { backgroundColor: colors.card },
-                  isSelected && [
-                    styles.selectedCell,
-                    { backgroundColor: isDark ? "#2A2A44" : "#F5F3FF" },
-                  ],
-                ]}
-                onPress={() => setSelectedChar(item)}
-                pressScale={0.92}
+        {loading ? (
+          <View style={styles.stateBox}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        ) : error ? (
+          <View style={styles.stateBox}>
+            <Ionicons name="cloud-offline" size={36} color={Colors.locked} />
+            <Text style={[styles.stateText, { color: colors.textSecondary }]}>
+              {error}
+            </Text>
+            <GradientButton title="Thử lại" onPress={load} variant="outline" />
+          </View>
+        ) : groups.length === 0 ? (
+          <View style={styles.stateBox}>
+            <Text style={[styles.stateText, { color: colors.textSecondary }]}>
+              Chưa có dữ liệu bảng chữ cái cho mục này.
+            </Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.summaryRow}>
+              <Text
+                style={[styles.summaryText, { color: colors.textSecondary }]}
               >
-                <Text
-                  style={[
-                    styles.cellKana,
-                    { color: colors.text },
-                    isSelected && styles.selectedCellText,
-                  ]}
-                >
-                  {item.kana}
-                </Text>
-                <Text
-                  style={[
-                    styles.cellRomaji,
-                    { color: colors.textSecondary },
-                    isSelected && styles.selectedRomaji,
-                  ]}
-                >
-                  {item.romaji}
-                </Text>
-              </AnimatedPressable>
-            );
-          })}
-        </View>
+                Đã học {learnedCount}/{characters.length} · Thành thạo{" "}
+                {masteredCount}/{characters.length}
+              </Text>
+            </View>
+            <AlphabetGrid
+              groups={groups}
+              cellSize={cellSize}
+              gap={GRID_GAP}
+              columns={COLUMNS}
+              selectedId={selected?.characterId ?? null}
+              onSelect={handleSelect}
+            />
+          </>
+        )}
       </ScrollView>
+
+      <View
+        style={[
+          styles.footer,
+          {
+            bottom: tabBarHeight,
+            backgroundColor: colors.card,
+            borderTopColor: colors.borderSubtle,
+          },
+        ]}
+      >
+        <GradientButton
+          title="Bắt đầu luyện tập"
+          onPress={() => router.push("/alphabet/practice")}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -358,17 +268,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   header: {
-    backgroundColor: "#FFFFFF",
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.five,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
     alignItems: "center",
     ...Shadows.sm,
   },
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: Colors.cream,
     borderRadius: BorderRadius.xl,
     padding: 4,
     width: "100%",
@@ -381,13 +288,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   activeTabButton: {
-    backgroundColor: "#FFFFFF",
     ...Shadows.sm,
   },
   tabText: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
-    color: Colors.textSecondary,
   },
   activeTabText: {
     color: Colors.primaryDark,
@@ -396,141 +301,46 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.five,
     paddingVertical: Spacing.five,
-    paddingBottom: 100,
   },
   infoBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
     borderRadius: BorderRadius.xl,
     padding: Spacing.four,
     marginBottom: Spacing.five,
     gap: Spacing.three,
-    ...Shadows.sm,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.03)",
+    ...Shadows.sm,
   },
   infoText: {
     flex: 1,
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
     lineHeight: 18,
   },
-  previewPanel: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: BorderRadius.xxl,
-    padding: Spacing.five,
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    marginBottom: Spacing.five,
-    ...Shadows.glow(Colors.primary),
+  summaryRow: {
+    marginBottom: Spacing.three,
   },
-  previewHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lockedBg,
-    paddingBottom: 8,
-    marginBottom: Spacing.four,
-  },
-  previewLabel: {
-    fontSize: 11,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.primary,
-    letterSpacing: 0.5,
-  },
-  closeCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 26,
-    backgroundColor: Colors.lockedBg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  previewBody: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.six,
-  },
-  bigCharContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 28,
-    backgroundColor: Colors.cream,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bigChar: {
-    fontSize: 52,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.primaryDark,
-  },
-  charInfo: {
-    flex: 1,
-    gap: 10,
-  },
-  romajiLabel: {
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-  },
-  audioBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    alignSelf: "flex-start",
-    ...Shadows.glow(Colors.primary),
-  },
-  audioEmoji: {
-    color: "#FFFFFF",
+  summaryText: {
     fontSize: FontSizes.sm,
-    fontWeight: FontWeights.extrabold,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    justifyContent: "space-between",
-  },
-  cell: {
-    width: GRID_CELL_SIZE,
-    height: GRID_CELL_SIZE + 10,
-    backgroundColor: "#FFFFFF",
-    borderRadius: BorderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    ...Shadows.sm,
-  },
-  selectedCell: {
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    backgroundColor: "#F5F3FF",
-    ...Shadows.glow(Colors.primary),
-  },
-  cellKana: {
-    fontSize: 24,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-  },
-  selectedCellText: {
-    color: Colors.primaryDark,
-  },
-  cellRomaji: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  selectedRomaji: {
-    color: Colors.primary,
     fontWeight: FontWeights.bold,
   },
-  emptyCell: {
-    width: GRID_CELL_SIZE,
-    height: GRID_CELL_SIZE + 10,
-    backgroundColor: "transparent",
+  stateBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.three,
+    paddingVertical: Spacing.eight,
+  },
+  stateText: {
+    fontSize: FontSizes.sm,
+    textAlign: "center",
+  },
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    paddingHorizontal: Spacing.five,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.three,
+    borderTopWidth: 1,
   },
 });

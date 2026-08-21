@@ -1,0 +1,26 @@
+appId: com.tungdzai123.Frontend
+---
+# Assumes the app was just launched with a cleared session (welcome screen visible).
+# Logs in with the shared test account and waits until the tab bar shows.
+# Dev builds show a "Open debugger to view warnings." banner at the bottom
+# of the screen that overlaps the welcome screen's buttons and swallows taps
+# meant for them. Dismiss it first if present.
+- runFlow:
+    when:
+      visible: "Open debugger to view warnings."
+    commands:
+      - tapOn:
+          point: "92%,92%"
+
+- tapOn: "TÔI ĐÃ CÓ TÀI KHOẢN"
+- extendedWaitUntil:
+    visible: "Email hoặc tên đăng nhập"
+    timeout: 8000
+- tapOn: "Email hoặc tên đăng nhập"
+- inputText: "nicek92408@gmai.com"
+- hideKeyboard
+- tapOn: "Mật khẩu"
+- inputText: "123"
+- hideKeyboard
+- tapOn: "ĐĂNG NHẬP"
+- assertVisible: "Học"

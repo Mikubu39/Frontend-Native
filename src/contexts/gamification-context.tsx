@@ -15,7 +15,7 @@ import {
   userService,
 } from "@/services/api";
 import { useAuth } from "@/contexts/auth-context";
-import { Quest, ChestStatus } from "@/types";
+import { Quest, ChestStatus, OpenChestResponse } from "@/types";
 
 interface GamificationState {
   energy: number;
@@ -41,7 +41,8 @@ interface GamificationContextType extends GamificationState {
   refillEnergy: () => Promise<void>;
   fetchQuests: () => Promise<void>;
   fetchChestStatus: () => Promise<void>;
-  openChest: () => Promise<void>;
+  /** Resolves with the payout so the caller can show what was won. */
+  openChest: () => Promise<OpenChestResponse>;
   buyStreakFreeze: () => Promise<void>;
   watchAdToRefill: () => Promise<void>;
 }
@@ -169,6 +170,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       const res = await chestApi.openChest();
       setState((prev) => ({ ...prev, coins: res.currentCoins }));
       await fetchChestStatus();
+      return res;
     } catch (error) {
       console.error("Failed to open chest:", error);
       throw error;

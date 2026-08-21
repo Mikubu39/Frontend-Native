@@ -6,15 +6,14 @@
  *  - Active tab: icon + label inside a tight tinted capsule.
  *  - Inactive tab: icon only, slightly muted — keeps the bar lean.
  *  - Thin 1px brand-tinted top border grounds the bar without a heavy shadow.
- *  - BlurView on iOS for the native frosted look; solid on Android.
+ *  - Solid, fully opaque background on all platforms — no blur/frosted look.
  *  - Motion: tight spring, no carnival bounce.
  */
 
 import React, { useState } from "react";
-import { StyleSheet, View, Platform } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Tabs } from "expo-router";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TabItem } from "@/components/ui/tab-item";
 import { MoreBottomSheet } from "@/components/ui/more-bottom-sheet";
@@ -89,21 +88,13 @@ function CustomTabBar({
       ]}
       accessibilityRole="tablist"
     >
-      {/* Background layer */}
-      {Platform.OS === "ios" ? (
-        <BlurView
-          tint={isDark ? "systemChromeMaterialDark" : "systemChromeMaterial"}
-          intensity={90}
-          style={StyleSheet.absoluteFill}
-        />
-      ) : (
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            { backgroundColor: colors.tabBarBg },
-          ]}
-        />
-      )}
+      {/* Background layer — solid, fully opaque */}
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          { backgroundColor: colors.tabBarBg },
+        ]}
+      />
 
       {/* Top rule */}
       <View

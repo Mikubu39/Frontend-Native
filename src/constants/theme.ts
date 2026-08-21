@@ -77,7 +77,7 @@ export const Colors = {
     cardElevated: "#FFFFFF",
     border: "#E5E7EB",
     borderSubtle: "#F3F4F6",
-    tabBarBg: "rgba(255, 255, 255, 0.75)",
+    tabBarBg: "#FFFFFF",
     tabBarBorder: "rgba(255, 255, 255, 0.8)",
   },
   dark: {
@@ -90,7 +90,7 @@ export const Colors = {
     cardElevated: "#30303D",
     border: "#3F3F4E",
     borderSubtle: "#2A2A35",
-    tabBarBg: "rgba(38, 38, 49, 0.9)",
+    tabBarBg: "#262631",
     tabBarBorder: "rgba(255, 255, 255, 0.12)",
   },
 } as const;

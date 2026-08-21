@@ -89,7 +89,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // Starts true: index.tsx redirects based on isAuthenticated as soon as
+  // isLoading is false, so it must stay true until the persisted session
+  // has actually been read — otherwise it redirects to /welcome before
+  // loadSession() below has a chance to restore the logged-in user.
+  const [isLoading, setIsLoading] = useState(true);
 
   // Configure Google Sign-In once when the provider mounts
   useEffect(() => {
@@ -107,6 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (e) {
         console.error("Failed to load session", e);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadSession();

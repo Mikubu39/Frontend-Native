@@ -1,0 +1,25 @@
+appId: com.tungdzai123.Frontend
+---
+# Leaderboard / Ranks screen: rank tabs, podium, and rank-switching.
+# Relies on a session already being logged in on the device (session
+# persistence across launchApp was a real bug — fixed, see .maestro/README.md
+# Known Issues #2). Run subflows/login.yaml once by hand first if the device
+# is logged out; this flow doesn't drive the login form itself because
+# `inputText` is separately broken in this environment (Known Issues #1).
+- launchApp
+# Normalize the starting tab — the active tab's label can be visually
+# truncated (e.g. "Xếp ..."), so land on Home first where "Xếp hạng" is
+# guaranteed to still read as the inactive tab's full label.
+- tapOn: "Học"
+- tapOn: "Xếp hạng"
+- assertVisible: "Bảng xếp hạng"
+- assertVisible: "BRONZE"
+
+# Switch to a rank the user is not currently in — banner should show the
+# "need more EXP" message instead of a position.
+- tapOn: "SILVER"
+- assertVisible: "Hạng SILVER"
+
+# Switch back to the user's own rank.
+- tapOn: "BRONZE"
+- assertVisible: "Hạng BRONZE"

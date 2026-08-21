@@ -1,585 +1,224 @@
 /**
- * Shop Screen - Fetches real items from Backend Shop API
+ * Shop Screen
+ *
+ * A shop you walk into: a lacquer counter with the day's featured item and
+ * your purse, shelves you switch between, and a purchase sheet for the deal
+ * itself. Data and actions live in `useShop`; this file composes the layout.
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  RefreshControl,
   ScrollView,
-  ActivityIndicator,
-  Alert,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import Animated, {
-  FadeIn,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnimatedScreen } from "@/components/ui/animated-screen";
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { StaggeredList } from "@/components/ui/staggered-list";
 import {
-  Colors,
-  FontSizes,
-  FontWeights,
-  Spacing,
-  BorderRadius,
-  Shadows,
-} from "@/constants/theme";
-import { useGamification } from "@/contexts/gamification-context";
-import { useToast } from "@/contexts/toast-context";
+  ItemSheet,
+  ItemTile,
+  PurseEmptyDialog,
+  ShelfEmpty,
+  ShelfTabs,
+  ShopCounter,
+  ShopSkeleton,
+} from "@/components/shop";
+import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 import { useTheme } from "@/contexts/theme-context";
-import { shopApi } from "@/services/api/shop";
-import { ShopItemDto, InventoryItemDto, ItemType } from "@/types/api";
+import { useShop } from "@/hooks/use-shop";
+import type { ShelfEntry, ShelfKey } from "@/types/shop";
 
-import { ModalCard } from "@/components/ui/modal-card";
-import { GradientButton } from "@/components/ui/gradient-button";
-import { useRouter } from "expo-router";
-
-const CountdownTimer = ({ expiresAt }: { expiresAt: string }) => {
-  const [timeLeft, setTimeLeft] = useState<string>("");
-
-  useEffect(() => {
-    const updateTimer = () => {
-      const diff = new Date(expiresAt).getTime() - Date.now();
-      
-      if (diff <= 0) {
-        setTimeLeft("Đã hết hạn");
-        return;
-      }
-
-      const m = Math.floor(diff / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${m}p ${s}s`);
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [expiresAt]);
-
-  return <Text style={{ color: Colors.warning, fontWeight: "bold", fontSize: FontSizes.xs, marginTop: 4 }}>⏳ Đang kích hoạt: còn {timeLeft}</Text>;
+const EMPTY_STATES: Record<
+  ShelfKey,
+  { icon: string; title: string; body: string }
+> = {
+  CONSUMABLE: {
+    icon: "cube-outline",
+    title: "Kệ đang trống",
+    body: "Hàng mới sẽ lên kệ sớm. Kéo xuống để tải lại.",
+  },
+  POWERUP: {
+    icon: "flame-outline",
+    title: "Kệ đang trống",
+    body: "Hàng mới sẽ lên kệ sớm. Kéo xuống để tải lại.",
+  },
+  COSMETIC: {
+    icon: "sparkles-outline",
+    title: "Kệ đang trống",
+    body: "Hàng mới sẽ lên kệ sớm. Kéo xuống để tải lại.",
+  },
+  VAULT: {
+    icon: "briefcase-outline",
+    title: "Túi đồ trống",
+    body: "Mua vật phẩm ở các kệ bên cạnh, chúng sẽ nằm ở đây.",
+  },
 };
 
 export default function ShopScreen() {
   const router = useRouter();
-  const buttonPulse = useSharedValue(1);
-  const { coins, activeEffects, setGamificationState, fetchGamificationData } =
-    useGamification();
-  const { showSuccess, showError } = useToast();
+  const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [shopItems, setShopItems] = useState<Record<ItemType, ShopItemDto[]>>({
-    CONSUMABLE: [],
-    POWERUP: [],
-    COSMETIC: [],
-  });
-  const [inventory, setInventory] = useState<InventoryItemDto[]>([]);
-  const [buyingId, setBuyingId] = useState<number | null>(null);
-  const [showNoCoinModal, setShowNoCoinModal] = useState(false);
-  const [missingCoins, setMissingCoins] = useState(0);
+  const shop = useShop();
 
-  const fetchData = async () => {
-    try {
-      const [itemsRes, invRes] = await Promise.all([
-        shopApi.getShopItems(),
-        shopApi.getInventory(),
-      ]);
-      // Make sure all keys exist even if backend returns empty for some
-      setShopItems({
-        CONSUMABLE: itemsRes.CONSUMABLE || [],
-        POWERUP: itemsRes.POWERUP || [],
-        COSMETIC: itemsRes.COSMETIC || [],
-      });
-      setInventory(invRes);
-    } catch (e) {
-      console.error("Failed to load shop:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [shelf, setShelf] = useState<ShelfKey>("CONSUMABLE");
+  /** The sheet tracks an id, not an entry, so it stays fresh after a purchase. */
+  const [openItemId, setOpenItemId] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchData();
-    buttonPulse.value = withRepeat(
-      withTiming(1.05, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
+  const entries = shop.entriesFor(shelf);
+  const openEntry = shop.findEntry(openItemId);
+
+  const chipColor = isDark ? colors.backgroundElement : Colors.creamDark;
+
+  const activeUntil = useMemo(() => {
+    if (!openEntry) return null;
+    const match = shop.activeEffects.find(
+      (effect) => effect.effectType === openEntry.item.effectType,
     );
-  }, []);
+    return match && new Date(match.expiresAt).getTime() > Date.now()
+      ? match.expiresAt
+      : null;
+  }, [openEntry, shop.activeEffects]);
 
-  const handleBuy = async (item: ShopItemDto) => {
-    if (coins < item.priceCoins) {
-      setMissingCoins(item.priceCoins - coins);
-      setShowNoCoinModal(true);
-      return;
-    }
-    setBuyingId(item.id);
-    try {
-      const res = await shopApi.buyItem(item.id);
-      showSuccess("Mua thành công!", res.message);
-      setGamificationState({ coins: res.currentCoins });
-      fetchData(); // Refresh inventory
-    } catch (e: any) {
-      showError("Mua thất bại", e?.response?.data?.message || "Không đủ coins");
-    } finally {
-      setBuyingId(null);
-    }
+  const openItem = (entry: ShelfEntry) => setOpenItemId(entry.item.id);
+
+  const handleBuy = async (entry: ShelfEntry) => {
+    const bought = await shop.buy(entry.item);
+    if (!bought && shop.coins < entry.item.priceCoins) setOpenItemId(null);
   };
 
-  const handleConsume = async (invItem: InventoryItemDto) => {
-    try {
-      const res = await shopApi.consumeItem(invItem.inventoryId);
-      showSuccess("Sử dụng thành công!", res.message);
-      fetchGamificationData(); // Update energy/streak/coins from BE globally
-      fetchData(); // Refresh inventory
-    } catch (e: any) {
-      showError("Lỗi", e?.response?.data?.message || "Có lỗi xảy ra");
-    }
-  };
-
-  const handleEquip = async (invItem: InventoryItemDto) => {
-    try {
-      await shopApi.equipItem(invItem.inventoryId);
-      showSuccess(
-        "Thành công",
-        `Đã ${invItem.equipped ? "tháo" : "trang bị"} ${invItem.name}`,
-      );
-      fetchData(); // Refresh inventory
-    } catch (e: any) {
-      showError("Lỗi", e?.response?.data?.message || "Có lỗi xảy ra");
-    }
-  };
-
-  const getInventoryItem = (itemId: number) => {
-    return inventory.find((i) => i.itemId === itemId);
-  };
-
-  const buttonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonPulse.value }],
-  }));
-
-  const renderSection = (title: string, items: ShopItemDto[]) => {
-    if (items.length === 0) return null;
-
-    return (
-      <View style={{ marginBottom: Spacing.six }}>
-        <Animated.Text
-          entering={FadeIn.delay(100).duration(250)}
-          style={[styles.sectionTitle, { color: colors.text }]}
-        >
-          {title}
-        </Animated.Text>
-        <StaggeredList staggerDelay={80} initialDelay={300}>
-          {items.map((item) => {
-            const inv = getInventoryItem(item.id);
-            const isBuying = buyingId === item.id;
-            const canBuy = coins >= item.priceCoins;
-
-            return (
-              <AnimatedPressable
-                key={item.id}
-                style={[
-                  styles.itemCard,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                ]}
-                onPress={() => {}}
-                pressScale={0.98}
-              >
-                <View
-                  style={[
-                    styles.itemIconContainer,
-                    { backgroundColor: isDark ? "#232338" : Colors.cream },
-                  ]}
-                >
-                  {item.iconUrl ? (
-                    <Text style={styles.itemIcon}>🎁</Text> // Fallback emoji if no valid image, could use Image here
-                  ) : (
-                    <Text style={styles.itemIcon}>✨</Text>
-                  )}
-                </View>
-
-                <View style={styles.itemInfo}>
-                  <Text style={[styles.itemTitle, { color: colors.text }]}>
-                    {item.name}
-                  </Text>
-                  <Text
-                    style={[styles.itemDesc, { color: colors.textSecondary }]}
-                  >
-                    {item.description}
-                  </Text>
-                  {inv && (
-                    <Text style={styles.inventoryText}>
-                      Trong túi: {inv.quantity}{" "}
-                      {inv.equipped ? "(Đang dùng)" : ""}
-                    </Text>
-                  )}
-                  {(() => {
-                    const activeEffect = activeEffects.find(
-                      (e) => e.effectType === item.effectType
-                    );
-                    return activeEffect ? (
-                      <CountdownTimer expiresAt={activeEffect.expiresAt} />
-                    ) : null;
-                  })()}
-                </View>
-
-                <View style={{ gap: Spacing.two, alignItems: "flex-end" }}>
-                  {/* Buy Button */}
-                  <AnimatedPressable
-                    style={styles.buyButton}
-                    onPress={() => handleBuy(item)}
-                    pressScale={0.93}
-                    disabled={isBuying || !canBuy}
-                  >
-                    <View style={styles.buyButtonShadow} />
-                    <View
-                      style={[
-                        styles.buyButtonContent,
-                        !canBuy && { backgroundColor: colors.textSecondary },
-                      ]}
-                    >
-                      <Text style={styles.buyButtonText}>
-                        {isBuying ? "..." : `${item.priceCoins} 🪙`}
-                      </Text>
-                    </View>
-                  </AnimatedPressable>
-
-                  {/* Consume / Equip Button if in inventory */}
-                  {inv && inv.quantity > 0 && item.itemType !== "COSMETIC" && (
-                    <AnimatedPressable
-                      style={styles.actionButton}
-                      onPress={() => handleConsume(inv)}
-                    >
-                      <Text style={styles.actionButtonText}>Dùng</Text>
-                    </AnimatedPressable>
-                  )}
-                  {inv && inv.quantity > 0 && item.itemType === "COSMETIC" && (
-                    <AnimatedPressable
-                      style={[
-                        styles.actionButton,
-                        inv.equipped && { backgroundColor: Colors.success },
-                      ]}
-                      onPress={() => handleEquip(inv)}
-                    >
-                      <Text style={styles.actionButtonText}>
-                        {inv.equipped ? "Tháo" : "Mặc"}
-                      </Text>
-                    </AnimatedPressable>
-                  )}
-                </View>
-              </AnimatedPressable>
-            );
-          })}
-        </StaggeredList>
-      </View>
-    );
-  };
+  const emptyState = EMPTY_STATES[shelf];
 
   return (
     <AnimatedScreen>
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: colors.background }]}
-        edges={["top"]}
-      >
-        <View
-          style={[
-            styles.header,
-            { backgroundColor: colors.card, borderBottomColor: colors.border },
-          ]}
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ShopCounter
+          coins={shop.coins}
+          buffs={shop.activeEffects}
+          featured={shop.featured}
+          onOpenItem={openItem}
+          topInset={insets.top}
+        />
+
+        <ShelfTabs
+          active={shelf}
+          onSelect={setShelf}
+          vaultCount={shop.vaultCount}
+          chipColor={chipColor}
+          mutedColor={colors.textSecondary}
+        />
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={shop.isRefreshing}
+              onRefresh={shop.refresh}
+              tintColor={Colors.primary}
+            />
+          }
         >
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            Cửa hàng
-          </Text>
-          <View style={styles.gemCounter}>
-            <Text style={styles.gemEmoji}>🪙</Text>
-            <Text style={styles.gemText}>{coins}</Text>
-          </View>
-        </View>
-
-        {loading ? (
-          <View
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-          >
-            <ActivityIndicator size="large" color={Colors.primary} />
-          </View>
-        ) : (
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Super Banner */}
-            <Animated.View entering={FadeIn.duration(300)}>
-              <LinearGradient
-                colors={[Colors.primary, "#6D28D9"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.superBanner}
-              >
-                <View style={styles.superHeader}>
-                  <Text style={styles.superIcon}>🦉⚡</Text>
-                  <View style={styles.superContent}>
-                    <Text style={styles.superTitle}>Super Kotodama</Text>
-                    <Text style={styles.superDesc}>
-                      Học không quảng cáo, vô hạn Tim và tính năng độc quyền!
-                    </Text>
-                  </View>
-                </View>
-                <Animated.View style={buttonStyle}>
-                  <AnimatedPressable
-                    style={styles.superButton}
-                    onPress={() => {}}
-                    pressScale={0.97}
-                  >
-                    <Text style={styles.superButtonText}>
-                      DÙNG THỬ 2 TUẦN MIỄN PHÍ
-                    </Text>
-                  </AnimatedPressable>
-                </Animated.View>
-              </LinearGradient>
-            </Animated.View>
-
-            {renderSection(
-              "Vật phẩm Hỗ trợ (Consumables)",
-              shopItems.CONSUMABLE,
-            )}
-            {renderSection("Bùa Lợi (Power-ups)", shopItems.POWERUP)}
-            {renderSection("Trang Trí (Cosmetics)", shopItems.COSMETIC)}
-          </ScrollView>
-        )}
-
-        {/* No Coin Modal */}
-        {showNoCoinModal && (
-          <ModalCard onClose={() => setShowNoCoinModal(false)}>
-            <View style={{ alignItems: "center", gap: Spacing.four, marginTop: Spacing.four }}>
-              <Text style={{ fontSize: 52 }}>🪙</Text>
-              <Text
-                style={{
-                  fontSize: FontSizes.xl,
-                  fontWeight: FontWeights.extrabold,
-                  color: Colors.textPrimary,
-                  textAlign: "center",
-                }}
-              >
-                Chưa đủ xu!
+          {shop.isLoading ? (
+            <ShopSkeleton blockColor={chipColor} />
+          ) : shop.loadFailed ? (
+            <ShelfEmpty
+              icon="cloud-offline-outline"
+              title="Không tải được cửa hàng"
+              body="Kiểm tra kết nối rồi kéo xuống để thử lại."
+              textColor={colors.text}
+              mutedColor={colors.textSecondary}
+              borderColor={colors.border}
+            />
+          ) : entries.length === 0 ? (
+            <ShelfEmpty
+              icon={emptyState.icon}
+              title={emptyState.title}
+              body={emptyState.body}
+              textColor={colors.text}
+              mutedColor={colors.textSecondary}
+              borderColor={colors.border}
+            />
+          ) : (
+            <>
+              <Text style={[styles.shelfMeta, { color: colors.textSecondary }]}>
+                {entries.length} món · xếp theo giá
               </Text>
-              <Text
-                style={{
-                  fontSize: FontSizes.md,
-                  color: Colors.textSecondary,
-                  textAlign: "center",
-                  lineHeight: 22,
-                }}
-              >
-                Bạn còn thiếu {missingCoins} xu nữa để mua vật phẩm này. Hãy làm bài học hoặc mở rương để kiếm thêm nhé!
-              </Text>
-              <View style={{ width: "100%", gap: Spacing.two, marginTop: Spacing.two }}>
-                <GradientButton
-                  title="ĐI HỌC BÀI"
-                  onPress={() => {
-                    setShowNoCoinModal(false);
-                    router.push("/(tabs)");
-                  }}
-                  style={{ width: "100%" }}
-                />
-                <GradientButton
-                  title="ĐÓNG"
-                  variant="outline"
-                  onPress={() => setShowNoCoinModal(false)}
-                  style={{ width: "100%", borderWidth: 0 }}
-                />
+              <View style={styles.grid}>
+                <StaggeredList staggerDelay={45} style={styles.gridSlot}>
+                  {entries.map((entry) => (
+                    <ItemTile
+                      key={entry.item.id}
+                      entry={entry}
+                      surface={colors.card}
+                      textColor={colors.text}
+                      mutedColor={colors.textSecondary}
+                      coins={shop.coins}
+                      onPress={openItem}
+                    />
+                  ))}
+                </StaggeredList>
               </View>
-            </View>
-          </ModalCard>
-        )}
-      </SafeAreaView>
+            </>
+          )}
+        </ScrollView>
+
+        <ItemSheet
+          entry={openEntry}
+          coins={shop.coins}
+          pending={shop.pendingItemId === openEntry?.item.id}
+          activeUntil={activeUntil}
+          colors={colors}
+          onClose={() => setOpenItemId(null)}
+          onBuy={handleBuy}
+          onUse={shop.use}
+          onEquip={shop.toggleEquip}
+        />
+
+        {shop.shortfall !== null ? (
+          <PurseEmptyDialog
+            shortfall={shop.shortfall}
+            onGoLearn={() => {
+              shop.clearShortfall();
+              router.push("/(tabs)");
+            }}
+            onClose={shop.clearShortfall}
+          />
+        ) : null}
+      </View>
     </AnimatedScreen>
   );
 }
 
+/** Half the space between grid columns; the row cancels it at the edges. */
+const GRID_GUTTER = 6;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
-  },
-  header: {
-    backgroundColor: "#FFFFFF",
-    paddingVertical: Spacing.four,
-    paddingHorizontal: Spacing.six,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
-    ...Shadows.sm,
-  },
-  headerTitle: {
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-  },
-  gemCounter: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.cream,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: 6,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
-    gap: 6,
-    ...Shadows.sm,
-  },
-  gemEmoji: {
-    fontSize: 18,
-  },
-  gemText: {
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.primary,
   },
   scrollContent: {
+    paddingBottom: 120,
+    gap: Spacing.three,
+  },
+  shelfMeta: {
     paddingHorizontal: Spacing.five,
-    paddingVertical: Spacing.five,
-    paddingBottom: 100,
-  },
-  superBanner: {
-    borderRadius: BorderRadius.xxl,
-    padding: Spacing.six,
-    flexDirection: "column",
-    gap: Spacing.four,
-    marginBottom: Spacing.six,
-    ...Shadows.lg,
-  },
-  superHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.four,
-  },
-  superIcon: {
-    fontSize: 52,
-  },
-  superContent: {
-    flex: 1,
-  },
-  superTitle: {
-    fontSize: FontSizes.xxl,
-    fontWeight: FontWeights.extrabold,
-    color: "#FFFFFF",
-  },
-  superDesc: {
-    fontSize: FontSizes.sm,
-    color: "rgba(255, 255, 255, 0.9)",
-    marginTop: 4,
-    lineHeight: 20,
-  },
-  superButton: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.four,
-    alignItems: "center",
-    width: "100%",
-    ...Shadows.sm,
-  },
-  superButtonText: {
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.primary,
-  },
-  sectionTitle: {
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.four,
-  },
-  itemCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.five,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.four,
-    marginBottom: Spacing.three,
-    ...Shadows.sm,
-  },
-  itemIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.cream,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  itemIcon: {
-    fontSize: 32,
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xs,
     fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
   },
-  itemDesc: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    marginTop: 4,
-    lineHeight: 18,
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: Spacing.five - GRID_GUTTER,
   },
-  inventoryText: {
-    fontSize: FontSizes.xs,
-    color: Colors.primary,
-    marginTop: 4,
-    fontWeight: "bold",
-  },
-  buyButton: {
-    width: 80,
-    height: 36,
-    position: "relative",
-  },
-  buyButtonShadow: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 3,
-    bottom: -3,
-    backgroundColor: "#CC9300",
-    borderRadius: BorderRadius.md,
-  },
-  buyButtonContent: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: Colors.accent,
-    borderRadius: BorderRadius.md,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  buyButtonText: {
-    color: "#FFFFFF",
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.extrabold,
-  },
-  actionButton: {
-    backgroundColor: Colors.primary,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: BorderRadius.md,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  actionButtonText: {
-    color: "#FFFFFF",
-    fontSize: FontSizes.xs,
-    fontWeight: "bold",
+  gridSlot: {
+    width: "50%",
+    paddingHorizontal: GRID_GUTTER,
+    marginBottom: Spacing.three,
   },
 });

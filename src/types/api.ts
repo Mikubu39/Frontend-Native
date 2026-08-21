@@ -208,14 +208,14 @@ export interface LeaderboardUserDto {
   userId: number;
   displayName: string;
   avatarUrl: string | null;
-  exp: number;
+  exp: number | null;
   position: number;
 }
 
 export interface CurrentUserStanding {
   userId: number;
   displayName: string;
-  exp: number;
+  exp: number | null;
   position: number | null;
   message: string;
 }
