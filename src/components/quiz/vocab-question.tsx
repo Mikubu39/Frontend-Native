@@ -4,6 +4,7 @@
 
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Image, Pressable } from "react-native";
+import LottieView from "lottie-react-native";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { AudioButton } from "@/components/ui/audio-button";
 import type { VocabQuestion as VocabQuestionType } from "@/types";
@@ -22,12 +23,15 @@ interface VocabQuestionProps {
   question: VocabQuestionType;
   selectedAnswer: string | null;
   onSelectAnswer: (answerId: string) => void;
+  /** Nguồn Lottie mascot (require(...) của character1/2/3.json) - hiện kèm bong bóng thoại phía trên. */
+  mascotSource?: any;
 }
 
 export function VocabQuestionCard({
   question,
   selectedAnswer,
   onSelectAnswer,
+  mascotSource,
 }: VocabQuestionProps) {
   const [showHint, setShowHint] = useState(false);
   const { colors, isDark } = useTheme();
@@ -39,6 +43,64 @@ export function VocabQuestionCard({
 
   return (
     <View style={styles.container}>
+      {/* Mascot + bong bóng thoại - chỉ hiện khi có mascotSource được truyền vào.
+          Khi có, bong bóng đã hiện question.word rồi nên KHÔNG lặp lại chữ to
+          bên dưới nữa - giữ nguyên tính năng nhấn-giữ-xem-hint bằng cách gắn
+          luôn vào bong bóng. */}
+      {mascotSource ? (
+        <View style={styles.mascotRow}>
+          <LottieView
+            source={mascotSource}
+            autoPlay
+            loop
+            style={styles.mascotLottie}
+          />
+          {question.word ? (
+            <Pressable
+              onLongPress={() => setShowHint(true)}
+              onPressOut={() => setShowHint(false)}
+              delayLongPress={200}
+              style={styles.speechBubbleWrap}
+            >
+              {showHint && question.hint && (
+                <View style={styles.bubbleTooltipContainer}>
+                  <View style={[styles.tooltipBody, { backgroundColor: Colors.secondary }]}>
+                    <Text style={styles.tooltipText}>{question.hint}</Text>
+                  </View>
+                  <View style={[styles.tooltipArrow, { borderTopColor: Colors.secondary }]} />
+                </View>
+              )}
+              <View style={styles.speechBubble}>
+                <View
+                  style={[
+                    styles.speechBubbleArrow,
+                    { borderRightColor: isDark ? "rgba(255,255,255,0.06)" : "#FFFFFF" },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.speechBubbleBody,
+                    {
+                      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#FFFFFF",
+                      borderColor: isDark ? "rgba(255,255,255,0.12)" : cardBorder,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.speechBubbleText,
+                      { color: isDark ? "#F9FAFB" : Colors.textPrimary },
+                    ]}
+                  >
+                    {question.word}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+
       {question.imageUrl ? (
         <Image source={{ uri: question.imageUrl }} style={styles.image} />
       ) : null}
@@ -47,7 +109,7 @@ export function VocabQuestionCard({
         <AudioButton variant="speaker" size="small" onPress={() => {}} />
       </View>
 
-      {question.word ? (
+      {!mascotSource && question.word ? (
         <Pressable
           onLongPress={() => setShowHint(true)}
           onPressOut={() => setShowHint(false)}
@@ -128,6 +190,55 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.four,
     paddingHorizontal: Spacing.two,
+  },
+  mascotRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 0,
+    marginBottom: Spacing.two,
+  },
+  mascotLottie: {
+    width: 100,
+    height: 130,
+    // Kéo bong bóng đè nhẹ lên vùng rìa nhân vật để 2 thứ dính sát nhau hơn.
+    marginRight: -12,
+  },
+  speechBubbleWrap: {
+    position: "relative",
+  },
+  speechBubble: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+  },
+  speechBubbleArrow: {
+    width: 0,
+    height: 0,
+    borderTopWidth: 7,
+    borderBottomWidth: 7,
+    borderRightWidth: 8,
+    borderTopColor: "transparent",
+    borderBottomColor: "transparent",
+  },
+  speechBubbleBody: {
+    borderWidth: 1.5,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.four,
+  },
+  speechBubbleText: {
+    fontSize: FontSizes.lg,
+    fontFamily: Fonts.rounded,
+    fontWeight: FontWeights.bold,
+  },
+  bubbleTooltipContainer: {
+    position: "absolute",
+    top: -54,
+    left: 8,
+    alignItems: "center",
+    zIndex: 20,
+    width: 200,
   },
   image: {
     width: 200,

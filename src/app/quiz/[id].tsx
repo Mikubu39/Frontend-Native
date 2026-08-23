@@ -27,7 +27,7 @@ import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import LottieView from "lottie-react-native";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -47,6 +47,14 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+
+// 3 mascot mới, hiện ngẫu nhiên ở mọi loại câu hỏi (khác với happy/confuse_mascot
+// chỉ dùng riêng cho panel feedback sau khi trả lời).
+const QUESTION_MASCOTS = [
+  require("../../../assets/animations/character1.json"),
+  require("../../../assets/animations/character2.json"),
+  require("../../../assets/animations/character3.json"),
+];
 
 export default function QuizScreen() {
   const router = useRouter();
@@ -123,6 +131,14 @@ export default function QuizScreen() {
   }, [lessonId]);
 
   const currentQuestion = questions[currentIndex];
+
+  // Random 1 trong 3 mascot mỗi khi sang câu mới (currentIndex đổi),
+  // không đổi liên tục mỗi lần re-render trong lúc đang làm câu đó.
+  const currentMascot = useMemo(
+    () => QUESTION_MASCOTS[Math.floor(Math.random() * QUESTION_MASCOTS.length)],
+    [currentIndex]
+  );
+
   const progress =
     originalQuestionsLength > 0
       ? Math.min((currentIndex + 1) / originalQuestionsLength, 1)
@@ -309,6 +325,7 @@ export default function QuizScreen() {
           <VocabQuestionCard
             question={currentQuestion}
             selectedAnswer={selectedAnswerId}
+            mascotSource={currentMascot}
             onSelectAnswer={(answerId) => {
               setSelectedAnswerId(answerId);
               const answer = currentQuestion.answers.find(
@@ -608,6 +625,19 @@ export default function QuizScreen() {
             style={{ width: "100%" }}
           >
             <View pointerEvents={hasSubmitted ? "none" : "auto"}>
+              {/* Mascot minh hoạ dùng chung - hiện ở các loại câu hỏi CHƯA tự tích hợp
+                  mascot + bong bóng riêng (vd "vocab" đã tự vẽ trong VocabQuestionCard,
+                  nên bỏ qua ở đây để tránh hiện trùng 2 con mascot cùng lúc). */}
+              {currentQuestion.type !== "vocab" && (
+                <View style={styles.questionMascotWrap}>
+                  <LottieView
+                    source={currentMascot}
+                    autoPlay
+                    loop
+                    style={styles.questionMascotLottie}
+                  />
+                </View>
+              )}
               {renderQuestionCard()}
             </View>
           </Animated.View>
@@ -803,6 +833,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: Spacing.six,
     gap: Spacing.six,
+  },
+  questionMascotWrap: {
+    alignItems: "center",
+    marginBottom: Spacing.four,
+  },
+  questionMascotLottie: {
+    width: 160,
+    height: 200,
   },
   redoIntroLottie: {
     width: 220,
