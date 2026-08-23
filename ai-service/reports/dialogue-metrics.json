@@ -1,0 +1,247 @@
+{
+  "structural_coverage": {
+    "per_scenario": {
+      "directions": {
+        "pairs": 36,
+        "reachable": 30,
+        "coverage": 0.8333333333333334,
+        "holes": [
+          [
+            "approach",
+            "affirm"
+          ],
+          [
+            "approach",
+            "deny"
+          ],
+          [
+            "got_direction",
+            "affirm"
+          ],
+          [
+            "got_direction",
+            "deny"
+          ],
+          [
+            "confirmed",
+            "affirm"
+          ],
+          [
+            "confirmed",
+            "deny"
+          ]
+        ]
+      },
+      "restaurant": {
+        "pairs": 70,
+        "reachable": 55,
+        "coverage": 0.7857142857142857,
+        "holes": [
+          [
+            "welcome",
+            "affirm"
+          ],
+          [
+            "welcome",
+            "deny"
+          ],
+          [
+            "welcome",
+            "restaurant_ask_bill"
+          ],
+          [
+            "welcome",
+            "restaurant_order"
+          ],
+          [
+            "seated",
+            "affirm"
+          ],
+          [
+            "seated",
+            "deny"
+          ],
+          [
+            "seated",
+            "restaurant_ask_bill"
+          ],
+          [
+            "order_taken",
+            "restaurant_ask_bill"
+          ],
+          [
+            "order_taken",
+            "restaurant_seat"
+          ],
+          [
+            "eating",
+            "affirm"
+          ],
+          [
+            "eating",
+            "deny"
+          ],
+          [
+            "eating",
+            "restaurant_seat"
+          ],
+          [
+            "paying",
+            "deny"
+          ],
+          [
+            "paying",
+            "restaurant_order"
+          ],
+          [
+            "paying",
+            "restaurant_seat"
+          ]
+        ]
+      },
+      "self_intro": {
+        "pairs": 84,
+        "reachable": 72,
+        "coverage": 0.8571428571428571,
+        "holes": [
+          [
+            "first_meet",
+            "affirm"
+          ],
+          [
+            "first_meet",
+            "deny"
+          ],
+          [
+            "asked_name",
+            "affirm"
+          ],
+          [
+            "asked_name",
+            "deny"
+          ],
+          [
+            "asked_origin",
+            "affirm"
+          ],
+          [
+            "asked_origin",
+            "deny"
+          ],
+          [
+            "asked_job",
+            "affirm"
+          ],
+          [
+            "asked_job",
+            "deny"
+          ],
+          [
+            "asked_hobby",
+            "affirm"
+          ],
+          [
+            "asked_hobby",
+            "deny"
+          ],
+          [
+            "wrap_up",
+            "affirm"
+          ],
+          [
+            "wrap_up",
+            "deny"
+          ]
+        ]
+      },
+      "shopping": {
+        "pairs": 52,
+        "reachable": 43,
+        "coverage": 0.8269230769230769,
+        "holes": [
+          [
+            "welcome",
+            "affirm"
+          ],
+          [
+            "welcome",
+            "shopping_pay"
+          ],
+          [
+            "welcome",
+            "shopping_try_on"
+          ],
+          [
+            "browsing",
+            "affirm"
+          ],
+          [
+            "browsing",
+            "deny"
+          ],
+          [
+            "trying",
+            "shopping_try_on"
+          ],
+          [
+            "paying",
+            "affirm"
+          ],
+          [
+            "paying",
+            "deny"
+          ],
+          [
+            "paying",
+            "shopping_try_on"
+          ]
+        ]
+      }
+    },
+    "pairs": 242,
+    "reachable": 200,
+    "coverage": 0.8264462809917356
+  },
+  "replay": {
+    "outcomes": {
+      "wrong_time": 1364,
+      "repeat": 5519,
+      "advanced": 995,
+      "completed": 405
+    },
+    "social_outcomes": {
+      "repeat": 2914,
+      "completed": 232,
+      "advanced": 58
+    },
+    "per_scenario": {
+      "directions": {
+        "wrong_time": 177,
+        "repeat": 966,
+        "advanced": 245,
+        "completed": 58
+      },
+      "restaurant": {
+        "wrong_time": 549,
+        "repeat": 1494,
+        "advanced": 266,
+        "completed": 126
+      },
+      "self_intro": {
+        "wrong_time": 354,
+        "repeat": 1957,
+        "advanced": 237,
+        "completed": 122
+      },
+      "shopping": {
+        "wrong_time": 284,
+        "repeat": 1102,
+        "advanced": 247,
+        "completed": 99
+      }
+    },
+    "n_turns": 8283
+  },
+  "wrong_time_rate": 0.1646746347941567,
+  "social_wrong_time_rate": 0.0
+}

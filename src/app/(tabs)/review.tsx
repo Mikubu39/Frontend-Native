@@ -60,6 +60,15 @@ export default function PracticeHubScreen() {
     },
     {
       id: "p2",
+      title: "Luyện hội thoại AI",
+      description: "Đóng vai tình huống thật và nói chuyện bằng tiếng Nhật.",
+      icon: "chatbubbles-outline",
+      route: "/conversation",
+      badge: "Mới",
+      color: "#8B5CF6",
+    },
+    {
+      id: "p3",
       title: "Sổ tay Từ điển",
       description: "Ôn tập và kiểm tra từ vựng bạn đã mở khóa.",
       icon: "book-outline",
@@ -70,7 +79,7 @@ export default function PracticeHubScreen() {
 
   const additionalItems: PracticeItem[] = [
     {
-      id: "p3",
+      id: "p4",
       title: "Thử thách thời gian",
       description: "Luyện phản xạ nhanh để giành thêm Đá quý.",
       icon: "flash-outline",
@@ -78,7 +87,7 @@ export default function PracticeHubScreen() {
       color: Colors.accent,
     },
     {
-      id: "p4",
+      id: "p5",
       title: "Luyện phát âm chuyên sâu",
       description: "Nghe giọng bản xứ và tập nói lại chuẩn xác.",
       icon: "mic-outline",
@@ -104,14 +113,18 @@ export default function PracticeHubScreen() {
       </View>
       <View style={styles.cardContent}>
         <View style={styles.titleRow}>
-          <Text style={[styles.itemTitle, { color: colors.text }]}>{item.title}</Text>
+          <Text style={[styles.itemTitle, { color: colors.text }]}>
+            {item.title}
+          </Text>
           {item.badge ? (
             <View style={[styles.badge, { backgroundColor: item.color }]}>
               <Text style={styles.badgeText}>{item.badge}</Text>
             </View>
           ) : null}
         </View>
-        <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>{item.description}</Text>
+        <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
+          {item.description}
+        </Text>
       </View>
       <View style={styles.arrowContainer}>
         <Ionicons
@@ -124,10 +137,20 @@ export default function PracticeHubScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={["top"]}
+    >
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Trung tâm luyện tập</Text>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.card, borderBottomColor: colors.border },
+        ]}
+      >
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Trung tâm luyện tập
+        </Text>
       </View>
 
       <ScrollView
@@ -146,7 +169,9 @@ export default function PracticeHubScreen() {
             <Ionicons name="barbell" size={32} color={Colors.primary} />
           </View>
           <View style={styles.introInfo}>
-            <Text style={[styles.introTitle, { color: colors.text }]}>Nâng cao phản xạ</Text>
+            <Text style={[styles.introTitle, { color: colors.text }]}>
+              Nâng cao phản xạ
+            </Text>
             <Text style={[styles.introDesc, { color: colors.textSecondary }]}>
               Ôn luyện hằng ngày giúp bạn nhớ lâu hơn gấp 4 lần.
             </Text>

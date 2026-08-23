@@ -1,4 +1,5 @@
 import { StartLessonQuestion } from "@/types/api";
+import { resolveMediaUrl } from "@/utils/media";
 import {
   KanaQuestion,
   ListeningQuestion,
@@ -22,8 +23,8 @@ export function mapApiQuestionsToQuizQuestions(
     const answers: QuizAnswer[] = (q.options || []).map((opt) => ({
       id: String(opt.optionId),
       text: opt.content || "",
-      imageUrl: opt.imageUrl,
-      audioUrl: opt.audioUrl,
+      imageUrl: resolveMediaUrl(opt.imageUrl),
+      audioUrl: resolveMediaUrl(opt.audioUrl),
       isCorrect: !!opt.isCorrect,
     }));
 
@@ -40,7 +41,7 @@ export function mapApiQuestionsToQuizQuestions(
           word: q.content,
           hint,
           originalOptions,
-          audioUrl: q.audioUrl,
+          audioUrl: resolveMediaUrl(q.audioUrl),
           images: answers,
         } as PictureQuestion;
 
@@ -51,7 +52,7 @@ export function mapApiQuestionsToQuizQuestions(
           instruction: "Nghe và chọn đáp án đúng",
           hint,
           originalOptions,
-          audioUrl: q.audioUrl || "",
+          audioUrl: resolveMediaUrl(q.audioUrl) ?? "",
           answers,
         } as ListeningQuestion;
 
@@ -75,8 +76,8 @@ export function mapApiQuestionsToQuizQuestions(
           instruction: "Nghe và sắp xếp câu",
           hint,
           originalOptions,
-          imageUrl: q.imageUrl || "",
-          audioUrl: q.audioUrl,
+          imageUrl: resolveMediaUrl(q.imageUrl) ?? "",
+          audioUrl: resolveMediaUrl(q.audioUrl),
           characters,
           correctOrder,
         } as KanaQuestion;
@@ -111,7 +112,7 @@ export function mapApiQuestionsToQuizQuestions(
           word: cleanWord || q.content,
           hint,
           originalOptions,
-          imageUrl: q.imageUrl || "",
+          imageUrl: resolveMediaUrl(q.imageUrl) ?? "",
           answers,
         } as VocabQuestion;
       }

@@ -28,6 +28,7 @@ import { userService } from "@/services/api/user";
 import * as Contacts from "expo-contacts";
 import { UserOverviewResponse } from "@/types/user-api";
 import { useTheme } from "@/hooks/use-theme";
+import { resolveMediaUrl } from "@/utils/media";
 
 interface FriendOption {
   id: string;
@@ -132,12 +133,24 @@ export default function FriendsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
-      <View style={[styles.header, { backgroundColor: themeColors.card, borderBottomColor: themeColors.borderSubtle }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: themeColors.background }]}
+    >
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: themeColors.card,
+            borderBottomColor: themeColors.borderSubtle,
+          },
+        ]}
+      >
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={themeColors.text} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: themeColors.text }]}>Thêm Bạn Bè</Text>
+        <Text style={[styles.title, { color: themeColors.text }]}>
+          Thêm Bạn Bè
+        </Text>
         <View style={styles.backBtn} />
       </View>
 
@@ -146,7 +159,13 @@ export default function FriendsScreen() {
           {OPTIONS.map((option) => (
             <AnimatedPressable
               key={option.id}
-              style={[styles.optionCard, { backgroundColor: themeColors.card, borderColor: themeColors.borderSubtle }]}
+              style={[
+                styles.optionCard,
+                {
+                  backgroundColor: themeColors.card,
+                  borderColor: themeColors.borderSubtle,
+                },
+              ]}
               onPress={() => handleOptionPress(option.id)}
               disabled={option.id === "sync" && isSyncing}
               pressScale={0.98}
@@ -160,7 +179,9 @@ export default function FriendsScreen() {
                 <Ionicons name={option.icon} size={24} color={option.color} />
               </View>
               <View style={styles.optionText}>
-                <Text style={[styles.optionTitle, { color: themeColors.text }]}>{option.title}</Text>
+                <Text style={[styles.optionTitle, { color: themeColors.text }]}>
+                  {option.title}
+                </Text>
                 <Text style={styles.optionSubtitle}>{option.subtitle}</Text>
               </View>
               {option.id === "sync" && isSyncing ? (
@@ -185,9 +206,21 @@ export default function FriendsScreen() {
         transparent={true}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: themeColors.background }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: themeColors.borderSubtle }]}>
-              <Text style={[styles.modalTitle, { color: themeColors.text }]}>Kết quả đồng bộ</Text>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: themeColors.background },
+            ]}
+          >
+            <View
+              style={[
+                styles.modalHeader,
+                { borderBottomColor: themeColors.borderSubtle },
+              ]}
+            >
+              <Text style={[styles.modalTitle, { color: themeColors.text }]}>
+                Kết quả đồng bộ
+              </Text>
               <TouchableOpacity
                 onPress={() => setSyncResults(null)}
                 style={styles.closeBtn}
@@ -202,7 +235,13 @@ export default function FriendsScreen() {
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.userCard, { backgroundColor: themeColors.card, borderColor: themeColors.borderSubtle }]}
+                  style={[
+                    styles.userCard,
+                    {
+                      backgroundColor: themeColors.card,
+                      borderColor: themeColors.borderSubtle,
+                    },
+                  ]}
                   onPress={() => {
                     setSyncResults(null);
                     router.push({
@@ -220,7 +259,7 @@ export default function FriendsScreen() {
                 >
                   {item.avatarUrl ? (
                     <Image
-                      source={{ uri: item.avatarUrl }}
+                      source={{ uri: resolveMediaUrl(item.avatarUrl) }}
                       style={styles.avatar}
                     />
                   ) : (
@@ -233,7 +272,9 @@ export default function FriendsScreen() {
                     </View>
                   )}
                   <View style={styles.userInfo}>
-                    <Text style={[styles.fullName, { color: themeColors.text }]}>
+                    <Text
+                      style={[styles.fullName, { color: themeColors.text }]}
+                    >
                       {item.displayName || "Người dùng"}
                     </Text>
                     <Text style={styles.userLevel}>Lv {item.level || 1}</Text>

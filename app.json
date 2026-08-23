@@ -38,7 +38,17 @@
         }
       ],
       "@react-native-google-signin/google-signin",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Cho phép Kotodama dùng micro để nghe bạn nói tiếng Nhật khi luyện hội thoại.",
+          "speechRecognitionPermission": "Cho phép Kotodama nhận diện giọng nói để chuyển câu tiếng Nhật bạn nói thành chữ.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false,

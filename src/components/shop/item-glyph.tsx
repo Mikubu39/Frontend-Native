@@ -13,6 +13,7 @@ import { BorderRadius } from "@/constants/theme";
 import type { ShopItemDto } from "@/types/api";
 import type { ItemRarity } from "@/types/shop";
 import { resolveItemArtwork } from "@/utils/shop";
+import { useImageFallback } from "@/hooks/use-image-fallback";
 
 interface ItemGlyphProps {
   item: ShopItemDto;
@@ -22,7 +23,9 @@ interface ItemGlyphProps {
 
 export function ItemGlyph({ item, rarity, size = 56 }: ItemGlyphProps) {
   const tier = RARITY_STYLES[rarity];
-  const artwork = resolveItemArtwork(item.iconUrl);
+  const { uri: artwork, onError } = useImageFallback(
+    resolveItemArtwork(item.iconUrl),
+  );
   const meta = EFFECT_META[item.effectType];
 
   return (
@@ -44,6 +47,7 @@ export function ItemGlyph({ item, rarity, size = 56 }: ItemGlyphProps) {
           style={{ width: size * 0.68, height: size * 0.68 }}
           contentFit="contain"
           accessibilityIgnoresInvertColors
+          onError={onError}
         />
       ) : (
         <Ionicons

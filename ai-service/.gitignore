@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Mô hình được huấn luyện lại lúc build (xem Dockerfile / render.yaml), nên
+# không commit trọng số - tránh trường hợp file .joblib cũ không khớp dataset
+# trong cùng commit.
+artifacts/
+
+# Cache trọng số Transformer tải về khi chạy `evaluate.py --heavy`.
+.cache/

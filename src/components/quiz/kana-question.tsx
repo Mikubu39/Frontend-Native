@@ -76,12 +76,8 @@ export function KanaQuestionCard({
 
   const cardBg = isDark ? "rgba(255,255,255,0.05)" : colors.card;
   const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
-  const previewBorder = isDark
-    ? "rgba(139,92,246,0.4)"
-    : Colors.primary + "55";
-  const previewBg = isDark
-    ? "rgba(139,92,246,0.07)"
-    : Colors.primary + "07";
+  const previewBorder = isDark ? "rgba(139,92,246,0.4)" : Colors.primary + "55";
+  const previewBg = isDark ? "rgba(139,92,246,0.07)" : Colors.primary + "07";
 
   return (
     <View
@@ -125,7 +121,9 @@ export function KanaQuestionCard({
           <Text
             style={[
               styles.placeholderText,
-              { color: isDark ? "rgba(255,255,255,0.2)" : Colors.textSecondary },
+              {
+                color: isDark ? "rgba(255,255,255,0.2)" : Colors.textSecondary,
+              },
             ]}
           >
             Chạm vào các ký tự bên dưới để sắp xếp
@@ -178,7 +176,9 @@ export function KanaQuestionCard({
       <View style={styles.bankContainer}>
         {bank.map((char, index) => {
           const tileTextColor = isDark ? "#F9FAFB" : Colors.textPrimary;
-          const tileSubColor = isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary;
+          const tileSubColor = isDark
+            ? "rgba(255,255,255,0.45)"
+            : Colors.textSecondary;
           return (
             <TouchableOpacity
               key={`bank-${index}`}

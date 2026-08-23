@@ -7,8 +7,18 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
 ## Session Goal
 
 1. Impeccable Quiz & Lesson Flow Redesign — full theme-aware redesign of all quiz screens and question components.
+2. Sửa 3 lỗi chặn buổi demo với giáo viên: (a) bài học hỏi ngay chữ chưa dạy, (b) bản đồ lộ trình giật trên emulator, (c) nút loa không ra tiếng.
 
 ## Plan
+
+- [x] **Lỗi demo #1 — Bài học phải dạy trước khi hỏi (kiểu Duolingo).**
+  - [x] `src/types/lesson-intro.ts` + `src/utils/lesson-intro.ts` (`buildTeachCards`): suy thẻ dạy từ `metadataJson` của chính đề bài.
+  - [x] `src/components/quiz/teach-card.tsx` (`TeachCardView`): mặt chữ + romaji + nghĩa + ảnh, tự phát âm thanh.
+  - [x] Pha dạy trong `src/app/quiz/[id].tsx` (có nút bỏ qua).
+  - [x] `src/app/quiz/ready.tsx` hết hiện lý thuyết mock không liên quan; nhận tên bài thật qua params.
+- [x] **Lỗi demo #2 — Bản đồ lộ trình giật.** Tách `TopicSection` (memo) + `FlatList` windowing, memo `HexNode`, bỏ `TrackDot` chết.
+- [x] **Lỗi demo #3 — Không có âm thanh.** `src/utils/media.ts` (`resolveMediaUrl`) + áp vào `use-audio`, `quiz-mapper`, avatar, icon cửa hàng, màn Bạn bè.
+- [x] Test: `media.test.ts`, `lesson-intro.test.ts`, `quiz/__tests__/teaching-flow.test.tsx`. `npx jest` 12 suite / 69 test xanh, `tsc --noEmit` 0 lỗi.
 
 - [x] Fix Lesson Map path connection bug.
 - [x] Update Profile Avatar layout to match reference.
@@ -35,7 +45,49 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
 - [x] Impeccable Shop Screen Redesign (game-shop direction).
 - [x] Impeccable Quests Screen Redesign ("chặng trong ngày" / mission-track direction).
 
+- [x] **Hội thoại tự nhiên — gỡ nút thắt `wrong_time` của FSM.**
+  - [x] Dựng `evaluate_dialogue.py`: bộ đo TẦNG HỘI THOẠI (độ phủ cấu trúc + phát lại toàn bộ câu train qua mọi trạng thái). `evaluate.py`/`evaluate_system.py` đều dừng trước FSM nên không nhìn thấy lớp lỗi này.
+  - [x] `ALWAYS_ALLOWED` trong `dialogue.py`: `thanks`/`apologize`/`greeting`/`farewell`/`not_understand`/`meta_about_bot` đi vòng qua `expects`.
+  - [x] Khối `anytime` cấp kịch bản (YAML + `Scenario.anytime`): ý định không có thứ tự, khai một lần thay vì chép cạnh vào từng state.
+  - [x] `_decide` đổi thứ tự tra cứu: `state.expects` → `scenario.anytime` → `ALWAYS_ALLOWED` → `wrong_time`.
+  - [x] `wrong_time` nêu thẳng câu đang chờ thay vì bỏ lửng.
+  - [x] 12 test mới (quét toàn bộ state, không kiểm ca lẻ). `pytest` 53/53 xanh.
+
+
+- [x] **Thanh chủ đề kiểu Duolingo trên bản đồ lộ trình.**
+  - [x] `src/components/lessons/topic-header-bar.tsx`: MỘT thanh dính duy nhất dưới header, đổi tên/màu/tiến độ theo chủ đề đang cuộn tới.
+  - [x] `src/components/lessons/topic-divider.tsx`: vạch ngăn giữa hai chủ đề, chỉ mang tên chủ đề SẮP TỚI (chiều cao cố định `TOPIC_DIVIDER_HEIGHT`).
+  - [x] `src/app/(tabs)/index.tsx`: bỏ banner theo từng chủ đề; thêm `topicSectionHeight()` để tính sẵn offset → `getItemLayout` + `onScroll` xác định chủ đề đang xem.
+  - [x] Mock `expo-av` toàn cục trong `jest-setup.js` (barrel `@/components/lessons` kéo theo `use-audio` → native module).
+  - [x] Test `src/app/(tabs)/__tests__/roadmap-topic-bar.test.tsx` (4 ca). `npx jest` 13 suite / 73 test xanh, `tsc --noEmit` 0 lỗi.
+
+- [x] **Sửa nhóm "bản đồ hiển thị sai trạng thái" (BE-1/2/3/5 + FE-1/2).**
+  - [x] `LessonAttemptServiceImpl.startLesson`: replay không còn hạ COMPLETED → IN_PROGRESS (BE-1); luợt đang dở dang vào lại không bị trừ năng lượng lần nữa (BE-5); điều kiện trừ tiền đổi từ `!isReplay` sang `totalEnergy > 0`.
+  - [x] `submitLesson`: `isReplay` suy ra từ trạng thái COMPLETED trong DB thay vì tin cờ client gửi (BE-3). `req.isReplay` vẫn nhận nhưng bị bỏ qua (tương thích ngược).
+  - [x] `cancelLesson`: hạ progress xuống LOCKED sau khi hoàn năng lượng → gọi lặp không cộng thêm (BE-2).
+  - [x] `src/app/(tabs)/index.tsx`: bỏ khối `processedTopics` ép COMPLETED (FE-1); `globalActiveLessonId` quét xuôi thay vì ngược (FE-2); memo hoá `allLessons`; thêm `accessibilityState={{ selected }}` cho node bài học.
+  - [x] Test: 4 test backend mới (`LessonAttemptServiceImplTest` 32 ca) + 2 test FE mới; đã xác nhận 2 test FE FAIL trên mã cũ và PASS trên mã mới. `mvn test` 110 unit test xanh, `npx jest` 13 suite / 75 test xanh, `tsc --noEmit` 0 lỗi.
+
+- [x] **Sửa nốt BE-4 + FE-3 → FE-8.**
+  - [x] BE-4 (một nửa): `submitLesson` chấm lại đáp án từ DB TRƯỚC khi tính thưởng; `perfectLesson`/`goodLesson` dùng kết quả chấm nếu có, chỉ khi không có mới quay về con số client khai. Chưa chặn triệt để vì server vẫn chưa lưu bộ đề của lượt làm bài.
+  - [x] `LessonUnlockPolicy.computeEntryCost` (static, dùng chung) + `RoadmapLessonResponse.entryCostEnergy` → bản đồ báo đúng chi phí năng lượng thật.
+  - [x] `recordAnswers` giữ chính entity vừa dựng thay vì giá trị trả về của `save()`.
+  - [x] FE-3: `checkAnswer` chỉ ghi nhận đáp án khi người học thật sự bấm một lựa chọn có id.
+  - [x] FE-4: nộp bài thất bại → `useToast().showError`, state bài làm giữ nguyên để bấm lại.
+  - [x] FE-5: hook `use-image-fallback.ts` + áp vào `avatar-display`, `leaderboard-avatar`, `item-glyph`, `teach-card`.
+  - [x] FE-6: `lineHeight` của emoji dự phòng co theo `size`.
+  - [x] FE-7: popup năng lượng dùng `maxEnergy` thật; popover chỉ vẽ sao cho `TIMED_REVIEW` và theo `starsEarned`; chi phí năng lượng lấy từ API.
+  - [x] FE-8: `npx eslint --fix` phạm vi `src/` → `npm run lint` 0 error (còn 86 warning).
+  - [x] Test: 3 test backend mới, `avatar-display.test.tsx` (4 ca), test FE-4 trong `teaching-flow.test.tsx` (đã xác nhận fail khi gỡ `showError`). `mvn test` 112 unit test xanh, `npx jest` 14 suite / 80 test xanh, `tsc --noEmit` 0 lỗi.
+
+- [x] **Rà soát toàn dự án (FE + BE)** — báo cáo lỗi logic/hình ảnh/UX kèm phương án sửa (xem Blockers).
+
 ## Progress
+
+- Done: **Sửa 3 lỗi chặn demo (bài học / hiệu năng / âm thanh)** — xem Plan và Decisions.
+  - Nguyên nhân gốc của "không có âm thanh": backend lưu media dạng tương đối (`/uploads/...`, 2790 tham chiếu trong seed) còn RN không có origin để ghép, nên `Audio.Sound.createAsync` và `<Image uri>` fail im lặng. Lỗi này đồng thời làm mất avatar và icon cửa hàng.
+  - Nguyên nhân gốc của "giật": `(tabs)/index.tsx` mount đồng thời toàn bộ 95 node trong một `ScrollView`, mỗi node là SVG + animation lặp vô hạn.
+  - Nguyên nhân gốc của "hỏi chữ chưa dạy": dữ liệu seed đúng như thiết kế (bài 1 câu 1 = "Chữ 「あ」 đọc là gì?") nhưng app không có bước GIỚI THIỆU nào trước phần hỏi.
 
 - Done: Fixed React list unique key warning in Quests tab (`quests.tsx`).
 - Done: **Full impeccable redesign of Lesson Map** (`src/app/(tabs)/index.tsx`).
@@ -131,13 +183,98 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
   - Kiến trúc: `src/types/quest.ts`, `src/constants/quests.ts` (QuestPalette / RailMetrics / QUEST_META / `goldInk`), `src/utils/quests.ts` (thuần), `src/hooks/use-quests.ts`, 8 component trong `src/components/quests/`. Màn hình còn ~120 dòng ghép layout.
   - Kiểm chứng: `npx tsc --noEmit` 0 lỗi, `npm test` 40/40 xanh (thêm `src/app/(tabs)/__tests__/quests.test.tsx` — 5 test tích hợp), ESLint sạch trên toàn bộ file mới. Chạy thật trên emulator ở CẢ dark lẫn light mode và sửa lại theo ảnh chụp (xem Decisions).
 
+- Done: **Tính năng Luyện hội thoại AI (không dùng LLM)** — dịch vụ Python riêng + màn hình RN.
+  - **Dịch vụ AI** (`ai-service/`, tách hẳn khỏi backend Java, KHÔNG đụng `BE_NihongoApp`):
+    - Dataset **tự soạn 730 câu / 30 ý định / 4 kịch bản** (nhà hàng, hỏi đường, mua sắm, tự giới thiệu) ở `data/intents/*.yaml`. Soạn theo 4 trục biến thể: mức lịch sự, kanji↔kana, độ dài câu, và **lỗi thật của người học** (`こんにちわ`, `ありがとうごさいます`).
+    - Nhãn từ chối `out_of_scope` 132 câu chia 4 nhóm nhiễu có chủ ý (tiếng Nhật đúng nhưng lạc đề / đập bàn phím / trêu bot / ký hiệu-emoji).
+    - Mô hình chọn: **TF-IDF n-gram KÝ TỰ (2,5) + Hồi quy Logistic**, C=30, class_weight balanced. 930 KB, train ~2s CPU, suy luận 0.42 ms.
+    - **4 tầng phòng thủ**: luật chặn tất định → ngưỡng tin cậy 0.30 → thu hẹp nhãn theo kịch bản (+chuẩn hoá lại xác suất) → FSM kịch bản.
+    - 41 test pytest xanh; FastAPI phi trạng thái; `Dockerfile` + `render.yaml` (Render free tier, train lúc build).
+  - **Frontend RN**: `src/types/conversation.ts`, `src/constants/conversation.ts`, `src/services/api/conversation.ts` (axios instance riêng, timeout 30s cho cold start), `src/hooks/use-conversation.ts`, 5 component ở `src/components/conversation/`, màn `src/app/conversation/{_layout,index,[id]}.tsx`. Lối vào đặt ở Practice Hub (`(tabs)/review.tsx`), KHÔNG nhét vào luồng bài học chính.
+  - Kiểm chứng: `npx tsc --noEmit` 0 lỗi, `npm test` **51/51 xanh** (thêm 11 test tích hợp), ESLint 0 error trên toàn bộ file mới, và đã smoke-test server uvicorn thật bằng curl.
+  - Tài liệu đầy đủ: `ai-service/README.md`, `reports/DATASET.md`, `reports/EVALUATION.md` + số liệu thô `reports/*.json`.
+
+- Done: **Chạy thật tính năng hội thoại trên emulator Android 16 (SDK 37)** — xác nhận FE ↔ service Python hoạt động đầu-cuối.
+  - Nạp được 4 kịch bản từ service, mở hội thoại, chạm chip gợi ý (điền vào ô nhập, KHÔNG tự gửi — đúng thiết kế), gửi 「Tシャツはありますか。」 → bot hiểu đúng `shopping_ask_item`, dải màu xanh lá, FSM chuyển bước và đổi bộ gợi ý.
+  - Tầng chặn xác nhận hoạt động trên máy: gõ "toi muon mua ao" → viền đỏ + nhãn "CHƯA ĐỌC ĐƯỢC" + hướng dẫn gõ tiếng Nhật, trạng thái hội thoại giữ nguyên.
+  - **Tìm & sửa được 1 bug thật**: bàn phím che hoàn toàn ô nhập trên Android. Nguyên nhân: từ Android 15, chế độ edge-to-edge (Expo SDK 54 bật mặc định) làm `android:windowSoftInputMode="adjustResize"` trong manifest BỊ BỎ QUA, nên `KeyboardAvoidingView behavior={undefined}` (mặc định RN cho Android) không làm gì. Sửa: dùng `behavior="padding"` cho cả hai nền tảng. Đã verify lại trên máy.
+
+- Done: **Thêm giọng nói cho tính năng hội thoại (TTS + STT), nói và gõ SONG SONG không ép chọn**.
+  - `expo-speech@~14.0.8` (đọc, offline) + `expo-speech-recognition@3.1.3` (nghe). **Ghim 3.1.3 vì bản 56.x build cho Expo SDK 56, còn 3.1.3 build cho ~54.0.32** đúng SDK dự án.
+  - `src/hooks/use-japanese-speech.ts` (đọc `ja-JP`, rate 0.85 cho người mới) + `src/hooks/use-speech-input.ts` (STT, có ngưỡng `confidence < 0.6` cảnh báo, map từng mã lỗi sang câu tiếng Việt dùng được ngay).
+  - **STT KHÔNG tự gửi**: transcript rơi vào ô nhập để người học đọc lại/sửa — chặn chuỗi lỗi mic kém → nghe sai → phân loại sai → bot trả lời lạc lõng.
+  - UI: nút mic cạnh nút gửi (cùng tồn tại), nút loa trên từng bong bóng bot, nút bật/tắt tự-đọc ở header. Lỗi mic hiện ở banner nhưng KHÔNG chặn gõ chữ.
+  - **Bug thật #2 tìm được**: `RECORD_AUDIO` không vào APK. Dự án commit sẵn `android/` nên `expo run:android` KHÔNG chạy prebuild → config plugin không bao giờ áp dụng. Sửa bằng cách thêm tay `RECORD_AUDIO` + `<queries>` (`com.google.android.googlequicksearchbox` và intent `android.speech.RecognitionService`) vào `android/app/src/main/AndroidManifest.xml`.
+  - Verify trên emulator: module nạp OK, quyền cấp OK, `start()` OK, UI vào trạng thái "Đang nghe…" với nút dừng đỏ, chuỗi sự kiện `nomatch → error(no-speech) → end` chạy đúng (emulator không có audio đầu vào nên dừng ở đó — đúng như dự kiến).
+  - `jest-setup.js` mock 2 module native (không có JS fallback, không mock thì mọi màn có giọng nói đều crash khi load). `npm test` 56/56 xanh, tsc 0 lỗi, ESLint 0 error.
+
+- Done: **Hội thoại tự nhiên (tầng FSM)** — người dùng báo: hỏi `レストランはどうやって行きますか` ở lượt đầu kịch bản `directions` bị trả "chưa hợp bước này".
+  - Nguyên nhân gốc KHÔNG phải mô hình: bộ phân loại nhận đúng `directions_ask_how_to_get` với độ tin cậy 0.816. Lỗi ở FSM — state `approach` chỉ khai 4 ý định trong `expects`.
+  - Quét toàn bộ mới thấy quy mô thật: 18 state, mỗi state chỉ nhận 2-5 trong 12-14 ý định hợp lệ. Độ phủ cấu trúc 33.1%, và **66.5% số lượt phát lại rơi vào `wrong_time`**.
+  - Tệ nhất: câu xã giao bị chặn **69.2%** — nói "ありがとう" giữa chừng thì bot bảo chưa hợp bước này.
+  - Sau sửa: độ phủ 33.1% → **82.6%**, `wrong_time` 66.5% → **17.9%**, xã giao 69.2% → **0.0%**.
+  - `advanced` (528) và `completed` (262) KHÔNG đổi một lượt nào — bằng chứng các luồng kịch bản soạn tay không bị đụng tới.
+  - `evaluate_system.py` giữ nguyên 12.9% harmful / 84.1% chặn lạc đề: thay đổi này thuần tầng hội thoại, không chạm bộ phân loại.
+
+
+- Done: **Lỗ hổng dataset 「〜に行きたいです」** — người dùng gõ `コンビニに行きたい。` bị trả "lạc chủ đề".
+  - Nguyên nhân: `out_of_scope.yaml` có sẵn `日本に行きたいです`. Với n-gram KÝ TỰ thì `に行きたいです` trùng khít, nên thứ DUY NHẤT phân biệt được là DANH TỪ.
+  - Thêm 12 ví dụ vào `directions_ask_how_to_get`, toàn dùng địa điểm đi bộ tới được (駅・コンビニ・トイレ・銀行…) vốn đã xuất hiện dày trong các ý định hỏi đường khác.
+  - Lần train đầu LÀM VỠ ranh giới: `ハワイに行きたいです` / `ディズニーランドに行きたいです` bị kéo sang hợp lệ ở mức 0.99. Phải thêm 8 câu ĐỐI CHỨNG (đích xa / đi chơi) vào `out_of_scope` mới cân lại.
+  - Kết quả dò ranh giới: 13/15 đúng. Hai ca hỏng còn lại là danh từ chưa từng thấy ở CẢ HAI phía: `タイ` (katakana ngắn) và `北海道` (chứa 道 — n-gram rất mạnh của hỏi đường).
+  - Đánh đổi ĐO ĐƯỢC: tỉ lệ lỗi gây hại đứng yên 12.9%, nhưng cơ cấu dịch — trả lời sai giảm 1.0 điểm, lạc đề lọt tăng 2.0 điểm. Kiểm riêng 132 câu OOS CŨ cũng giảm (84.1% → 82.2%), tức đánh đổi thật chứ không phải do 8 câu mới làm khó bài đo.
+  - 750 câu / 30 ý định, fingerprint `f90ac95ecc929c15`, CV acc 0.6699 → 0.6640, macro-F1 0.6612 → 0.6628, mô hình 930 → 959 KB. `pytest` 62/62.
+  - Đã restart uvicorn: mô hình `.joblib` nạp MỘT LẦN trong `lifespan`, và `--reload` của uvicorn (StatReload, chưa cài `watchfiles`) chỉ theo dõi `.py` — sửa YAML hay train lại đều KHÔNG tự nạp.
+
+
+- Done: **Tăng cường dữ liệu bằng LLM (offline, không đụng runtime)** — người dùng hỏi có nên đổi sang LLM không.
+  - Chốt: KHÔNG thay runtime. Dùng LLM ở khâu SINH DỮ LIỆU TRAIN. Mô hình xuất xưởng vẫn là TF-IDF + Hồi quy Logistic, vẫn giải thích được, vẫn 0 đồng lúc chạy.
+  - `dataset.py`: dữ liệu sinh nằm TÁCH BIỆT ở `data/intents/generated/`, gộp vào ý định hạt giống lúc nạp. `include_generated=False` cho ra đúng dataset hạt giống — nhờ vậy đo được phần đóng góp.
+  - `augment.py`: công cụ sinh (Gemini mặc định, đặt `AI_AUGMENT_BASE_URL` để dùng endpoint kiểu OpenAI). Dùng `urllib` thuần nên `requirements.txt` KHÔNG đổi, ảnh triển khai vẫn ~120 MB.
+  - `augment.py --check [--strip]`: cổng kiểm duyệt chạy ĐỘC LẬP với khâu sinh, vì dữ liệu sinh có thể đến từ bất kỳ đâu.
+  - `evaluate_augmentation.py`: đo riêng đóng góp, tập TEST luôn chỉ gồm câu viết tay.
+  - Mẻ đầu do claude-opus-5 sinh: 864 câu thô → cổng loại 226 (222 trùng, 4 lẫn hệ chữ lạ) → 646 câu giữ lại. Dataset 750 → 1396.
+  - Đo sạch (test chỉ câu viết tay): trả lời đúng 68.7→76.2, chặn lạc đề 82.0→86.8, lạc đề lọt 17.5→13.0, **lỗi gây hại 12.9→10.4**, macro-F1 74.3→81.8. Tất cả 8 chỉ số đều tốt lên.
+  - Dò ranh giới 「〜に行きたいです」: 13/15 → **15/15**. `タイ` và `北海道` (hai ca hỏng cũ) nay đúng.
+  - `pytest` 62/62. Mô hình 959 KB → 1829 KB.
+
+
 ## Next Steps
 
-- Await user feedback or next feature request.
+- **Phần giảng ngữ pháp của mỗi bài vẫn chưa lên được app**: nó nằm trong `lessons.config_json.description`, mà `GET /api/v1/topics` lẫn `POST /lessons/{id}/start` đều không trả về. Muốn hiện cần thêm field vào `StartLessonResponse` phía backend — CHƯA LÀM vì AGENTS.md cấm sửa backend khi chưa được yêu cầu.
+- Chưa chạy lại app trên emulator để nghiệm thu 3 sửa đổi (backend chưa bật lúc làm). Cần: `docker compose up -d` + `./mvnw spring-boot:run` ở BE, rồi mở lại bài 1.
+
+- **Chưa nghiệm thu được STT với giọng thật** — emulator không có audio đầu vào. Cần chạy trên máy Android thật.
+- **Chưa nghiệm thu được TTS có phát ra tiếng hay không** — `tts_default_locale` trên emulator trả `null`, nhiều khả năng chưa cài gói giọng `ja-JP`. Máy thật hoặc cài gói giọng Nhật sẽ rõ.
+- Nút mic/gửi có đáy chạm mép 2400px, tức nằm dưới vùng thanh điều hướng cử chỉ — chạm vào nửa dưới nút bị hệ thống nuốt. Nên thêm safe-area đáy cho composer.
+- Header màn chat hiện chỉ ghi "Hội thoại", chưa hiện tên kịch bản đang chơi — nên thêm để người dùng biết mình đang ở tình huống nào.
+- Chưa test được câu lạc đề bằng tiếng Nhật TRÊN MÁY (`adb shell input text` không gõ được ký tự non-ASCII); đã verify qua curl + pytest thay thế.
+- Cân nhắc gate tính năng theo trình độ/streak — hiện đang mở cho mọi người dùng.
+- Thu thập câu bị đoán sai khi dùng thật rồi gán nhãn lại: đây là hướng cải thiện hiệu quả nhất (xem Decisions).
 
 ## Blockers
 
-- None.
+Rà soát ngày 2026-08-23 — toàn bộ 13 mục đã xử lý. Hai điểm còn nợ:
+
+- **BE-4 mới chặn được một nửa.** Server chấm lại từ đáp án client gửi, nhưng chưa biết bộ đề của lượt làm bài gồm những câu nào, nên chưa khẳng định được "đã trả lời đủ". Muốn triệt để: lưu bộ đề lúc `/start` rồi đối chiếu lúc `/submit`.
+- **`render`/`fireEvent` của @testing-library/react-native bản này là BẤT ĐỒNG BỘ.** Thiếu `await` thì query trả về undefined và thao tác không được flush — đây là thứ đã làm mất cả buổi khi viết test quiz. Mọi test mới phải `await render(...)` và `await fireEvent...`.
+
+Danh sách gốc:
+
+- ✅ ĐÃ SỬA — **[BE-1] Bỏ dở bài đã hoàn thành làm khoá lại toàn bộ lộ trình phía sau.**
+  `LessonAttemptServiceImpl.startLesson` gọi `upsertProgress(..., IN_PROGRESS, ...)` kể cả khi bài đang COMPLETED. Nếu user thoát giữa chừng, `LessonUnlockPolicy.computeStatuses` thấy bài đó không còn COMPLETED → cờ `previousNormalCompleted` thành false → mọi bài sau đều LOCKED. `cancelLesson` cũng không khôi phục (chỉ hoàn năng lượng rồi trả `status: "LOCKED"`).
+- ✅ ĐÃ SỬA — **[BE-2] Lỗ hổng năng lượng vô hạn.** Replay tốn 0 năng lượng (`totalEnergy = isReplay ? 0 : ...`) nhưng `cancelLesson` hoàn `resolveEntryCost(lesson)` cho mọi progress IN_PROGRESS → start + cancel liên tục một bài đã xong = cộng năng lượng miễn phí.
+- ✅ ĐÃ SỬA — **[BE-3] Client tự khai `isReplay`.** `submitLesson` lấy thẳng `req.getIsReplay()`; gửi `false` là ăn full EXP/coin mỗi lần làm lại. Phải suy ra từ server.
+- ✅ ĐÃ SỬA — **[BE-4] NORMAL / TIMED_REVIEW luôn `passed = true`.** Mức độ nhẹ hơn đánh giá ban đầu: FE đẩy câu sai xuống cuối hàng đợi (`isRedo`) nên qua UI bình thường user buộc phải trả lời đúng hết mới kết thúc được. Đây là lỗ hổng "tin client" (gọi thẳng API là qua bài), không phải lỗi cho phép bỏ qua việc học.
+- ✅ ĐÃ SỬA — **[BE-5] `/start` không idempotent** — gọi lại là trừ năng lượng lần nữa (StrictMode dev, hoặc user quay lại màn quiz).
+- ✅ ĐÃ SỬA — **[FE-1] `processedTopics` ghi đè trạng thái backend** (`(tabs)/index.tsx`): mọi bài trước bài COMPLETED xa nhất bị vẽ thành COMPLETED. Vì JUMP_TEST luôn UNLOCKED ở bất kỳ đâu, một lần nhảy cóc là cả trăm bài LOCKED hiện dấu tích; bấm vào thì backend ném `LessonLockedException`.
+- ✅ ĐÃ SỬA — **[FE-2] `globalActiveLessonId` chọn nhầm node "đang học"** — `[...allLessons].reverse().find(l => l.status === "UNLOCKED")` lấy bài UNLOCKED CUỐI cùng thay vì đầu tiên.
+- ✅ ĐÃ SỬA — **[FE-3] `checkAnswer` bịa `selectedOptionId`** (`quiz/[id].tsx`): câu kana/fill-blank/speaking không có option nào được chọn nên code lấy đại một option sai → Mistake Bank ghi nhận đáp án user chưa từng chọn.
+- ✅ ĐÃ SỬA — **[FE-4] Submit thất bại là im lặng** — `moveToNextQuestion` chỉ `console.error` rồi `setIsSubmitting(false)`; user kẹt ở câu cuối và mất hết kết quả.
+- ✅ ĐÃ SỬA — **[FE-5] Không có `onError` cho ảnh mạng ở bất kỳ đâu** — URL 404 cho ra ô trống thay vì fallback.
+- ✅ ĐÃ SỬA — **[FE-6] `avatar-display.tsx`**: `styles.fallback.lineHeight` cố định 60 trong khi `fontSize` co theo `size` → emoji panda lệch/bị cắt ở avatar nhỏ.
+- ✅ ĐÃ SỬA — **[FE-7] Text sai dữ liệu** — popup năng lượng ghi "Năng lượng tối đa là 5" nhưng `MAX_ENERGY = 25`; popover bài học luôn vẽ 3 sao vàng dù `computeStars` chỉ cấp sao cho TIMED_REVIEW.
+- ✅ ĐÃ SỬA — **[FE-8] `npm run lint`: 73 lỗi**, toàn bộ là `prettier/prettier` (`npx eslint --fix .` là xong) + 89 warning.
 
 ## Decisions
 
@@ -168,4 +305,43 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
 - Nét đứt trên ray xếp bằng nhiều `View` nhỏ chứ không dùng `borderStyle: "dashed"` — RN đổ về nét liền trên vài bản Android.
 - Đồng hồ đếm ngược đặt mốc là nửa đêm local (`nextResetAt()`) vì BE chưa trả timestamp reset; nếu sau này BE có thì thay chỗ đó.
 - RNTL 14 trả kết quả `render()` BẤT ĐỒNG BỘ — phải `await render(...)` mới có query (`getByText`...); spread kết quả ra sẽ mất hết query.
+- **Luyện hội thoại KHÔNG nhét vào luồng bài học chính** (`lesson/[id].tsx`): engine chấm điểm/XP hiện tại giả định đúng-sai tất định, còn hội thoại mở có kết quả bất định (lạc đề, tin cậy thấp). Chèn vào giữa bài học đang giữ streak sẽ gây ức chế. Đặt ở Practice Hub (`(tabs)/review.tsx`) — nơi đã có sẵn pattern hub và không cần thêm tab thứ 7.
+- **KHÔNG dùng LLM cho tính năng hội thoại**: vi phạm cả 3 ràng buộc của đồ án (tự train được / không tốn phí / deploy được). LLM API tốn tiền theo lượt gọi; LLM tự host cần 2-6 GB, không lọt free tier 512 MB; cả hai đều là hộp đen khó giải thích với hội đồng.
+- **n-gram KÝ TỰ chứ không phải n-gram TỪ**: tiếng Nhật không có dấu cách, không có MeCab thì cả câu thành 1 token. Đo được: 0.765 so với 0.271 — chênh 2.8 lần. Đây cũng là lý do KHÔNG cần cài MeCab/Sudachi (từ điển 50-100 MB + biên dịch native trên Windows).
+- **Hồi quy Logistic thay vì LinearSVC/MLP dù điểm sát nhau**: LinearSVC không cho xác suất nên không đặt ngưỡng tin cậy được — mà ngưỡng chính là nền móng của cơ chế chống lạc đề. MLP hơn đúng +0.003 nhưng nặng gấp **81 lần** (75.5 MB so với 0.93 MB).
+- **Mô hình Transformer (MiniLM đa ngữ) THUA TF-IDF trên chính bài toán này**: kém hơn về accuracy theo kịch bản (0.751 so với 0.765) và kém hẳn ở phát hiện lạc đề (OOS-F1 0.578 so với 0.697), trong khi lớn hơn 456 lần và chậm hơn 33 lần. Lý do: bài toán phân biệt bằng mẫu mặt chữ ở đuôi câu, không phải ngữ nghĩa sâu; và lớp `out_of_scope` quá đa dạng về nghĩa để gom lại trong không gian nhúng.
+- **Siêu tham số không phải nút thắt**: grid search 280 tổ hợp × 5 fold chỉ cho +0.005 macro-F1, trong khi MỘT lần sửa nhãn (`大丈夫です`/`けっこうです` từ `affirm` sang `deny`) giảm lỗi gây hại 13.3% → 12.2%. Muốn tốt hơn thì thêm/làm sạch dữ liệu.
+- **Ngưỡng tin cậy 0.30** là điểm gãy của đường cong đánh đổi: từ 0.25 lên 0.30 đổi 1.1 điểm "trả lời đúng" lấy 4.4 điểm "chặn lạc đề" (lãi); từ 0.30 lên 0.35 chỉ được 2.5 điểm mà mất 4.0 điểm (lỗ).
+- **Đỏ báo lỗi CHỈ dùng cho `invalid_input`**, không dùng cho `off_topic` / `wrong_time`: trong hai trường hợp đó câu tiếng Nhật của người học thường ĐÚNG, tô đỏ sẽ dạy họ điều sai. Dùng xanh dương ("thông tin") và vàng ("cần nói rõ hơn").
+- **Dịch vụ AI phi trạng thái, client giữ `state` + `consecutiveFailures`**: free tier ngủ đông và restart container, phiên lưu RAM server sẽ bốc hơi giữa cuộc hội thoại. Đổi lại không cần Redis/DB.
+- **Không commit file `.joblib`**, train lúc build (Dockerfile/render.yaml): tránh cảnh mô hình cũ chạy trên dataset mới. Train chỉ 2 giây nên nằm gọn trong build.
+- **torch/sentence-transformers KHÔNG nằm trong `requirements.txt`** — chỉ ở `requirements-dev.txt` để chạy đối chứng. Đây là thứ giữ ảnh triển khai ~120 MB thay vì ~2.5 GB.
+- Công cụ Edit làm file bị đổi sang **CRLF** khiến prettier báo hàng trăm lỗi `Delete ␍`; file tạo mới bằng Write thì vẫn LF. Sau khi sửa file có sẵn, chạy `npx prettier --write` đúng phạm vi file đã động vào.
 - `adb exec-out screencap` của emulator này chết sau nhiều lần chụp (ImageReader hết buffer) và trả ảnh đen toàn màn; app vẫn chạy bình thường — kiểm bằng `maestro hierarchy` trước khi nghi app crash, và `adb reboot` để chụp lại được.
+- **Thẻ dạy được suy ra ở CLIENT từ `metadataJson` của đề bài, không thêm API mới**: mỗi câu hỏi đã mang sẵn `symbol`/`kana`/`jp` + `romaji` + `vn` + ảnh + âm thanh, gộp lại là đủ dạy. Cách này khiến thẻ luôn khớp đúng 10 câu được random cho phiên đó — không dạy thừa thứ không hỏi, không hỏi thứ chưa dạy — và không phải đụng vào backend.
+- **Pha dạy có nút "TÔI ĐÃ BIẾT — BỎ QUA" thay vì tự tắt khi `isReplay`**: Duolingo bỏ qua phần giới thiệu khi học lại, nhưng buổi demo cần cho giáo viên xem lại được nhiều lần. Nút bỏ qua thoả cả hai.
+- **Kana không lặp romaji xuống dòng nghĩa**: với câu "Chữ 「あ」 đọc là gì?" thì đáp án đúng CHÍNH LÀ romaji, để nguyên thì thẻ hiện "a" hai lần. Test tích hợp bắt được lỗi này ("Found multiple elements with text: a").
+- **`resolveMediaUrl` đặt bên trong `useAudio`, không rải ở từng nơi gọi**: hook đó là cửa duy nhất của mọi audio trong app, nên sửa một chỗ là toàn bộ nút loa (quiz, bảng chữ cái, luyện nghe) hết câm cùng lúc.
+- **`FlatList` cho bản đồ lộ trình với `windowSize={3}`, `initialNumToRender={1}`**: mỗi chủ đề là một đoạn bản đồ rất cao, giữ 1-3 chủ đề quanh khung nhìn là đủ và kéo số node SVG sống cùng lúc từ ~95 xuống ~một tá.
+- **Handler của bản đồ phải ổn định (`useCallback` + đọc `energy` qua ref)**: closure tạo mới mỗi lần render sẽ vô hiệu hoá `React.memo` của `TopicSection`, coi như không tối ưu gì.
+- **`StartLessonOption.content` đổi thành `string | null`**: backend trả `null` ở câu `SELECT_IMAGE` (nhãn nằm trong `metadataJson.label`), type cũ khai `string` là sai so với dữ liệu thật.
+- Comment `// ...` bê nguyên từ mảng JS vào JSX sẽ RENDER RA MÀN HÌNH thành chữ; phải đổi sang `{/* ... */}`. Lint rule `react/jsx-no-comment-textnodes` bắt được — đáng chạy `eslint` sau mỗi lần bê khối JSX sang chỗ khác.
+- **KHÔNG chạy `git stash` để đo baseline lint**: `core.autocrlf=true` khiến `stash pop` trả file về dạng CRLF và làm hỏng cả lint lẫn diff. Muốn so với HEAD thì dùng `git show HEAD:path | npx eslint --stdin --stdin-filename path`.
+- **Script chuẩn hoá CRLF→LF phải loại trừ `.venv`, `node_modules`, `artifacts`**: chạy đè lên `ai-service/.venv` làm hỏng toàn bộ `.exe` và file `.joblib` (venv phải dựng lại + train lại mô hình). Chỉ quét đúng danh sách file mình đã sửa.
+- **Ba tầng tra cứu trong `_decide`, `state.expects` LUÔN xét trước**: hai lưới đỡ (`anytime`, `ALWAYS_ALLOWED`) chỉ đỡ những state không viết gì. Nhờ vậy các cạnh soạn tay mang ý đồ dạy học vẫn thắng — ví dụ `thanks` ở `paying` (nhà hàng) vẫn kết thúc bài, `restaurant_ask_menu` ở `seated` vẫn dùng câu đáp riêng có "一番人気" chứ không rơi xuống bản dùng chung.
+- **`wrong_time` được GIỮ LẠI, chỉ thu hẹp về đúng chỗ của nó**: đòi hoá đơn khi chưa ngồi vào bàn, đòi trả tiền khi chưa chọn đồ. Ở đó nó dạy TRÌNH TỰ. Bỏ hẳn thì mất luôn giá trị sư phạm; để nguyên thì nó phạt CÁCH DIỄN ĐẠT, mà cách diễn đạt thì không có gì sai.
+- **`anytime` khai ở cấp KỊCH BẢN chứ không chép cạnh vào từng state**: `self_intro` có 6 state × 6 ý định nội dung = 36 cạnh phải chép tay, và mỗi lần thêm state là phải nhớ chép lại. Khai một lần thì không thể quên.
+- **Câu xã giao không tính vào chuỗi hỏng** (cùng lý lẽ với `meta_about_bot`): nếu tính, người học càng lịch sự càng nhanh bị đẩy tới trạng thái "cần cứu".
+- **`affirm`/`deny` CỐ Ý không nằm trong `ALWAYS_ALLOWED`**: はい/いいえ chỉ có nghĩa khi vừa được hỏi câu có-không, nên `wrong_time` ở đó là phản hồi đúng. Đây là phần còn lại của 17.9%.
+- **Cần bộ đo riêng cho tầng FSM**: `evaluate.py` đo bộ phân loại, `evaluate_system.py` đo phân loại + luật quyết định — cả hai DỪNG TRƯỚC máy trạng thái. Mô hình hoàn hảo vẫn cho trải nghiệm tệ nếu FSM từ chối câu nó hiểu đúng, và không có bộ đo nào bắt được điều đó cho tới khi người dùng báo lỗi.
+- **Gộp 「〜に行きたいです」 vào `directions_ask_how_to_get` thay vì tạo lớp mới**: câu đáp đúng vẫn là chỉ đường y hệt, nên thêm một lớp chỉ làm bộ phân loại phải phân biệt hai mẫu mặt chữ mà kết quả cuối cùng không khác gì. Ít lớp hơn cũng giúp lớp `out_of_scope` dễ thở hơn.
+- **Mỗi lần thêm mẫu câu có đuôi trùng với `out_of_scope` thì PHẢI thêm cặp đối chứng**: đây là lần thứ hai trong dự án chuyện nhãn quan trọng hơn siêu tham số. Một chiều dữ liệu không đủ — mô hình học đuôi câu trước, danh từ sau.
+- **Ranh giới `〜に行きたいです` được khoá bằng test hai chiều** (`test_stating_a_nearby_destination_asks_for_directions` + `test_stating_a_far_destination_stays_out_of_scope`): ai thêm một địa danh xa vào `directions` hoặc bỏ nhóm đối chứng khỏi `out_of_scope` sẽ làm đổ ranh giới, và test bắt được ngay.
+- **Server AI phải restart bằng tay sau khi train lại**: `--reload` không đủ. Muốn hết thì `pip install watchfiles`, nhưng `artifacts/*.joblib` vẫn nằm ngoài `--reload-dir` nên train lại luôn cần restart.
+- **LLM dùng ở khâu SINH DỮ LIỆU, không dùng lúc phục vụ**: quyết định [KHÔNG dùng LLM cho hội thoại] vẫn giữ nguyên cho runtime, nhưng lý do "tốn tiền theo lượt gọi" không áp dụng cho việc gọi một lần lúc build. Được toàn bộ cái lợi của LLM (đẻ ra cách diễn đạt) mà không mất gì (vẫn 0 đồng, vẫn giải thích được, vẫn lọt free tier 512 MB).
+- **Dữ liệu sinh để RIÊNG thư mục `generated/`, không trộn vào file hạt giống**: (1) kiểm toán được — luôn trả lời được "câu này người viết hay máy sinh"; (2) revert bằng cách xoá thư mục; (3) train được hai lần có/không để đo đóng góp. Đây là con số hội đồng sẽ hỏi.
+- **Cổng kiểm duyệt phải chạy ĐỘC LẬP với cổng sinh** (`--check`): dữ liệu sinh có thể do người dán vào, do nhà cung cấp khác, hoặc do một phiên trợ lý viết thẳng. Cổng chỉ canh đúng con đường mình đẻ ra thì vô dụng.
+- **Tỉ lệ ký tự tiếng Nhật KHÔNG tách được rác khỏi từ mượn hợp lệ**: 「Wi-Fiはありますか」 0.55 và 「AIですか」 0.67 là hợp lệ, còn 「friendly になれたら…」 0.58 và 「窓side の席は…」 0.69 là rác — hai nhóm chồng lên nhau. Thứ tách được là ĐỘ DÀI chuỗi Latin liên tiếp (từ mượn thật đều rất ngắn), cộng một allowlist nhỏ cho ATM/PayPay/Suica.
+- **Cần luật riêng cho hệ chữ lạ**: 「값段を教えてください」 có đúng một ký tự Hangul trên mười, tỉ lệ 0.90 — lọt mọi ngưỡng hợp lý. Mô hình sinh văn bản hay trượt ngôn ngữ giữa chừng kiểu này, và nó đầu độc dataset âm thầm vì không test nào đỏ.
+- **Đo trên dataset đã trộn là SAI ý nghĩa**: câu máy sinh nằm cả trong tập test thì một phần điểm là đo khả năng đọc chính văn máy sinh. `evaluate_augmentation.py` giữ tập test thuần câu viết tay. Chênh lệch rất thật: cùng thay đổi đó, đo trộn cho lỗi gây hại TĂNG 0.2 điểm, đo sạch cho GIẢM 2.5 điểm.
+- **KHÔNG đưa câu test vào dữ liệu sinh**: khi 「レストランに行きたいです」 hỏng, cách sửa là thêm các địa điểm katakana dài KHÁC (ファミレス・マクドナルド・ショッピングモール) rồi để mô hình tự tổng quát hoá. Thêm thẳng câu test vào train là biến test thành phép thử trí nhớ.

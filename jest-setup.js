@@ -12,6 +12,53 @@ jest.mock("react-native-reanimated", () => {
   return { ...mock, useReducedMotion: () => false };
 });
 
+// Speech is a NATIVE module: it has no JS implementation to fall back on, so
+// importing it under Jest throws "Cannot find native module". Both are mocked
+// globally rather than per-test because any screen offering speech input would
+// otherwise fail to even load.
+//
+// The mocks are deliberately inert (no events fired). Speech is an optional
+// input path — the tests assert that typing still works and that the UI never
+// depends on speech being available. Speech behaviour itself is verified on a
+// real device, since an emulator's microphone cannot exercise it meaningfully.
+// expo-av cũng là NATIVE module ("ExponentAV"): chỉ cần một barrel export chạm
+// tới `use-audio` là cả suite chết ngay lúc import, kể cả test không đụng gì
+// tới âm thanh. Mock ở đây thay vì trong từng file test để mọi màn hình đều
+// mount được; hành vi phát audio thật được kiểm trên máy/emulator.
+jest.mock("expo-av", () => {
+  const sound = {
+    unloadAsync: jest.fn().mockResolvedValue(undefined),
+    stopAsync: jest.fn().mockResolvedValue(undefined),
+    playAsync: jest.fn().mockResolvedValue(undefined),
+    setOnPlaybackStatusUpdate: jest.fn(),
+  };
+  return {
+    Audio: {
+      setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
+      Sound: { createAsync: jest.fn().mockResolvedValue({ sound }) },
+    },
+    InterruptionModeAndroid: { DoNotMix: 1, DuckOthers: 2 },
+    InterruptionModeIOS: { DoNotMix: 1, DuckOthers: 2 },
+  };
+});
+
+jest.mock("expo-speech", () => ({
+  speak: jest.fn(),
+  stop: jest.fn(),
+  isSpeakingAsync: jest.fn().mockResolvedValue(false),
+}));
+
+jest.mock("expo-speech-recognition", () => ({
+  ExpoSpeechRecognitionModule: {
+    start: jest.fn(),
+    stop: jest.fn(),
+    abort: jest.fn(),
+    requestPermissionsAsync: jest.fn().mockResolvedValue({ granted: true }),
+    getPermissionsAsync: jest.fn().mockResolvedValue({ granted: true }),
+  },
+  useSpeechRecognitionEvent: jest.fn(),
+}));
+
 // React 19's act() environment flag is only toggled for the duration of a
 // synchronous act() call; our screens update state from async effects that
 // resolve after that window, which triggers spurious "not configured to

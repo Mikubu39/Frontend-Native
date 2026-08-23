@@ -90,10 +90,7 @@ function CustomTabBar({
     >
       {/* Background layer — solid, fully opaque */}
       <View
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: colors.tabBarBg },
-        ]}
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.tabBarBg }]}
       />
 
       {/* Top rule */}
@@ -101,9 +98,7 @@ function CustomTabBar({
         style={[
           styles.topBorder,
           {
-            backgroundColor: isDark
-              ? colors.border
-              : Colors.primary + "28",
+            backgroundColor: isDark ? colors.border : Colors.primary + "28",
           },
         ]}
       />
@@ -112,9 +107,7 @@ function CustomTabBar({
       <View style={styles.itemsRow}>
         {TABS.map((tab) => {
           // Find the matching React Navigation route
-          const routeIndex = state.routes.findIndex((r) =>
-            r.name === tab.name,
-          );
+          const routeIndex = state.routes.findIndex((r) => r.name === tab.name);
           const focused = routeIndex !== -1 && state.index === routeIndex;
 
           const handlePress = () => {

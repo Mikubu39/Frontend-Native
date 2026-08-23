@@ -59,12 +59,8 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
         ? Colors.success
         : Colors.primary;
 
-  const cardBg = isDark
-    ? "rgba(255,255,255,0.06)"
-    : Colors.light.card;
-  const cardBorder = isDark
-    ? "rgba(255,255,255,0.1)"
-    : Colors.light.border;
+  const cardBg = isDark ? "rgba(255,255,255,0.06)" : Colors.light.card;
+  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : Colors.light.border;
 
   return (
     <Animated.View
@@ -112,7 +108,14 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
           <Text style={[styles.scoreValue, styles.correctValue]}>
             {result.correctCount}
           </Text>
-          <Text style={[styles.scoreLabel, { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary }]}>
+          <Text
+            style={[
+              styles.scoreLabel,
+              {
+                color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary,
+              },
+            ]}
+          >
             Đúng
           </Text>
         </View>
@@ -120,7 +123,11 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
         <View
           style={[
             styles.divider,
-            { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : Colors.light.border },
+            {
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.1)"
+                : Colors.light.border,
+            },
           ]}
         />
 
@@ -129,7 +136,14 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
           <Text style={[styles.scoreValue, styles.wrongValue]}>
             {result.wrongCount}
           </Text>
-          <Text style={[styles.scoreLabel, { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary }]}>
+          <Text
+            style={[
+              styles.scoreLabel,
+              {
+                color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary,
+              },
+            ]}
+          >
             Sai
           </Text>
         </View>
@@ -156,7 +170,9 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
             <Text
               style={[
                 styles.categoryName,
-                { color: isDark ? "rgba(255,255,255,0.85)" : Colors.textPrimary },
+                {
+                  color: isDark ? "rgba(255,255,255,0.85)" : Colors.textPrimary,
+                },
               ]}
             >
               {cat.name}
@@ -191,7 +207,9 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
               key={cat}
               style={[
                 styles.wrongCategory,
-                { color: isDark ? "rgba(255,255,255,0.65)" : Colors.textPrimary },
+                {
+                  color: isDark ? "rgba(255,255,255,0.65)" : Colors.textPrimary,
+                },
               ]}
             >
               • {cat}

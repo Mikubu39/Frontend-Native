@@ -52,7 +52,9 @@ export default function WelcomeScreen() {
   }));
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <View style={styles.content}>
         {/* Mascot & Brand Header */}
         <View style={styles.mascotContainer}>
@@ -96,8 +98,21 @@ export default function WelcomeScreen() {
             onPress={() => router.push("/(auth)/login")}
             pressScale={0.97}
           >
-            <View style={[styles.secondaryButtonShadow, { backgroundColor: colors.borderSubtle }]} />
-            <View style={[styles.secondaryButtonContent, { backgroundColor: colors.backgroundElement, borderColor: colors.borderSubtle }]}>
+            <View
+              style={[
+                styles.secondaryButtonShadow,
+                { backgroundColor: colors.borderSubtle },
+              ]}
+            />
+            <View
+              style={[
+                styles.secondaryButtonContent,
+                {
+                  backgroundColor: colors.backgroundElement,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
               <Text style={styles.secondaryButtonText}>
                 TÔI ĐÃ CÓ TÀI KHOẢN
               </Text>

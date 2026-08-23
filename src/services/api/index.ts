@@ -16,3 +16,4 @@ export { chestApi } from "./chest";
 export { rankApi } from "./rank";
 export { alphabetApi, alphabetAdminApi } from "./alphabets";
 export { mistakesApi } from "./mistakes";
+export { conversationApi } from "./conversation";

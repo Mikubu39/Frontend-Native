@@ -20,6 +20,7 @@ import {
 import { userService } from "@/services/api/user";
 import { UserProfileResponse } from "@/types/user-api";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { resolveMediaUrl } from "@/utils/media";
 
 export default function UserProfileScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
@@ -96,7 +97,10 @@ export default function UserProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profileHeader}>
           {profile.avatarUrl ? (
-            <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+            <Image
+              source={{ uri: resolveMediaUrl(profile.avatarUrl) }}
+              style={styles.avatar}
+            />
           ) : (
             <View style={styles.avatarPlaceholder}>
               <Text style={styles.avatarText}>

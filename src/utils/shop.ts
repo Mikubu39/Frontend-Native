@@ -5,6 +5,7 @@
 import { EFFECT_META, RARITY_PRICE_BANDS } from "@/constants/shop";
 import type { InventoryItemDto, ShopItemDto } from "@/types/api";
 import type { ItemRarity, ShelfEntry } from "@/types/shop";
+import { resolveMediaUrlOrNull } from "@/utils/media";
 
 const RARITY_ORDER: ItemRarity[] = ["common", "rare", "epic", "legendary"];
 
@@ -72,7 +73,9 @@ export function formatCountdown(msRemaining: number): string | null {
  * everything else falls back to the effect glyph.
  */
 export function resolveItemArtwork(iconUrl: string | null): string | null {
-  return iconUrl && /^https?:\/\//i.test(iconUrl) ? iconUrl : null;
+  // Backend trả đường dẫn tương đối (`/uploads/images/shop/...`) nên phải ghép
+  // base URL, nếu không toàn bộ icon cửa hàng sẽ rơi về icon mặc định.
+  return resolveMediaUrlOrNull(iconUrl);
 }
 
 /** Joins the catalogue with the player's inventory into one view model. */

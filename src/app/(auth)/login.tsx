@@ -56,21 +56,34 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
         {/* Header navigation bar */}
-        <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
+        <View
+          style={[styles.header, { borderBottomColor: colors.borderSubtle }]}
+        >
           <AnimatedPressable
             onPress={() => router.replace("/welcome")}
-            style={[styles.closeButton, { backgroundColor: colors.cardElevated }]}
+            style={[
+              styles.closeButton,
+              { backgroundColor: colors.cardElevated },
+            ]}
             pressScale={0.9}
           >
-            <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
+            <Text
+              style={[styles.closeButtonText, { color: colors.textSecondary }]}
+            >
+              ✕
+            </Text>
           </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.textSecondary }]}>Đăng nhập</Text>
+          <Text style={[styles.headerTitle, { color: colors.textSecondary }]}>
+            Đăng nhập
+          </Text>
           <View style={styles.headerPlaceholder} />
         </View>
 
@@ -87,7 +100,9 @@ export default function LoginScreen() {
               style={styles.mascot}
             />
           </View>
-          <Text style={[styles.titleText, { color: colors.text }]}>Đăng nhập</Text>
+          <Text style={[styles.titleText, { color: colors.text }]}>
+            Đăng nhập
+          </Text>
         </Animated.View>
 
         {/* Inputs */}

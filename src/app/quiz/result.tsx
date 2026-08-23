@@ -86,8 +86,8 @@ export default function QuizResultScreen() {
       ? ["#1A0A0A", "#3B0F0F", "#1A0A0A"]
       : ["#0A0A14", "#1B0A2E", "#0A0A14"]
     : isFailed
-    ? ["#FFF1F2", "#FFE4E6", "#FFF1F2"]
-    : ["#F5F3FF", "#EDE9FE", "#F5F3FF"];
+      ? ["#FFF1F2", "#FFE4E6", "#FFF1F2"]
+      : ["#F5F3FF", "#EDE9FE", "#F5F3FF"];
 
   return (
     <LinearGradient
@@ -101,9 +101,7 @@ export default function QuizResultScreen() {
         style={[
           styles.orb1,
           {
-            backgroundColor: isFailed
-              ? Colors.error
-              : Colors.primary,
+            backgroundColor: isFailed ? Colors.error : Colors.primary,
           },
         ]}
         pointerEvents="none"
@@ -112,9 +110,7 @@ export default function QuizResultScreen() {
         style={[
           styles.orb2,
           {
-            backgroundColor: isFailed
-              ? "#FF6B6B"
-              : Colors.secondary,
+            backgroundColor: isFailed ? "#FF6B6B" : Colors.secondary,
           },
         ]}
         pointerEvents="none"

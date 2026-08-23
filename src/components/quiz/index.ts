@@ -10,3 +10,4 @@ export * from "./listening-question";
 export * from "./speaking-question";
 export * from "./quiz-result-card";
 export * from "./swipe-hint";
+export * from "./teach-card";

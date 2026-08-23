@@ -1,0 +1,19 @@
+{
+  "threshold": 0.3,
+  "margin": 0.12,
+  "in_scope": {
+    "answered_correctly": 1363,
+    "clarified_top_was_right": 30,
+    "answered_wrongly": 203,
+    "wrongly_called_offtopic": 165,
+    "asked_again": 54,
+    "clarified_top_was_wrong": 22
+  },
+  "out_of_scope": {
+    "blocked": 858,
+    "leaked_confidently": 176,
+    "asked_to_clarify": 6
+  },
+  "harmful_error_rate": 0.13173444560305875,
+  "n_trials": 2877
+}

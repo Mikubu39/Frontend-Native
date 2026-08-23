@@ -1,0 +1,156 @@
+id: shopping
+title: "Đi mua sắm"
+title_ja: "買い物"
+level: N5
+icon: bag-handle-outline
+color: "#8B5CF6"
+description: "Ở cửa hàng quần áo: tìm đồ, hỏi size, thử đồ, hỏi giá và trả tiền."
+goal: "Chọn được một món, thử và thanh toán."
+persona:
+  name: "Nhân viên cửa hàng"
+  name_ja: "店員"
+  emoji: "🛍️"
+
+initial_state: welcome
+
+# Hỏi có hàng không / size màu / giá là chuyện hỏi lúc nào cũng được.
+# CỐ Ý không đưa `shopping_pay` và `shopping_try_on` vào đây: chúng là mốc
+# của mạch truyện (chọn -> thử -> trả tiền).
+anytime:
+  - intent: shopping_ask_item
+    reply:
+      ja: "はい、ございます。こちらの棚にございますよ。"
+      vi: "Dạ có ạ. Ở kệ bên này ạ."
+  - intent: shopping_ask_size_color
+    reply:
+      ja: "はい、Lサイズもございます。色は白と黒と青がございます。"
+      vi: "Dạ có size L ạ. Màu thì có trắng, đen và xanh ạ."
+  - intent: shopping_ask_price
+    reply:
+      ja: "こちらは三千円でございます。税込みのお値段です。"
+      vi: "Cái này 3000 yên ạ. Đã bao gồm thuế ạ."
+
+states:
+  - id: welcome
+    bot:
+      - ja: "いらっしゃいませ。何かお探しですか。"
+        vi: "Xin mời vào. Quý khách đang tìm gì ạ?"
+    hints:
+      - ja: "Tシャツはありますか。"
+        vi: "Ở đây có áo phông không ạ?"
+      - ja: "見ているだけです。"
+        vi: "Tôi chỉ xem thôi ạ."
+    expects:
+      - intent: shopping_ask_item
+        reply:
+          ja: "はい、ございます。こちらの棚にございますよ。"
+          vi: "Dạ có ạ. Ở kệ bên này ạ."
+        next: browsing
+      - intent: greeting
+        reply:
+          ja: "こんにちは。ごゆっくりご覧くださいませ。"
+          vi: "Xin chào ạ. Mời quý khách xem thoải mái ạ."
+        next: welcome
+      - intent: deny
+        reply:
+          ja: "かしこまりました。何かありましたらお声がけくださいませ。"
+          vi: "Vâng ạ. Cần gì quý khách cứ gọi em ạ."
+        next: browsing
+
+  - id: browsing
+    bot: []
+    hints:
+      - ja: "大きいサイズはありますか。"
+        vi: "Có size lớn hơn không ạ?"
+      - ja: "いくらですか。"
+        vi: "Cái này bao nhiêu ạ?"
+    expects:
+      - intent: shopping_ask_size_color
+        reply:
+          ja: "はい、Lサイズもございます。色は白と黒と青がございます。"
+          vi: "Dạ có size L ạ. Màu thì có trắng, đen và xanh ạ."
+        next: browsing
+      - intent: shopping_ask_price
+        reply:
+          ja: "こちらは三千円でございます。税込みのお値段です。"
+          vi: "Cái này 3000 yên ạ. Đã bao gồm thuế ạ."
+        next: browsing
+      - intent: shopping_ask_item
+        reply:
+          ja: "はい、そちらもございます。お持ちしますね。"
+          vi: "Dạ cái đó cũng có ạ. Em lấy cho quý khách ạ."
+        next: browsing
+      - intent: shopping_try_on
+        reply:
+          ja: "はい、どうぞ。試着室はあちらでございます。"
+          vi: "Dạ mời quý khách. Phòng thử ở đằng kia ạ."
+        next: trying
+      - intent: shopping_pay
+        reply:
+          ja: "ありがとうございます。レジへどうぞ。"
+          vi: "Cảm ơn quý khách. Mời ra quầy thu ngân ạ."
+        next: paying
+
+  - id: trying
+    bot:
+      - ja: "いかがでしょうか。サイズは大丈夫ですか。"
+        vi: "Quý khách thấy thế nào ạ? Size có vừa không ạ?"
+    hints:
+      - ja: "はい、これにします。"
+        vi: "Vâng, tôi lấy cái này."
+      - ja: "もっと大きいのはありますか。"
+        vi: "Có cái to hơn không ạ?"
+    expects:
+      - intent: affirm
+        reply:
+          ja: "よくお似合いですよ。ではレジへどうぞ。"
+          vi: "Hợp với quý khách lắm ạ. Mời quý khách ra quầy thu ngân ạ."
+        next: paying
+      - intent: shopping_pay
+        reply:
+          ja: "ありがとうございます。レジへどうぞ。"
+          vi: "Cảm ơn quý khách. Mời ra quầy thu ngân ạ."
+        next: paying
+      - intent: shopping_ask_size_color
+        reply:
+          ja: "かしこまりました。すぐにお持ちいたします。"
+          vi: "Vâng ạ. Em lấy ngay cho quý khách ạ."
+        next: trying
+      - intent: deny
+        reply:
+          ja: "さようでございますか。ほかの商品もご覧くださいませ。"
+          vi: "Dạ vậy ạ. Mời quý khách xem thêm các mẫu khác ạ."
+        next: browsing
+
+  - id: paying
+    bot: []
+    hints:
+      - ja: "カードで払えますか。"
+        vi: "Tôi trả thẻ được không ạ?"
+      - ja: "袋をください。"
+        vi: "Cho tôi xin túi ạ."
+    expects:
+      - intent: shopping_pay
+        reply:
+          ja: "はい、カードもお使いいただけます。ありがとうございました！"
+          vi: "Dạ được ạ, quý khách dùng thẻ được ạ. Cảm ơn quý khách!"
+        next: done
+      - intent: shopping_ask_price
+        reply:
+          ja: "合計三千円でございます。"
+          vi: "Tổng cộng 3000 yên ạ."
+        next: paying
+      - intent: thanks
+        reply:
+          ja: "ありがとうございました。またお越しくださいませ！"
+          vi: "Cảm ơn quý khách. Mong được đón tiếp lần sau ạ!"
+        next: done
+      - intent: farewell
+        reply:
+          ja: "ありがとうございました。またお越しくださいませ！"
+          vi: "Cảm ơn quý khách. Mong được đón tiếp lần sau ạ!"
+        next: done
+
+  - id: done
+    terminal: true
+    bot: []

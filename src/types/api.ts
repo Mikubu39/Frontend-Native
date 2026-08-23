@@ -105,7 +105,8 @@ export interface UserMeResponse {
 }
 
 // ============== ROADMAP DTOs ==============
-export type RoadmapLessonStatus = "LOCKED" | "UNLOCKED" | "COMPLETED" | "IN_PROGRESS";
+export type RoadmapLessonStatus =
+  "LOCKED" | "UNLOCKED" | "COMPLETED" | "IN_PROGRESS";
 
 export interface RoadmapLessonResponse {
   lessonId: number;
@@ -114,6 +115,8 @@ export interface RoadmapLessonResponse {
   orderIndex: number;
   status: RoadmapLessonStatus;
   starsEarned?: number;
+  /** Số năng lượng bị trừ khi bắt đầu bài này (backend đọc từ `configJson`). */
+  entryCostEnergy?: number;
 }
 
 export interface RoadmapTopicResponse {
@@ -125,7 +128,8 @@ export interface RoadmapTopicResponse {
 // ============== LESSON ATTEMPT DTOs ==============
 export interface StartLessonOption {
   optionId: number;
-  content: string;
+  /** Backend trả `null` ở câu SELECT_IMAGE — thẻ đáp án khi đó chỉ có ảnh. */
+  content: string | null;
   imageUrl?: string;
   audioUrl?: string;
   metadataJson?: any;

@@ -24,7 +24,15 @@ interface QuizHeaderProps {
   heartsRemaining?: number;
 }
 
-function HeartIcon({ filled, index, total }: { filled: boolean; index: number; total: number }) {
+function HeartIcon({
+  filled,
+  index,
+  total,
+}: {
+  filled: boolean;
+  index: number;
+  total: number;
+}) {
   const scale = useSharedValue(1);
 
   useEffect(() => {
@@ -52,7 +60,13 @@ function HeartIcon({ filled, index, total }: { filled: boolean; index: number; t
   );
 }
 
-function SegmentedProgressBar({ progress, isDark }: { progress: number; isDark: boolean }) {
+function SegmentedProgressBar({
+  progress,
+  isDark,
+}: {
+  progress: number;
+  isDark: boolean;
+}) {
   const animatedWidth = useSharedValue(0);
 
   useEffect(() => {

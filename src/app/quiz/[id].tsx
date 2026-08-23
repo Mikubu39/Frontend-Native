@@ -13,15 +13,25 @@ import {
   PictureQuestionCard,
   QuizHeader,
   SpeakingQuestionCard,
+  TeachCardView,
   VocabQuestionCard,
 } from "@/components/quiz";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { ModalCard } from "@/components/ui/modal-card";
-import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from "@/constants/theme";
+import {
+  Colors,
+  Spacing,
+  FontSizes,
+  FontWeights,
+  BorderRadius,
+} from "@/constants/theme";
 import { useGamification } from "@/contexts/gamification-context";
 import { useTheme } from "@/contexts/theme-context";
+import { useToast } from "@/contexts/toast-context";
 import { lessonAttemptApi } from "@/services/api/lessons";
+import type { TeachCard } from "@/types/lesson-intro";
 import type { QuizQuestion } from "@/types/quiz";
+import { buildTeachCards } from "@/utils/lesson-intro";
 import { mapApiQuestionsToQuizQuestions } from "@/utils/quiz-mapper";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -63,6 +73,11 @@ export default function QuizScreen() {
     useState<number>(0);
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  // Phần "dạy trước khi hỏi": bộ thẻ giới thiệu chữ/từ mới, suy ra từ chính đề
+  // bài của phiên này nên luôn khớp với những gì sắp được hỏi.
+  const [teachCards, setTeachCards] = useState<TeachCard[]>([]);
+  const [teachIndex, setTeachIndex] = useState(0);
+  const [isTeaching, setIsTeaching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
@@ -71,7 +86,8 @@ export default function QuizScreen() {
     { questionId: number; selectedOptionId: number }[]
   >([]);
   const startTime = useRef(Date.now());
-  const { deductEnergy } = useGamification();
+  const { deductEnergy, maxEnergy } = useGamification();
+  const { showError } = useToast();
 
   const [lessonType, setLessonType] = useState<string>("NORMAL");
   const [isReplay, setIsReplay] = useState<boolean>(false);
@@ -90,6 +106,11 @@ export default function QuizScreen() {
       );
       setQuestions(mappedQuestions);
       setOriginalQuestionsLength(mappedQuestions.length);
+
+      const cards = buildTeachCards(response.questions);
+      setTeachCards(cards);
+      setTeachIndex(0);
+      setIsTeaching(cards.length > 0);
       setLessonType(response.lessonType);
       setIsReplay(response.isReplay);
 
@@ -193,36 +214,16 @@ export default function QuizScreen() {
         setMistakeCount((prev) => prev + 1);
       }
 
-      const q = currentQuestion as any;
-      let optionId = selectedAnswerId ? Number(selectedAnswerId) : null;
-
-      if (!optionId && q.originalOptions && q.originalOptions.length > 0) {
-        if (currentIsCorrect) {
-          const correctOpt = q.originalOptions.find(
-            (opt: any) => opt.isCorrect,
-          );
-          if (correctOpt) optionId = Number(correctOpt.optionId);
-        } else {
-          const wrongOpt = q.originalOptions.find((opt: any) => !opt.isCorrect);
-          if (wrongOpt) optionId = Number(wrongOpt.optionId);
-          if (!optionId) optionId = Number(q.originalOptions[0].optionId);
-        }
-      }
-
-      if (!optionId && q.answers && q.answers.length > 0) {
-        if (currentIsCorrect) {
-          const correctOpt = q.answers.find((opt: any) => opt.isCorrect);
-          if (correctOpt) optionId = Number(correctOpt.id);
-        } else {
-          const wrongOpt = q.answers.find((opt: any) => !opt.isCorrect);
-          if (wrongOpt) optionId = Number(wrongOpt.id);
-        }
-      }
-
-      if (!optionId && q.originalOptions)
-        optionId = Number(q.originalOptions[0]?.optionId);
-
-      if (optionId) {
+      // Chỉ ghi nhận khi người học THẬT SỰ bấm vào một lựa chọn có id.
+      //
+      // Câu sắp xếp (kana) và câu nói (speaking) không có lựa chọn nào để bấm,
+      // nên `selectedAnswerId` là null. Mã cũ lấp chỗ trống bằng cách nhặt đại
+      // "một lựa chọn sai bất kỳ" của câu đó rồi gửi lên — Mistake Bank vì thế
+      // ghi nhận đáp án người học chưa từng chọn, và màn ôn tập lỗi sai hiện ra
+      // những phương án họ chưa bao giờ nhìn thấy. Không có bằng chứng thì đừng
+      // báo cáo gì cả: backend tự chấm lại từ DB và bỏ qua phần thiếu.
+      const optionId = Number(selectedAnswerId);
+      if (selectedAnswerId !== null && Number.isFinite(optionId)) {
         setAnswers((prev) => [
           ...prev,
           {
@@ -232,6 +233,20 @@ export default function QuizScreen() {
         ]);
       }
     }
+  };
+
+  /** Sang thẻ dạy kế tiếp; hết thẻ thì bước vào phần câu hỏi. */
+  const advanceTeaching = () => {
+    if (teachIndex >= teachCards.length - 1) {
+      setIsTeaching(false);
+    } else {
+      setTeachIndex((prev) => prev + 1);
+    }
+  };
+
+  /** Cho người đã biết phần này (hoặc đang học lại) vào thẳng câu hỏi. */
+  const skipTeaching = () => {
+    setIsTeaching(false);
   };
 
   const proceedToNext = () => {
@@ -277,9 +292,18 @@ export default function QuizScreen() {
             newRankName: response.newRankName || "",
           },
         });
-      } catch (error) {
+      } catch (error: any) {
+        // Trước đây chỉ console.error rồi tắt spinner: người học đứng ở câu cuối,
+        // không biết mình đã mất toàn bộ kết quả và cũng không có gì để bấm.
+        // Trạng thái bài làm vẫn còn nguyên trong state nên bấm lại là nộp lại
+        // được — chỉ cần nói cho họ biết.
         console.error("Failed to submit lesson:", error);
         setIsSubmitting(false);
+        showError(
+          "Chưa nộp được bài",
+          error?.message ||
+            "Kiểm tra kết nối mạng rồi bấm lại nút hoàn thành nhé.",
+        );
       }
     } else {
       if (
@@ -420,17 +444,29 @@ export default function QuizScreen() {
               <Text style={styles.energyIconEmoji}>⚡</Text>
             </LinearGradient>
 
-            <Text style={[styles.energyTitle, { color: isDark ? "#F9FAFB" : Colors.textPrimary }]}>
+            <Text
+              style={[
+                styles.energyTitle,
+                { color: isDark ? "#F9FAFB" : Colors.textPrimary },
+              ]}
+            >
               Hết năng lượng!
             </Text>
-            <Text style={[styles.energySubtitle, { color: isDark ? "rgba(255,255,255,0.55)" : Colors.textSecondary }]}>
-              Bạn không đủ năng lượng để bắt đầu bài học này. Hãy mua bằng xu
-              hoặc xem quảng cáo để hồi phục.
+            <Text
+              style={[
+                styles.energySubtitle,
+                {
+                  color: isDark
+                    ? "rgba(255,255,255,0.55)"
+                    : Colors.textSecondary,
+                },
+              ]}
+            >
+              Bạn không đủ năng lượng để bắt đầu bài học này. Năng lượng tối đa
+              là {maxEnergy}. Hãy mua bằng xu hoặc xem quảng cáo để hồi phục.
             </Text>
 
-            {adError && (
-              <Text style={styles.adErrorText}>{adError}</Text>
-            )}
+            {adError && <Text style={styles.adErrorText}>{adError}</Text>}
 
             <View style={styles.energyBtnGroup}>
               <GradientButton
@@ -485,7 +521,12 @@ export default function QuizScreen() {
     return (
       <SafeAreaView style={[styles.centered, { backgroundColor: bg }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={[styles.loadingText, { color: isDark ? "rgba(255,255,255,0.4)" : Colors.textSecondary }]}>
+        <Text
+          style={[
+            styles.loadingText,
+            { color: isDark ? "rgba(255,255,255,0.4)" : Colors.textSecondary },
+          ]}
+        >
           Đang tải bài học…
         </Text>
       </SafeAreaView>
@@ -496,9 +537,80 @@ export default function QuizScreen() {
   if (!currentQuestion) {
     return (
       <SafeAreaView style={[styles.centered, { backgroundColor: bg }]}>
-        <Text style={[styles.emptyText, { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary }]}>
+        <Text
+          style={[
+            styles.emptyText,
+            { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary },
+          ]}
+        >
           Không tìm thấy câu hỏi nào.
         </Text>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Phần dạy (trước khi hỏi) ──────────────────────────────────────────────
+  // Người học mới phải được nhìn thấy mặt chữ, nghe cách đọc và biết nghĩa
+  // trước khi bị hỏi về nó. Bỏ qua được để lần học lại không phải xem lại.
+  if (isTeaching && teachCards.length > 0) {
+    const teachCard = teachCards[teachIndex];
+    const isLastTeachCard = teachIndex >= teachCards.length - 1;
+
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+        {isDark && (
+          <>
+            <View style={styles.orbTL} pointerEvents="none" />
+            <View style={styles.orbBR} pointerEvents="none" />
+          </>
+        )}
+
+        <QuizHeader
+          progress={(teachIndex + 1) / teachCards.length}
+          onClose={() => router.back()}
+          lessonType={lessonType}
+        />
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View
+            key={teachCard.id}
+            entering={FadeInRight.duration(300).springify()}
+            exiting={FadeOutLeft.duration(200)}
+            style={styles.content}
+          >
+            <TeachCardView
+              card={teachCard}
+              index={teachIndex}
+              total={teachCards.length}
+            />
+          </Animated.View>
+        </ScrollView>
+
+        <View
+          style={[
+            styles.bottomBar,
+            {
+              backgroundColor: isDark
+                ? Colors.dark.background
+                : Colors.light.background,
+            },
+          ]}
+        >
+          <GradientButton
+            title={isLastTeachCard ? "BẮT ĐẦU LUYỆN TẬP" : "TIẾP TỤC"}
+            onPress={advanceTeaching}
+            style={styles.nextButton}
+          />
+          <GradientButton
+            title="TÔI ĐÃ BIẾT — BỎ QUA"
+            variant="outline"
+            onPress={skipTeaching}
+            style={styles.skipTeachButton}
+          />
+        </View>
       </SafeAreaView>
     );
   }
@@ -527,7 +639,10 @@ export default function QuizScreen() {
             <View
               style={[
                 styles.redoPill,
-                { backgroundColor: Colors.warning + "22", borderColor: Colors.warning + "55" },
+                {
+                  backgroundColor: Colors.warning + "22",
+                  borderColor: Colors.warning + "55",
+                },
               ]}
             >
               <Text style={[styles.redoPillText, { color: Colors.warning }]}>
@@ -545,7 +660,11 @@ export default function QuizScreen() {
             <Text
               style={[
                 styles.redoIntroText,
-                { color: isDark ? "rgba(255,255,255,0.55)" : Colors.textSecondary },
+                {
+                  color: isDark
+                    ? "rgba(255,255,255,0.55)"
+                    : Colors.textSecondary,
+                },
               ]}
             >
               Hãy cùng ôn lại các câu bạn chưa đúng nhé.
@@ -565,18 +684,18 @@ export default function QuizScreen() {
   const btnLabel = isSubmitting
     ? "ĐANG NỘP BÀI..."
     : !hasSubmitted
-    ? "KIỂM TRA"
-    : isLastQuestion
-    ? "HOÀN THÀNH"
-    : "TIẾP TỤC";
+      ? "KIỂM TRA"
+      : isLastQuestion
+        ? "HOÀN THÀNH"
+        : "TIẾP TỤC";
 
   const feedbackGradient: [string, string] = hasSubmitted
     ? currentIsCorrect
       ? ["#166534", "#14532D"]
       : ["#7F1D1D", "#991B1B"]
     : isDark
-    ? [Colors.dark.backgroundElement, Colors.dark.backgroundElement]
-    : [Colors.light.card, Colors.light.card];
+      ? [Colors.dark.backgroundElement, Colors.dark.backgroundElement]
+      : [Colors.light.card, Colors.light.card];
 
   const correctAnswerText = getCorrectAnswerText(currentQuestion);
 
@@ -618,7 +737,11 @@ export default function QuizScreen() {
       <View
         style={[
           styles.bottomBar,
-          { backgroundColor: isDark ? Colors.dark.background : Colors.light.background },
+          {
+            backgroundColor: isDark
+              ? Colors.dark.background
+              : Colors.light.background,
+          },
         ]}
       >
         {hasSubmitted && (
@@ -649,7 +772,9 @@ export default function QuizScreen() {
               <View style={styles.feedbackTextGroup}>
                 <View style={styles.feedbackIconRow}>
                   <Ionicons
-                    name={currentIsCorrect ? "checkmark-circle" : "close-circle"}
+                    name={
+                      currentIsCorrect ? "checkmark-circle" : "close-circle"
+                    }
                     size={22}
                     color={currentIsCorrect ? "#4ADE80" : "#F87171"}
                   />
@@ -696,6 +821,11 @@ export default function QuizScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  skipTeachButton: {
+    width: "100%",
+    borderWidth: 0,
+    marginTop: Spacing.two,
   },
   centered: {
     flex: 1,

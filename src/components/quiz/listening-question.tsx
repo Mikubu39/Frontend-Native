@@ -106,8 +106,8 @@ export function ListeningQuestionCard({
                         ? Colors.primaryLight
                         : Colors.primaryDark
                       : isDark
-                      ? "#F9FAFB"
-                      : Colors.textPrimary,
+                        ? "#F9FAFB"
+                        : Colors.textPrimary,
                   },
                 ]}
               >

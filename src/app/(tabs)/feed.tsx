@@ -145,10 +145,23 @@ export default function FeedScreen() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        edges={["top"]}
+      >
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.borderSubtle }]}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Bảng tin</Text>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.background,
+              borderBottomColor: colors.borderSubtle,
+            },
+          ]}
+        >
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            Bảng tin
+          </Text>
         </View>
 
         <ScrollView
@@ -162,7 +175,18 @@ export default function FeedScreen() {
                 index * AnimationPresets.staggerDelay,
               ).duration(400)}
             >
-              <View style={[styles.postCard, { backgroundColor: colors.card, borderColor: colors.borderSubtle, shadowColor: "transparent", borderWidth: 1, elevation: 0 }]}>
+              <View
+                style={[
+                  styles.postCard,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.borderSubtle,
+                    shadowColor: "transparent",
+                    borderWidth: 1,
+                    elevation: 0,
+                  },
+                ]}
+              >
                 {/* Post Author / Header */}
                 <View style={styles.authorRow}>
                   {post.id === "p2" ? (
@@ -234,9 +258,18 @@ export default function FeedScreen() {
                 {post.type === "phrase" ? (
                   <View style={styles.contentPhraseContainer}>
                     {/* Speech Bubble */}
-                    <View style={[styles.speechBubble, { backgroundColor: colors.backgroundElement }]}>
+                    <View
+                      style={[
+                        styles.speechBubble,
+                        { backgroundColor: colors.backgroundElement },
+                      ]}
+                    >
                       <Text style={styles.flagEmoji}>🇯🇵</Text>
-                      <Text style={[styles.japaneseText, { color: colors.text }]}>{post.phraseJa}</Text>
+                      <Text
+                        style={[styles.japaneseText, { color: colors.text }]}
+                      >
+                        {post.phraseJa}
+                      </Text>
                       <Text style={styles.vietnameseText}>{post.phraseVi}</Text>
                     </View>
                     {/* Mascot standing next to bubble */}
@@ -246,7 +279,12 @@ export default function FeedScreen() {
                   </View>
                 ) : (
                   // Streak achievement post
-                  <View style={[styles.contentStreakContainer, { backgroundColor: colors.backgroundElement }]}>
+                  <View
+                    style={[
+                      styles.contentStreakContainer,
+                      { backgroundColor: colors.backgroundElement },
+                    ]}
+                  >
                     <View style={styles.streakInfo}>
                       <Text style={[styles.streakText, { color: colors.text }]}>
                         Đã chạm mốc {post.streakDays} ngày{"\n"}Streak bạn bè!
@@ -264,7 +302,12 @@ export default function FeedScreen() {
                 )}
 
                 {/* Post Footer (Likes / Actions) */}
-                <View style={[styles.postFooter, { borderTopColor: colors.borderSubtle }]}>
+                <View
+                  style={[
+                    styles.postFooter,
+                    { borderTopColor: colors.borderSubtle },
+                  ]}
+                >
                   <LikeButton
                     isLiked={post.isLiked ?? false}
                     count={post.likesCount}

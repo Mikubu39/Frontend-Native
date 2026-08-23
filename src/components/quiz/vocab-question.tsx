@@ -56,10 +56,20 @@ export function VocabQuestionCard({
           <View style={styles.wordContainer}>
             {showHint && question.hint && (
               <View style={styles.tooltipContainer}>
-                <View style={[styles.tooltipBody, { backgroundColor: Colors.secondary }]}>
+                <View
+                  style={[
+                    styles.tooltipBody,
+                    { backgroundColor: Colors.secondary },
+                  ]}
+                >
                   <Text style={styles.tooltipText}>{question.hint}</Text>
                 </View>
-                <View style={[styles.tooltipArrow, { borderTopColor: Colors.secondary }]} />
+                <View
+                  style={[
+                    styles.tooltipArrow,
+                    { borderTopColor: Colors.secondary },
+                  ]}
+                />
               </View>
             )}
             <DualText
@@ -108,8 +118,8 @@ export function VocabQuestionCard({
                         ? Colors.primaryLight
                         : Colors.primaryDark
                       : isDark
-                      ? "#F9FAFB"
-                      : Colors.textPrimary,
+                        ? "#F9FAFB"
+                        : Colors.textPrimary,
                   },
                 ]}
               >

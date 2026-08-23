@@ -1,0 +1,196 @@
+# ---------------------------------------------------------------------------
+# Ý định DÙNG CHUNG cho mọi tình huống hội thoại.
+#
+# Đây là các câu người học nói ở bất kỳ kịch bản nào (chào, cảm ơn, xin lỗi,
+# đồng ý, từ chối, xin nói lại). Chúng được gán scenario: global nên bộ luật
+# "lạc ngữ cảnh" luôn chấp nhận chúng ở mọi kịch bản.
+#
+# Trục biến thể khi soạn ví dụ (xem reports/DATASET.md):
+#   1. Mức lịch sự   : thể thường / thể ます / kính ngữ
+#   2. Chữ viết       : có kanji  <-> toàn kana (người mới thường viết kana)
+#   3. Độ dài         : câu cụt   <-> câu đầy đủ có です/ます
+#   4. Lỗi người học  : sai trợ từ, thiếu dakuten, thiếu trường âm
+# ---------------------------------------------------------------------------
+
+- intent: greeting
+  scenario: global
+  description: "Chào hỏi khi mở đầu hội thoại"
+  examples:
+    - こんにちは
+    - こんにちは！
+    - こんばんは
+    - おはようございます
+    - おはよう
+    # `どうも` trần chỉ nằm ở `thanks`: đứng một mình nó nhập nhằng giữa chào
+    # và cảm ơn, giữ ở cả hai nơi sẽ tạo nhãn mâu thuẫn không thể học được.
+    - やあ
+    - こんにちは、元気ですか
+    - こんにちは。お元気ですか。
+    - こんにちわ           # lỗi chính tả rất phổ biến (は viết thành わ)
+    - おはようございます！
+    - こんばんわ            # lỗi chính tả phổ biến
+    - もしもし
+    - ちわっす
+    - どうも、こんにちは
+    - おはようごさいます    # thiếu dakuten (ざ -> さ)
+    - こんにちは、はじめまして
+    - ハロー
+    - こんにちは〜
+    - お世話になっております
+
+- intent: thanks
+  scenario: global
+  description: "Cảm ơn"
+  examples:
+    - ありがとう
+    - ありがとうございます
+    - ありがとうございました
+    - どうもありがとうございます
+    - どうも
+    - すみません、ありがとうございます
+    - ありがとうございます！
+    - ありがとうござます      # thiếu い - lỗi gõ phổ biến
+    - ありがとうごさいます    # thiếu dakuten
+    - どうもありがとう
+    - サンキュー
+    - 本当にありがとうございます
+    - ほんとうにありがとう
+    - 感謝します
+    - ありがと
+    - どうもすみません、ありがとう
+    - ありがとうね
+    - たすかりました
+    - 助かりました
+    - おかげさまで、ありがとうございます
+
+- intent: apologize
+  scenario: global
+  description: "Xin lỗi hoặc gọi để gây chú ý (すみません)"
+  examples:
+    - すみません
+    - すいません
+    - ごめんなさい
+    - ごめん
+    - 申し訳ありません
+    - 申し訳ございません
+    - すみませんでした
+    - どうもすみません
+    - ごめんなさい、遅れました
+    - すみません、遅くなりました
+    - しつれいしました
+    - 失礼しました
+    - ごめんね
+    - すみませんが
+    - あ、すみません
+    - すいませんでした
+    - もうしわけありません
+    - ちょっとすみません
+    - すみません、ちょっといいですか
+
+- intent: farewell
+  scenario: global
+  description: "Tạm biệt, kết thúc hội thoại"
+  examples:
+    - さようなら
+    - さよなら
+    - また明日
+    - また今度
+    - じゃあ、また
+    - じゃあね
+    - バイバイ
+    - 失礼します
+    - お先に失礼します
+    - では、また
+    - またね
+    - お疲れ様でした
+    - おつかれさまでした
+    - さようなら、また来ます
+    - じゃ、また明日
+    - それでは失礼します
+    - また会いましょう
+    - お元気で
+    - ではまた
+    - また来ますね
+
+- intent: affirm
+  scenario: global
+  description: "Đồng ý, xác nhận"
+  examples:
+    - はい
+    - はい、そうです
+    - そうです
+    - ええ
+    - うん
+    - はい、お願いします
+    # `お願いします` trần bị bỏ: nó là hậu tố lịch sự của hàng chục ý định khác
+    # (メニューを〜 / お会計〜 / 二人で〜), nên đứng một mình nó không mang
+    # thông tin ý định nào cả.
+    - そうですね
+    - はい、大丈夫です
+    # `大丈夫です` và `けっこうです` đứng MỘT MÌNH bị bỏ khỏi đây: trong ngữ
+    # cảnh phục vụ, cả hai thường mang nghĩa TỪ CHỐI nhẹ ("thôi khỏi"), nên
+    # chúng chỉ nằm ở `deny`. Giữ ở cả hai nơi tạo nhãn mâu thuẫn và trước đó
+    # đã là nguồn lỗi gây hại lớn nhất khi đo hệ thống.
+    - いいですよ
+    - もちろん
+    - はい、わかりました
+    - わかりました
+    - かしこまりました
+    - オーケー
+    - はいはい
+    - そうそう
+    - はい、それでいいです
+    - じゃあ、それにします
+    - はい、いいです
+
+- intent: deny
+  scenario: global
+  description: "Từ chối, phủ định"
+  examples:
+    - いいえ
+    - いえ
+    - いいえ、違います
+    - ちがいます
+    - 違います
+    - いや
+    - ううん
+    - いいえ、結構です
+    - 結構です
+    - けっこうです
+    - 大丈夫です
+    - だいじょうぶです
+    - いいです、大丈夫です
+    - いりません
+    - 要りません
+    - いいえ、いりません
+    - やめておきます
+    - ちょっと…
+    - いいえ、まだです
+    - まだです
+    - すみません、いいえ
+    - 今日はいいです
+
+- intent: not_understand
+  scenario: global
+  description: "Chưa hiểu, xin nhắc lại hoặc nói chậm"
+  examples:
+    - わかりません
+    - 分かりません
+    - すみません、わかりません
+    - もう一度お願いします
+    - もういちどお願いします
+    - もう一度言ってください
+    - ゆっくり話してください
+    - ゆっくりお願いします
+    - もっとゆっくりお願いします
+    - すみません、もう一度
+    - え？
+    - なんですか
+    - 何ですか
+    - どういう意味ですか
+    - すみません、聞こえませんでした
+    - よく分かりませんでした
+    - 日本語がわかりません
+    - まだ日本語が下手です
+    - すみません、難しいです
+    - もう一回お願いします

@@ -1,0 +1,325 @@
+{
+  "dataset": {
+    "n_examples": 1396,
+    "n_intents": 30,
+    "n_scenarios": 4,
+    "counts": {
+      "directions_ask_where": 63,
+      "directions_ask_how_to_get": 85,
+      "directions_ask_time": 47,
+      "directions_ask_nearby": 50,
+      "greeting": 29,
+      "thanks": 29,
+      "apologize": 25,
+      "farewell": 29,
+      "affirm": 29,
+      "deny": 30,
+      "not_understand": 34,
+      "out_of_scope": 260,
+      "meta_about_bot": 32,
+      "restaurant_seat": 43,
+      "restaurant_ask_menu": 41,
+      "restaurant_order": 48,
+      "restaurant_ask_price": 38,
+      "restaurant_ask_ingredient": 41,
+      "restaurant_ask_bill": 39,
+      "intro_nice_to_meet": 27,
+      "intro_name": 37,
+      "intro_origin": 33,
+      "intro_job": 33,
+      "intro_hobby": 41,
+      "intro_ask_back": 37,
+      "shopping_ask_item": 44,
+      "shopping_ask_size_color": 42,
+      "shopping_try_on": 32,
+      "shopping_ask_price": 37,
+      "shopping_pay": 41
+    }
+  },
+  "cv": {
+    "n_splits": 5,
+    "random_state": 42
+  },
+  "results": [
+    {
+      "name": "majority",
+      "label": "Đoán bừa lớp đông nhất",
+      "family": "baseline",
+      "rationale": "Sàn tuyệt đối. Mọi mô hình phải vượt xa con số này mới có ý nghĩa.",
+      "accuracy": 0.18624641833810887,
+      "macro_f1": 0.010466988727858293,
+      "scenario_accuracy": 0.18624641833810887,
+      "oos_precision": 0.18624641833810887,
+      "oos_recall": 1.0,
+      "oos_f1": 0.3140096618357488,
+      "fit_seconds": 0.03379215999957523,
+      "latency_ms": 0.32816099999763537,
+      "model_kb": 128.1357421875,
+      "gives_proba": true,
+      "heavy": false,
+      "tags": [
+        "baseline"
+      ],
+      "error": null
+    },
+    {
+      "name": "char_knn",
+      "label": "1-NN cosine (so khớp mẫu)",
+      "family": "retrieval",
+      "rationale": "Đại diện cho cách làm 'viết luật tay / so khớp mẫu câu'. Nếu một mô hình học được không thắng nổi nó thì không đáng để huấn luyện.",
+      "accuracy": 0.6583094555873925,
+      "macro_f1": 0.6501740752239821,
+      "scenario_accuracy": 0.660458452722063,
+      "oos_precision": 0.7760416666666666,
+      "oos_recall": 0.573076923076923,
+      "oos_f1": 0.6592920353982301,
+      "fit_seconds": 0.03392974000089453,
+      "latency_ms": 1.8059960000027786,
+      "model_kb": 365.515625,
+      "gives_proba": false,
+      "heavy": false,
+      "tags": [
+        "baseline"
+      ],
+      "error": null
+    },
+    {
+      "name": "char_nb",
+      "label": "TF-IDF ký tự + Naive Bayes",
+      "family": "linear",
+      "rationale": "Chuẩn mực kinh điển cho phân loại văn bản ít dữ liệu, huấn luyện cực nhanh.",
+      "accuracy": 0.7191977077363897,
+      "macro_f1": 0.6986349410593249,
+      "scenario_accuracy": 0.8042621776504298,
+      "oos_precision": 0.6646525679758308,
+      "oos_recall": 0.8461538461538461,
+      "oos_f1": 0.7445008460236887,
+      "fit_seconds": 0.04223145999967528,
+      "latency_ms": 1.5711955000006128,
+      "model_kb": 383.4912109375,
+      "gives_proba": true,
+      "heavy": false,
+      "tags": [],
+      "error": null
+    },
+    {
+      "name": "char_logreg",
+      "label": "TF-IDF ký tự + Hồi quy Logistic",
+      "family": "linear",
+      "rationale": "Ứng viên chính. Cho xác suất hiệu chỉnh sẵn - điều kiện BẮT BUỘC để đặt ngưỡng tin cậy phát hiện câu lạc đề.",
+      "accuracy": 0.7177650429799427,
+      "macro_f1": 0.7010990113593972,
+      "scenario_accuracy": 0.8193051575931232,
+      "oos_precision": 0.8366336633663366,
+      "oos_recall": 0.65,
+      "oos_f1": 0.7316017316017316,
+      "fit_seconds": 2.3921901399997294,
+      "latency_ms": 0.46017299999220995,
+      "model_kb": 1828.2841796875,
+      "gives_proba": true,
+      "heavy": false,
+      "tags": [
+        "primary"
+      ],
+      "error": null
+    },
+    {
+      "name": "char_linsvc",
+      "label": "TF-IDF ký tự + LinearSVC",
+      "family": "linear",
+      "rationale": "Thường nhỉnh hơn về độ chính xác thô, nhưng không có xác suất.",
+      "accuracy": 0.7077363896848138,
+      "macro_f1": 0.6949349670129911,
+      "scenario_accuracy": 0.8135744985673352,
+      "oos_precision": 0.9395973154362416,
+      "oos_recall": 0.5384615384615384,
+      "oos_f1": 0.684596577017115,
+      "fit_seconds": 0.10339882000007491,
+      "latency_ms": 0.4354514999977255,
+      "model_kb": 1430.8115234375,
+      "gives_proba": false,
+      "heavy": false,
+      "tags": [],
+      "error": null
+    },
+    {
+      "name": "char_linsvc_cal",
+      "label": "TF-IDF ký tự + LinearSVC (hiệu chỉnh)",
+      "family": "linear",
+      "rationale": "LinearSVC có thêm xác suất, đổi lại chi phí huấn luyện gấp 3 lần.",
+      "accuracy": 0.7170487106017192,
+      "macro_f1": 0.6959591040923127,
+      "scenario_accuracy": 0.8042621776504298,
+      "oos_precision": 0.7931034482758621,
+      "oos_recall": 0.7076923076923077,
+      "oos_f1": 0.7479674796747967,
+      "fit_seconds": 0.31802078000037,
+      "latency_ms": 4.8221805000048334,
+      "model_kb": 3475.013671875,
+      "gives_proba": true,
+      "heavy": false,
+      "tags": [],
+      "error": null
+    },
+    {
+      "name": "char_sgd",
+      "label": "TF-IDF ký tự + SGD (modified huber)",
+      "family": "linear",
+      "rationale": "Huấn luyện trực tuyến được, hữu ích nếu sau này muốn học tăng dần.",
+      "accuracy": 0.7120343839541547,
+      "macro_f1": 0.696850505465644,
+      "scenario_accuracy": 0.7693409742120344,
+      "oos_precision": 0.7236363636363636,
+      "oos_recall": 0.7653846153846153,
+      "oos_f1": 0.7439252336448599,
+      "fit_seconds": 0.0952527999994345,
+      "latency_ms": 1.9898860000012062,
+      "model_kb": 483.751953125,
+      "gives_proba": true,
+      "heavy": false,
+      "tags": [],
+      "error": null
+    },
+    {
+      "name": "char_mlp",
+      "label": "TF-IDF ký tự + MLP 256 nơ-ron",
+      "family": "neural",
+      "rationale": "Kiểm chứng xem phi tuyến có thêm được gì trên tập dữ liệu cỡ này không.",
+      "accuracy": 0.7277936962750716,
+      "macro_f1": 0.7108864302317646,
+      "scenario_accuracy": 0.8216332378223495,
+      "oos_precision": 0.7433962264150943,
+      "oos_recall": 0.7576923076923077,
+      "oos_f1": 0.7504761904761905,
+      "fit_seconds": 91.85984496000019,
+      "latency_ms": 0.4831614999966405,
+      "model_kb": 137603.193359375,
+      "gives_proba": true,
+      "heavy": false,
+      "tags": [],
+      "error": null
+    },
+    {
+      "name": "word_logreg",
+      "label": "TF-IDF TỪ + Hồi quy Logistic (ablation)",
+      "family": "ablation",
+      "rationale": "Đối chứng cho lựa chọn n-gram ký tự. Không có bộ tách từ, cả câu tiếng Nhật bị coi là MỘT token.",
+      "accuracy": 0.2342406876790831,
+      "macro_f1": 0.12681024035291782,
+      "scenario_accuracy": 0.23585243553008595,
+      "oos_precision": 0.2031496062992126,
+      "oos_recall": 0.9923076923076923,
+      "oos_f1": 0.33725490196078434,
+      "fit_seconds": 0.1631351600000926,
+      "latency_ms": 0.3895289999945817,
+      "model_kb": 70.951171875,
+      "gives_proba": true,
+      "heavy": false,
+      "tags": [
+        "ablation"
+      ],
+      "error": null
+    },
+    {
+      "name": "char_logreg_nofold",
+      "label": "TF-IDF ký tự, KHÔNG gộp katakana (ablation)",
+      "family": "ablation",
+      "rationale": "Đo riêng phần đóng góp của bước chuẩn hoá katakana -> hiragana.",
+      "accuracy": 0.7098853868194842,
+      "macro_f1": 0.6982194339146486,
+      "scenario_accuracy": 0.8137535816618912,
+      "oos_precision": 0.8532608695652174,
+      "oos_recall": 0.6038461538461538,
+      "oos_f1": 0.7072072072072072,
+      "fit_seconds": 1.7770941399998263,
+      "latency_ms": 0.40810150000652357,
+      "model_kb": 1814.505859375,
+      "gives_proba": true,
+      "heavy": false,
+      "tags": [
+        "ablation"
+      ],
+      "error": null
+    }
+  ],
+  "threshold_sweep": [
+    {
+      "threshold": 0.2,
+      "in_scope_answered_correctly": 0.779101245262588,
+      "in_scope_false_reject": 0.0828370330265295,
+      "oos_caught": 0.8105769230769231
+    },
+    {
+      "threshold": 0.25,
+      "in_scope_answered_correctly": 0.7726042230644288,
+      "in_scope_false_reject": 0.09799675148890093,
+      "oos_caught": 0.8211538461538461
+    },
+    {
+      "threshold": 0.3,
+      "in_scope_answered_correctly": 0.7634001082837033,
+      "in_scope_false_reject": 0.11423930698429886,
+      "oos_caught": 0.8298076923076924
+    },
+    {
+      "threshold": 0.35,
+      "in_scope_answered_correctly": 0.752571737953438,
+      "in_scope_false_reject": 0.1353546291283162,
+      "oos_caught": 0.8423076923076923
+    },
+    {
+      "threshold": 0.4,
+      "in_scope_answered_correctly": 0.7395776935571197,
+      "in_scope_false_reject": 0.15755278830536004,
+      "oos_caught": 0.8625
+    },
+    {
+      "threshold": 0.45,
+      "in_scope_answered_correctly": 0.7211694639956686,
+      "in_scope_false_reject": 0.18408229561451,
+      "oos_caught": 0.8788461538461538
+    },
+    {
+      "threshold": 0.5,
+      "in_scope_answered_correctly": 0.7043854899837575,
+      "in_scope_false_reject": 0.2165674066053059,
+      "oos_caught": 0.8875
+    },
+    {
+      "threshold": 0.55,
+      "in_scope_answered_correctly": 0.6832701678397402,
+      "in_scope_false_reject": 0.24959393611261504,
+      "oos_caught": 0.9038461538461539
+    },
+    {
+      "threshold": 0.6,
+      "in_scope_answered_correctly": 0.6621548456957228,
+      "in_scope_false_reject": 0.2853275582024905,
+      "oos_caught": 0.9192307692307692
+    },
+    {
+      "threshold": 0.65,
+      "in_scope_answered_correctly": 0.6372495939361126,
+      "in_scope_false_reject": 0.31781266919328643,
+      "oos_caught": 0.9298076923076923
+    },
+    {
+      "threshold": 0.7,
+      "in_scope_answered_correctly": 0.607471575527883,
+      "in_scope_false_reject": 0.3519220357336221,
+      "oos_caught": 0.9423076923076923
+    },
+    {
+      "threshold": 0.75,
+      "in_scope_answered_correctly": 0.5668651867893882,
+      "in_scope_false_reject": 0.4011911207363292,
+      "oos_caught": 0.9538461538461539
+    },
+    {
+      "threshold": 0.8,
+      "in_scope_answered_correctly": 0.511099079588522,
+      "in_scope_false_reject": 0.4688684353004873,
+      "oos_caught": 0.9605769230769231
+    }
+  ]
+}

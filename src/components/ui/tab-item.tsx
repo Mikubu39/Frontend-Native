@@ -21,7 +21,13 @@ import Animated, {
   interpolateColor,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { Colors, Fonts, FontSizes, FontWeights, Spacing } from "@/constants/theme";
+import {
+  Colors,
+  Fonts,
+  FontSizes,
+  FontWeights,
+  Spacing,
+} from "@/constants/theme";
 import { useTheme } from "@/contexts/theme-context";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);

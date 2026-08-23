@@ -124,19 +124,12 @@ export function FlashcardQuestionCard({
         </Animated.View>
 
         {/* Back */}
-        <Animated.View
-          style={[styles.card, backAnimatedStyle]}
-        >
+        <Animated.View style={[styles.card, backAnimatedStyle]}>
           <LinearGradient
             colors={[Colors.primary + "22", Colors.secondary + "18"]}
             style={StyleSheet.absoluteFill}
           />
-          <View
-            style={[
-              styles.cardBackInner,
-              { borderColor: cardBorder },
-            ]}
-          >
+          <View style={[styles.cardBackInner, { borderColor: cardBorder }]}>
             <Text
               style={[
                 styles.backText,
@@ -147,7 +140,11 @@ export function FlashcardQuestionCard({
             </Text>
             {question.audioUrl && (
               <View style={styles.audioWrapper}>
-                <AudioButton variant="speaker" size="small" onPress={() => {}} />
+                <AudioButton
+                  variant="speaker"
+                  size="small"
+                  onPress={() => {}}
+                />
               </View>
             )}
           </View>

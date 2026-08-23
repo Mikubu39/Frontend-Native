@@ -84,8 +84,8 @@ export const Colors = {
     text: "#F9FAFB",
     textSecondary: "#9CA3AF",
     background: "#1C1C24", // Lighter slate/grey
-    backgroundElement: "#2A2A35", 
-    backgroundSelected: "#3E3E4F", 
+    backgroundElement: "#2A2A35",
+    backgroundSelected: "#3E3E4F",
     card: "#262631", // Lighter card
     cardElevated: "#30303D",
     border: "#3F3F4E",

@@ -21,6 +21,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/use-theme";
+import { resolveMediaUrl } from "@/utils/media";
 
 export default function FriendsSearchScreen() {
   const router = useRouter();
@@ -54,13 +55,22 @@ export default function FriendsSearchScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={[styles.backText, { color: colors.text }]}>←</Text>
         </TouchableOpacity>
         <TextInput
-          style={[styles.searchInput, { backgroundColor: colors.card, borderColor: colors.borderSubtle, color: colors.text }]}
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.borderSubtle,
+              color: colors.text,
+            },
+          ]}
           placeholderTextColor={colors.textSecondary}
           placeholder="Search by username..."
           value={keyword}
@@ -87,7 +97,16 @@ export default function FriendsSearchScreen() {
           contentContainerStyle={styles.listContainer}
           renderItem={({ item, index }) => (
             <TouchableOpacity
-              style={[styles.userCard, { backgroundColor: colors.card, borderColor: colors.borderSubtle, elevation: 0, shadowOpacity: 0, borderWidth: 1 }]}
+              style={[
+                styles.userCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.borderSubtle,
+                  elevation: 0,
+                  shadowOpacity: 0,
+                  borderWidth: 1,
+                },
+              ]}
               disabled={false}
               onPress={() =>
                 router.push({
@@ -103,7 +122,10 @@ export default function FriendsSearchScreen() {
               }
             >
               {item.avatarUrl ? (
-                <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+                <Image
+                  source={{ uri: resolveMediaUrl(item.avatarUrl) }}
+                  style={styles.avatar}
+                />
               ) : (
                 <View style={styles.avatarPlaceholder}>
                   <Text style={styles.avatarText}>
@@ -112,22 +134,33 @@ export default function FriendsSearchScreen() {
                 </View>
               )}
               <View style={styles.userInfo}>
-                <Text style={[styles.fullName, { color: colors.text }]}>{item.displayName}</Text>
+                <Text style={[styles.fullName, { color: colors.text }]}>
+                  {item.displayName}
+                </Text>
                 <Text style={styles.username}>Lv {item.level}</Text>
               </View>
-                <TouchableOpacity
+              <TouchableOpacity
+                style={[
+                  styles.followBtn,
+                  item.isFollowing && [
+                    styles.followingBtn,
+                    {
+                      backgroundColor: colors.background,
+                      borderColor: colors.borderSubtle,
+                    },
+                  ],
+                ]}
+                onPress={() => handleToggleFollow(item.id, index)}
+              >
+                <Text
                   style={[
-                    styles.followBtn,
-                    item.isFollowing && [styles.followingBtn, { backgroundColor: colors.background, borderColor: colors.borderSubtle }],
+                    styles.followBtnText,
+                    item.isFollowing && [
+                      styles.followingBtnText,
+                      { color: colors.text },
+                    ],
                   ]}
-                  onPress={() => handleToggleFollow(item.id, index)}
                 >
-                  <Text
-                    style={[
-                      styles.followBtnText,
-                      item.isFollowing && [styles.followingBtnText, { color: colors.text }],
-                    ]}
-                  >
                   {item.isFollowing ? "Following" : "Follow"}
                 </Text>
               </TouchableOpacity>

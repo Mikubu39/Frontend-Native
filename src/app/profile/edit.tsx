@@ -55,18 +55,35 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.borderSubtle }]}>
-        <Text style={[styles.backBtn, { color: colors.text }]} onPress={() => router.back()}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.background,
+            borderBottomColor: colors.borderSubtle,
+          },
+        ]}
+      >
+        <Text
+          style={[styles.backBtn, { color: colors.text }]}
+          onPress={() => router.back()}
+        >
           ←
         </Text>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Chỉnh sửa Hồ sơ</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Chỉnh sửa Hồ sơ
+        </Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.formGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Tên hiển thị</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Tên hiển thị
+          </Text>
           <StyledTextInput
             placeholder="Tên hiển thị"
             value={displayName}
@@ -88,7 +105,9 @@ export default function EditProfileScreen() {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Số điện thoại</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Số điện thoại
+          </Text>
           <StyledTextInput
             placeholder="Số điện thoại mới"
             value={phoneNumber}

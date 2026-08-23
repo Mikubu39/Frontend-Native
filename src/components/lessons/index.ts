@@ -23,3 +23,7 @@ export {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "./lesson-path-constants";
+export { TopicHeaderBar } from "./topic-header-bar";
+export type { TopicHeaderBarProps } from "./topic-header-bar";
+export { TopicDivider, TOPIC_DIVIDER_HEIGHT } from "./topic-divider";
+export type { TopicDividerProps } from "./topic-divider";

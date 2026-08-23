@@ -58,20 +58,30 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
         {/* Header navigation bar */}
-        <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
+        <View
+          style={[styles.header, { borderBottomColor: colors.borderSubtle }]}
+        >
           <TouchableOpacity
             onPress={() => router.replace("/welcome")}
             style={styles.closeButton}
           >
-            <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
+            <Text
+              style={[styles.closeButtonText, { color: colors.textSecondary }]}
+            >
+              ✕
+            </Text>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textSecondary }]}>Tạo hồ sơ</Text>
+          <Text style={[styles.headerTitle, { color: colors.textSecondary }]}>
+            Tạo hồ sơ
+          </Text>
           <View style={styles.headerPlaceholder} />
         </View>
 
@@ -85,7 +95,9 @@ export default function SignupScreen() {
               style={styles.mascot}
             />
           </View>
-          <Text style={[styles.titleText, { color: colors.text }]}>Tạo hồ sơ của bạn</Text>
+          <Text style={[styles.titleText, { color: colors.text }]}>
+            Tạo hồ sơ của bạn
+          </Text>
         </View>
 
         {/* Inputs */}

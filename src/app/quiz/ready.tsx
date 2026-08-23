@@ -58,9 +58,7 @@ function ExampleRow({
             backgroundColor: isDark
               ? "rgba(255,255,255,0.05)"
               : "rgba(0,0,0,0.04)",
-            borderColor: isDark
-              ? "rgba(255,255,255,0.08)"
-              : "rgba(0,0,0,0.07)",
+            borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)",
           },
         ]}
       >
@@ -82,8 +80,8 @@ function ExampleRow({
                     ? Colors.primaryLight
                     : Colors.primaryDark
                   : isDark
-                  ? "rgba(255,255,255,0.25)"
-                  : "rgba(0,0,0,0.2)",
+                    ? "rgba(255,255,255,0.25)"
+                    : "rgba(0,0,0,0.2)",
                 fontStyle: "italic",
               },
             ]}
@@ -98,15 +96,21 @@ function ExampleRow({
               backgroundColor: revealed
                 ? Colors.primary + "33"
                 : isDark
-                ? "rgba(255,255,255,0.08)"
-                : "rgba(0,0,0,0.06)",
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.06)",
             },
           ]}
         >
           <Ionicons
             name={revealed ? "eye" : "eye-off"}
             size={18}
-            color={revealed ? Colors.primaryLight : isDark ? "rgba(255,255,255,0.4)" : Colors.textSecondary}
+            color={
+              revealed
+                ? Colors.primaryLight
+                : isDark
+                  ? "rgba(255,255,255,0.4)"
+                  : Colors.textSecondary
+            }
           />
         </View>
       </AnimatedPressable>
@@ -116,29 +120,63 @@ function ExampleRow({
 
 export default function QuizReadyScreen() {
   const router = useRouter();
-  const { lessonId = "lp1" } = useLocalSearchParams<{ lessonId: string }>();
+  const {
+    lessonId = "lp1",
+    title: lessonTitleParam,
+    lessonType: lessonTypeParam,
+  } = useLocalSearchParams<{
+    lessonId: string;
+    title?: string;
+    lessonType?: string;
+  }>();
   const { colors, isDark } = useTheme();
 
   const node = LEARNING_PATH.find((n) => n.id === lessonId);
-  const isTheory = node?.nodeType === "theory" || !node?.nodeType;
-  const isBoss = node?.nodeType === "boss";
+
+  // Bài học thật lấy từ backend có id dạng số, không khớp với LEARNING_PATH
+  // (dữ liệu mock id "lp1", "lp2"...). Trước đây mọi bài thật đều rơi vào nhánh
+  // fallback và hiện lý thuyết của LESSON_TIPS.lp5 — nội dung hoàn toàn không
+  // liên quan tới bài đang mở. Phần dạy thật giờ nằm trong màn hình học
+  // (`TeachCardView`), nên ở đây chỉ hiện đúng tên bài.
+  const isRemoteLesson = !node && !!lessonTitleParam;
+
+  const isBoss = isRemoteLesson
+    ? lessonTypeParam === "JUMP_TEST"
+    : node?.nodeType === "boss";
+  const isTheory = isRemoteLesson
+    ? false
+    : node?.nodeType === "theory" || !node?.nodeType;
 
   const tip =
     LESSON_TIPS[lessonId as keyof typeof LESSON_TIPS] || LESSON_TIPS.lp5;
 
+  const screenTitle = isRemoteLesson
+    ? lessonTitleParam
+    : isTheory
+      ? tip.title
+      : node?.title;
+
   const nodeTypeIcon = isBoss ? "trophy" : isTheory ? "bulb" : "barbell";
   const nodeTypeLabel = isBoss
     ? "KIỂM TRA CHƯƠNG"
-    : isTheory
-    ? "BÀI HỌC"
-    : "LUYỆN TẬP";
+    : isRemoteLesson
+      ? lessonTypeParam === "TIMED_REVIEW"
+        ? "ÔN TẬP TÍNH GIỜ"
+        : "BÀI HỌC"
+      : isTheory
+        ? "BÀI HỌC"
+        : "LUYỆN TẬP";
   const ctaLabel = isBoss ? "BẮT ĐẦU KIỂM TRA" : "BẮT ĐẦU";
 
   return (
     <SafeAreaView
       style={[
         styles.safeArea,
-        { backgroundColor: isDark ? Colors.dark.background : Colors.light.background },
+        {
+          backgroundColor: isDark
+            ? Colors.dark.background
+            : Colors.light.background,
+        },
       ]}
     >
       {/* Ambient glow orbs — dark mode only */}
@@ -200,7 +238,10 @@ export default function QuizReadyScreen() {
           <View
             style={[
               styles.typePill,
-              { backgroundColor: Colors.primary + "22", borderColor: Colors.primary + "55" },
+              {
+                backgroundColor: Colors.primary + "22",
+                borderColor: Colors.primary + "55",
+              },
             ]}
           >
             <Text style={[styles.typeText, { color: Colors.primaryLight }]}>
@@ -213,7 +254,7 @@ export default function QuizReadyScreen() {
               { color: isDark ? "#F9FAFB" : Colors.textPrimary },
             ]}
           >
-            {isTheory ? tip.title : node?.title}
+            {screenTitle}
           </Text>
         </Animated.View>
 
@@ -280,7 +321,11 @@ export default function QuizReadyScreen() {
               <Text
                 style={[
                   styles.sectionLabel,
-                  { color: isDark ? "rgba(255,255,255,0.35)" : Colors.textSecondary },
+                  {
+                    color: isDark
+                      ? "rgba(255,255,255,0.35)"
+                      : Colors.textSecondary,
+                  },
                 ]}
               >
                 VÍ DỤ THỰC HÀNH

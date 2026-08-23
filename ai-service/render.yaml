@@ -1,0 +1,33 @@
+# Triển khai lên Render (gói miễn phí).
+#
+# Vì sao chọn Render cho đồ án này:
+#   - Gói free thật sự miễn phí, không cần thẻ tín dụng.
+#   - 512 MB RAM - mô hình 930 KB + scikit-learn nằm gọn trong đó.
+#   - Tự build lại mỗi lần push, và bước build đã bao gồm huấn luyện mô hình.
+#
+# Hạn chế đã biết của gói free: dịch vụ NGỦ ĐÔNG sau ~15 phút không có lưu
+# lượng, và lần gọi kế tiếp mất khoảng 30 giây để đánh thức. Vì thế client
+# React Native đặt timeout 30 giây và hiện thông báo chờ tử tế
+# (xem `src/services/api/conversation.ts`).
+
+services:
+  - type: web
+    name: nihongo-conversation-ai
+    runtime: python
+    plan: free
+    region: singapore # gần Việt Nam nhất -> độ trễ thấp nhất
+    rootDir: ai-service
+
+    buildCommand: |
+      pip install -r requirements.txt
+      PYTHONPATH=src python -m nihongo_ai.train
+
+    startCommand: PYTHONPATH=src uvicorn nihongo_ai.api:app --host 0.0.0.0 --port $PORT
+
+    healthCheckPath: /health
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.10"
+      - key: PYTHONUNBUFFERED
+        value: "1"

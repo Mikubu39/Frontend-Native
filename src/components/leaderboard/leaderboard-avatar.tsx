@@ -6,6 +6,8 @@
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { FontWeights } from "@/constants/theme";
+import { resolveMediaUrl } from "@/utils/media";
+import { useImageFallback } from "@/hooks/use-image-fallback";
 
 interface LeaderboardAvatarProps {
   displayName: string;
@@ -44,7 +46,12 @@ export function LeaderboardAvatar({
   ringColor,
   ringWidth = 0,
 }: LeaderboardAvatarProps) {
-  const hasValidUri = !!avatarUrl && /^https?:\/\//i.test(avatarUrl);
+  // Avatar backend lưu tương đối (`/uploads/images/avatars/...`) nên cần ghép base URL.
+  // Tải hỏng thì quay về chữ cái đầu của tên — nhánh dự phòng vốn đã có sẵn.
+  const { uri: resolvedUri, onError } = useImageFallback(
+    resolveMediaUrl(avatarUrl),
+  );
+  const hasValidUri = !!resolvedUri;
   const bg = getPaletteColor(userId);
 
   return (
@@ -63,13 +70,14 @@ export function LeaderboardAvatar({
     >
       {hasValidUri ? (
         <Image
-          source={{ uri: avatarUrl as string }}
+          source={{ uri: resolvedUri as string }}
           style={{
             width: size - ringWidth * 2,
             height: size - ringWidth * 2,
             borderRadius: (size - ringWidth * 2) / 2,
           }}
           resizeMode="cover"
+          onError={onError}
         />
       ) : (
         <Text style={[styles.initial, { fontSize: size * 0.42 }]}>

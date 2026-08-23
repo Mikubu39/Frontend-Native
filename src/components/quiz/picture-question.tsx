@@ -79,7 +79,9 @@ export function PictureQuestionCard({
           const isCorrectAnswer = img.isCorrect;
 
           let borderColor: string = cardBorder;
-          let bgColor: string = isDark ? "rgba(255,255,255,0.04)" : colors.backgroundElement;
+          let bgColor: string = isDark
+            ? "rgba(255,255,255,0.04)"
+            : colors.backgroundElement;
           let showCheck = false;
           let checkBg: string = Colors.accent;
           let iconName: "checkmark" | "close" = "checkmark";

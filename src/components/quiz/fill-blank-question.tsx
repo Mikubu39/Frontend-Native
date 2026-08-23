@@ -55,8 +55,8 @@ export function FillBlankQuestionCard({
               borderBottomColor: selectedOption
                 ? Colors.primary
                 : isDark
-                ? "rgba(255,255,255,0.3)"
-                : Colors.textSecondary,
+                  ? "rgba(255,255,255,0.3)"
+                  : Colors.textSecondary,
               backgroundColor: selectedOption
                 ? isDark
                   ? Colors.primary + "22"
@@ -129,8 +129,8 @@ export function FillBlankQuestionCard({
                         ? Colors.primaryLight
                         : Colors.primaryDark
                       : isDark
-                      ? "#F9FAFB"
-                      : Colors.textPrimary,
+                        ? "#F9FAFB"
+                        : Colors.textPrimary,
                   },
                 ]}
               >

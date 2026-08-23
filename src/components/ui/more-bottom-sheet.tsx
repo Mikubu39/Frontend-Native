@@ -52,12 +52,22 @@ export function MoreBottomSheet({ visible, onClose }: MoreBottomSheetProps) {
         entering={SlideInDown.duration(AnimationPresets.duration.normal)}
         style={[styles.sheetContainer, { backgroundColor: colors.background }]}
       >
-        <View style={[styles.dragIndicator, { backgroundColor: isDark ? colors.border : Colors.lockedBg }]} />
-        <Text style={[styles.sheetTitle, { color: colors.text }]}>Khám phá thêm</Text>
+        <View
+          style={[
+            styles.dragIndicator,
+            { backgroundColor: isDark ? colors.border : Colors.lockedBg },
+          ]}
+        />
+        <Text style={[styles.sheetTitle, { color: colors.text }]}>
+          Khám phá thêm
+        </Text>
 
         <View style={styles.optionsContainer}>
           <TouchableOpacity
-            style={[styles.optionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={[
+              styles.optionButton,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
             onPress={() => handleNavigate("/(tabs)/profile")}
           >
             <View
@@ -72,11 +82,16 @@ export function MoreBottomSheet({ visible, onClose }: MoreBottomSheetProps) {
                 color={Colors.primary}
               />
             </View>
-            <Text style={[styles.optionText, { color: colors.text }]}>Hồ sơ</Text>
+            <Text style={[styles.optionText, { color: colors.text }]}>
+              Hồ sơ
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.optionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={[
+              styles.optionButton,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
             onPress={() => handleNavigate("/characters")}
           >
             <View
@@ -91,11 +106,16 @@ export function MoreBottomSheet({ visible, onClose }: MoreBottomSheetProps) {
                 color={Colors.accent}
               />
             </View>
-            <Text style={[styles.optionText, { color: colors.text }]}>Chữ Kana</Text>
+            <Text style={[styles.optionText, { color: colors.text }]}>
+              Chữ Kana
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.optionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={[
+              styles.optionButton,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
             onPress={() => handleNavigate("/review")}
           >
             <View
@@ -103,7 +123,9 @@ export function MoreBottomSheet({ visible, onClose }: MoreBottomSheetProps) {
             >
               <Ionicons name="barbell-outline" size={28} color="#10B981" />
             </View>
-            <Text style={[styles.optionText, { color: colors.text }]}>Trung tâm luyện tập</Text>
+            <Text style={[styles.optionText, { color: colors.text }]}>
+              Trung tâm luyện tập
+            </Text>
           </TouchableOpacity>
         </View>
       </Animated.View>

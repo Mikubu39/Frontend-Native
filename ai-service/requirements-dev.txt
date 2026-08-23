@@ -1,0 +1,17 @@
+# Phụ thuộc chỉ dùng khi PHÁT TRIỂN / NGHIÊN CỨU.
+#
+# torch + sentence-transformers CHỈ phục vụ việc chạy đối chứng mô hình
+# Transformer trong `evaluate.py --heavy`. Kết luận của phép đo đó là mô hình
+# nhúng câu THUA mô hình TF-IDF trên chính bài toán này (xem
+# reports/EVALUATION.md), nên nó không có mặt trong bản chạy thật.
+#
+# Cài: pip install -r requirements.txt -r requirements-dev.txt
+
+-r requirements.txt
+
+pytest==9.1.1
+httpx
+
+# Đối chứng nặng - cài riêng bằng bánh xe CPU để tránh kéo về CUDA:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install sentence-transformers
