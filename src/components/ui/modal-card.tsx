@@ -1,6 +1,9 @@
 /**
  * ModalCard - White card overlay with animated entrance.
- * Card scales in from 0.9 → 1 with a spring, backdrop fades in.
+ *
+ * Vào bằng một nhịp trượt-mờ đơn giản, KHÔNG nảy. Hộp thoại là thứ chắn đường
+ * người dùng để hỏi một câu — nó cần đứng yên cho người ta đọc, chứ không phải
+ * rung thêm hai nhịp nữa. Nảy để dành cho màn thưởng/ăn mừng.
  */
 
 import React from "react";
@@ -37,10 +40,7 @@ export function ModalCard({ children, onClose, style }: ModalCardProps) {
     >
       <BlurView intensity={45} tint="dark" style={styles.overlay} />
       <Animated.View
-        entering={FadeInDown.duration(AnimationPresets.duration.normal)
-          .springify()
-          .damping(AnimationPresets.spring.damping)
-          .stiffness(AnimationPresets.spring.stiffness)}
+        entering={FadeInDown.duration(AnimationPresets.duration.normal)}
         style={[styles.card, style]}
       >
         {onClose && (

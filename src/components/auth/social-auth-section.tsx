@@ -10,13 +10,11 @@ import { Colors, FontSizes, Spacing } from "@/constants/theme";
 interface SocialAuthSectionProps {
   onGooglePress: () => void;
   onFacebookPress: () => void;
-  onApplePress: () => void;
 }
 
 export function SocialAuthSection({
   onGooglePress,
   onFacebookPress,
-  onApplePress,
 }: SocialAuthSectionProps) {
   return (
     <View style={styles.container}>
@@ -29,7 +27,6 @@ export function SocialAuthSection({
       <View style={styles.buttons}>
         <SocialButton provider="google" onPress={onGooglePress} />
         <SocialButton provider="facebook" onPress={onFacebookPress} />
-        <SocialButton provider="apple" onPress={onApplePress} />
       </View>
     </View>
   );

@@ -141,6 +141,31 @@ describe("buildTeachCards", () => {
     expect(cards[0].kind).toBe("phrase");
   });
 
+  it("lấy cách đọc từ `teachAudio` khi đề bài cố ý không có nút loa", () => {
+    // Câu dịch không mang `audioUrl` (in sẵn mặt chữ ra rồi thì cái loa ở đề bài
+    // chẳng phục vụ việc gì). Nhưng thẻ DẠY thì bắt buộc phải có tiếng, nếu không
+    // người học gặp từ mới mà không biết đọc lên thế nào.
+    const cards = buildTeachCards([
+      question({
+        questionId: 1,
+        questionType: "TRANSLATE_TO_VN",
+        content: "「ねこ」 (neko) nghĩa là gì?",
+        metadataJson: {
+          kana: "ねこ",
+          romaji: "neko",
+          vn: "con mèo",
+          teachAudio: "/uploads/audios/words/neko.mp3",
+        },
+        options: [{ optionId: 1, content: "con mèo", isCorrect: true }],
+      }),
+    ]);
+
+    expect(cards).toHaveLength(1);
+    expect(cards[0].audioUrl).toContain("/uploads/audios/words/neko.mp3");
+    expect(cards[0].romaji).toBe("neko");
+    expect(cards[0].meaning).toBe("con mèo");
+  });
+
   it("bỏ qua câu không có gì để dạy", () => {
     const cards = buildTeachCards([
       question({ questionId: 1, metadataJson: null, options: [] }),

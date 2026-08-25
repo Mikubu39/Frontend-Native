@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { userService } from "@/services/api/user";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useTheme } from "@/hooks/use-theme";
 import { resolveMediaUrl } from "@/utils/media";
+import { PublicProfileResponse } from "@/types/api";
 
 export default function ViewSearchProfileScreen() {
   const params = useLocalSearchParams<{
@@ -36,6 +37,25 @@ export default function ViewSearchProfileScreen() {
   const id = parseInt(params.id || "0", 10);
   const [isFollowing, setIsFollowing] = useState(params.isFollowing === "true");
   const [toggling, setToggling] = useState(false);
+  const [publicProfile, setPublicProfile] =
+    useState<PublicProfileResponse | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!id) return;
+    userService
+      .getPublicProfile(id)
+      .then((data) => {
+        if (isMounted) {
+          setPublicProfile(data);
+          setIsFollowing(data.isFollowing);
+        }
+      })
+      .catch((e) => console.error(e));
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
 
   const handleToggleFollow = async () => {
     if (!id) return;
@@ -92,13 +112,41 @@ export default function ViewSearchProfileScreen() {
           </Text>
 
           <View style={styles.stats}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: colors.text }]}>
-                Lv {params.level || "1"}
-              </Text>
-              <Text style={styles.statLabel}>Level</Text>
-            </View>
+            {publicProfile ? (
+              <>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statNumber, { color: colors.text }]}>
+                    {publicProfile.followingCount}
+                  </Text>
+                  <Text style={styles.statLabel}>Đang theo dõi</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statNumber, { color: colors.text }]}>
+                    {publicProfile.followerCount}
+                  </Text>
+                  <Text style={styles.statLabel}>Người theo dõi</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statNumber, { color: colors.text }]}>
+                    🔥 {publicProfile.currentStreak}
+                  </Text>
+                  <Text style={styles.statLabel}>Streak</Text>
+                </View>
+              </>
+            ) : (
+              <View style={styles.statItem}>
+                <Text style={[styles.statNumber, { color: colors.text }]}>
+                  Lv {params.level || "1"}
+                </Text>
+                <Text style={styles.statLabel}>Level</Text>
+              </View>
+            )}
           </View>
+          {publicProfile?.rankName && (
+            <Text style={[styles.rankBadge, { color: colors.textSecondary }]}>
+              Hạng {publicProfile.rankName}
+            </Text>
+          )}
 
           <View style={styles.actionContainer}>
             <GradientButton
@@ -202,5 +250,11 @@ const styles = StyleSheet.create({
   },
   actionContainer: {
     width: "100%",
+  },
+  rankBadge: {
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.semibold,
+    marginBottom: Spacing.four,
+    textAlign: "center",
   },
 });

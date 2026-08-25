@@ -19,8 +19,9 @@ import React, {
 import { Alert } from "react-native";
 
 import { GOOGLE_WEB_CLIENT_ID } from "@/config/google-auth";
+import { FACEBOOK_APP_ID, FACEBOOK_CLIENT_TOKEN } from "@/config/facebook-auth";
 
-import { apiClient, TOKEN_KEY } from "@/services/api/client";
+import { TOKEN_KEY } from "@/services/api/client";
 import { authService } from "@/services/api/auth";
 import { AuthResponse } from "@/types/api";
 import { storage } from "@/services/storage/async-storage";
@@ -63,6 +64,35 @@ try {
   };
 }
 
+let FBLoginManager: any;
+let FBAccessToken: any;
+
+try {
+  const FBSDKModule = require("react-native-fbsdk-next");
+  FBLoginManager = FBSDKModule.LoginManager;
+  FBAccessToken = FBSDKModule.AccessToken;
+  // Belt-and-suspenders: native AndroidManifest meta-data is the source of
+  // truth for the SDK's own auto-init, but setting it here too covers builds
+  // where that meta-data hasn't been added yet.
+  FBSDKModule.Settings?.setAppID?.(FACEBOOK_APP_ID);
+  FBSDKModule.Settings?.setClientToken?.(FACEBOOK_CLIENT_TOKEN);
+} catch (e) {
+  console.warn(
+    "Facebook SDK native module is not available. Falling back to mock (Expo Go support).",
+  );
+  FBLoginManager = {
+    logInWithPermissions: async () => ({
+      isCancelled: false,
+      declinedPermissions: [],
+    }),
+  };
+  FBAccessToken = {
+    getCurrentAccessToken: async () => ({
+      accessToken: "mock-facebook-access-token",
+    }),
+  };
+}
+
 interface User {
   id: string;
   email: string;
@@ -82,6 +112,7 @@ interface AuthContextType {
     displayName: string,
   ) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signInWithFacebook: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -118,54 +149,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadSession();
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const response = await authService.login({
-        email: email,
-        password: password,
-      });
-      await storage.set(TOKEN_KEY, response.accessToken);
-      const userData = {
-        id: response.user.id.toString(),
-        email: response.user.email,
-        displayName: response.user.displayName || response.user.username,
-        roles: [response.user.role],
-      };
-      await storage.set("user_data", JSON.stringify(userData));
-      setUser(userData);
-    } catch (e: any) {
-      throw e;
-    } finally {
-      setIsLoading(false);
-    }
+  const persistSession = useCallback(async (response: AuthResponse) => {
+    await storage.set(TOKEN_KEY, response.accessToken);
+    const userData = {
+      id: response.user.id.toString(),
+      email: response.user.email,
+      displayName: response.user.displayName || response.user.username,
+      roles: [response.user.role],
+    };
+    await storage.set("user_data", JSON.stringify(userData));
+    setUser(userData);
   }, []);
 
-  const signUp = useCallback(
-    async (email: string, password: string, displayName: string) => {
+  const signIn = useCallback(
+    async (email: string, password: string) => {
       setIsLoading(true);
       try {
-        const response = await authService.register({
-          email: email,
-          password: password,
-          displayName: displayName,
-        });
-        await storage.set(TOKEN_KEY, response.accessToken);
-        const userData = {
-          id: response.user.id.toString(),
-          email: response.user.email,
-          displayName: response.user.displayName || response.user.username,
-          roles: [response.user.role],
-        };
-        await storage.set("user_data", JSON.stringify(userData));
-        setUser(userData);
+        const response = await authService.login({ email, password });
+        await persistSession(response);
       } catch (e: any) {
         throw e;
       } finally {
         setIsLoading(false);
       }
     },
-    [],
+    [persistSession],
+  );
+
+  const signUp = useCallback(
+    async (email: string, password: string, displayName: string) => {
+      setIsLoading(true);
+      try {
+        const response = await authService.register({
+          email,
+          password,
+          displayName,
+        });
+        await persistSession(response);
+      } catch (e: any) {
+        throw e;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [persistSession],
   );
 
   const signInWithGoogle = useCallback(async () => {
@@ -195,28 +222,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      console.log(
-        "\n\n====== GOOGLE ID TOKEN ======\n" +
-          idToken +
-          "\n==============================\n\n",
-      );
-      console.log("⚠️ Backend chưa có endpoint /api/v1/auth/google.");
-      console.log(
-        "📋 idToken đã sẵn sàng để gửi cho Backend khi endpoint ready.",
-      );
-
-      const googleUser = response.data?.user;
-      setUser({
-        id: googleUser?.id ?? "google-user",
-        email: googleUser?.email ?? "",
-        displayName: googleUser?.name ?? googleUser?.email ?? "Google User",
-        avatarUrl: googleUser?.photo ?? undefined,
-      });
-
-      Alert.alert(
-        "Google Sign-In OK ✅",
-        `Đăng nhập Google thành công!\n\nEmail: ${googleUser?.email}\nTên: ${googleUser?.name}\n\n⚠️ Backend chưa có endpoint /api/v1/auth/google nên chưa lấy được JWT. idToken đã log ra console.`,
-      );
+      const authResponse = await authService.loginWithGoogle({ idToken });
+      await persistSession(authResponse);
     } catch (error: unknown) {
       const typedError = error as { code?: string; message?: string };
       if (typedError.code === statusCodes.SIGN_IN_CANCELLED) {
@@ -229,24 +236,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "Google Play Services không khả dụng trên thiết bị này.",
         );
       } else {
-        console.error(
-          "Google Sign-In error:",
-          typedError.code,
-          typedError.message,
-        );
+        console.error("Google Sign-In error:", typedError.message);
         Alert.alert(
           "Lỗi đăng nhập Google",
-          `Code: ${typedError.code}\nMessage: ${typedError.message}`,
+          typedError.message || "Không thể đăng nhập bằng Google.",
         );
       }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [persistSession]);
+
+  const signInWithFacebook = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const loginResult = await FBLoginManager.logInWithPermissions([
+        "public_profile",
+        "email",
+      ]);
+
+      if (loginResult.isCancelled) {
+        console.log("Facebook Sign-In cancelled by user");
+        return;
+      }
+
+      if (loginResult.declinedPermissions?.includes("email")) {
+        Alert.alert(
+          "Thiếu quyền truy cập",
+          "Ứng dụng cần quyền Email từ Facebook để đăng nhập.",
+        );
+        return;
+      }
+
+      const tokenData = await FBAccessToken.getCurrentAccessToken();
+      if (!tokenData?.accessToken) {
+        Alert.alert(
+          "Lỗi",
+          "Không nhận được access token từ Facebook. Vui lòng thử lại.",
+        );
+        return;
+      }
+
+      const authResponse = await authService.loginWithFacebook({
+        accessToken: tokenData.accessToken,
+      });
+      await persistSession(authResponse);
+    } catch (error: any) {
+      console.error("Facebook Sign-In error:", error?.message);
+      Alert.alert(
+        "Lỗi đăng nhập Facebook",
+        error?.message || "Không thể đăng nhập bằng Facebook.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [persistSession]);
 
   const signOut = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Best-effort server-side logout; local session is cleared regardless.
+      try {
+        await authService.logout();
+      } catch {
+        // Ignore — token may already be invalid/expired.
+      }
       // Sign out from Google as well
       try {
         await GoogleSignin.signOut();
@@ -270,6 +324,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signUp,
         signInWithGoogle,
+        signInWithFacebook,
         signOut,
       }}
     >

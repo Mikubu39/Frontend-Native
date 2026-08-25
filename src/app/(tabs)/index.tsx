@@ -28,6 +28,7 @@ import {
   TopicDivider,
   TopicHeaderBar,
 } from "@/components/lessons";
+import { SpotlightTarget } from "@/components/tutorial";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { AnimatedScreen } from "@/components/ui/animated-screen";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -43,6 +44,7 @@ import {
 } from "@/constants/theme";
 import { useGamification } from "@/contexts/gamification-context";
 import { useTheme } from "@/contexts/theme-context";
+import { useTutorial } from "@/contexts/tutorial-context";
 import { roadmapApi } from "@/services/api/roadmap";
 import type { RoadmapLessonResponse, RoadmapTopicResponse } from "@/types";
 import { FontAwesome5 } from "@expo/vector-icons";
@@ -305,144 +307,167 @@ const HexNode = React.memo(function HexNode({
       {/* Glow ring for active node */}
       {isActive && <ActiveNodeGlow size={NODE_SIZE} />}
 
-      <AnimatedPressable
-        onPress={onPress}
-        disabled={isLocked}
-        pressScale={isLocked ? 1 : 0.9}
-        accessibilityRole="button"
-        // `selected` để trình đọc màn hình nói được "bài bạn đang học" — trước đó
-        // trạng thái này chỉ tồn tại dưới dạng hiệu ứng nhấp nháy, người dùng
-        // screen reader không có cách nào biết.
-        accessibilityState={{ selected: isActive }}
-        accessibilityLabel={`Bài học: ${node.title}. ${
-          isLocked ? "Đã khóa" : isCompleted ? "Đã hoàn thành" : "Đang mở khóa"
-        }`}
-        accessibilityHint={
-          isLocked
-            ? "Hãy hoàn thành bài học trước để mở khóa"
-            : "Bấm để xem chi tiết bài học"
-        }
-        style={{
-          width: NODE_SIZE,
-          height: NODE_SIZE,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Svg
-          width={NODE_SIZE}
-          height={NODE_SIZE}
-          viewBox={`0 0 ${NODE_SIZE} ${NODE_SIZE}`}
+      {/* Node đang mở khoá là mốc của tour hướng dẫn — chỉ nó mới đăng ký đo. */}
+      <SpotlightTarget targetId="lesson-node" enabled={isActive}>
+        <AnimatedPressable
+          onPress={onPress}
+          disabled={isLocked}
+          pressScale={isLocked ? 1 : 0.9}
+          accessibilityRole="button"
+          // `selected` để trình đọc màn hình nói được "bài bạn đang học" — trước đó
+          // trạng thái này chỉ tồn tại dưới dạng hiệu ứng nhấp nháy, người dùng
+          // screen reader không có cách nào biết.
+          accessibilityState={{ selected: isActive }}
+          accessibilityLabel={`Bài học: ${node.title}. ${
+            isLocked
+              ? "Đã khóa"
+              : isCompleted
+                ? "Đã hoàn thành"
+                : "Đang mở khóa"
+          }`}
+          accessibilityHint={
+            isLocked
+              ? "Hãy hoàn thành bài học trước để mở khóa"
+              : "Bấm để xem chi tiết bài học"
+          }
+          style={{
+            width: NODE_SIZE,
+            height: NODE_SIZE,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
-          <Defs>
-            <SvgGradient id={`hexGrad-${node.id}`} x1="0" y1="0" x2="1" y2="1">
-              <Stop
-                offset="0"
-                stopColor={isLocked ? "#8B8FA8" : Colors.primary}
-              />
-              <Stop
-                offset="1"
-                stopColor={isLocked ? "#5C6070" : Colors.secondary}
-              />
-            </SvgGradient>
-            {/* Outer shadow ring */}
-            <SvgGradient id={`ringGrad-${node.id}`} x1="0" y1="0" x2="1" y2="1">
-              <Stop
-                offset="0"
-                stopColor={
-                  isActive
-                    ? Colors.primary
-                    : isCompleted
-                      ? Colors.primaryLight
-                      : "#4B4F64"
-                }
-                stopOpacity="0.9"
-              />
-              <Stop
-                offset="1"
-                stopColor={
-                  isActive
-                    ? Colors.secondary
-                    : isCompleted
-                      ? Colors.secondary
-                      : "#2E3044"
-                }
-                stopOpacity="0.9"
-              />
-            </SvgGradient>
-          </Defs>
-
-          {/* Outer ring (border) */}
-          <Polygon
-            points={hexPoints(NODE_SIZE / 2, NODE_SIZE / 2, HEX_RADIUS)}
-            fill={`url(#ringGrad-${node.id})`}
-            opacity={isLocked ? 0.4 : 1}
-          />
-
-          {/* Inner fill */}
-          <Polygon
-            points={hexPoints(NODE_SIZE / 2, NODE_SIZE / 2, HEX_RADIUS - 5)}
-            fill={
-              isCompleted
-                ? `url(#hexGrad-${node.id})`
-                : isLocked
-                  ? isDark
-                    ? "#252736"
-                    : "#D1D5DB"
-                  : isDark
-                    ? "#1A1B2E"
-                    : "#F3F4F6"
-            }
-            opacity={isLocked ? 0.6 : 1}
-          />
-
-          {/* Inner highlight shimmer line */}
-          {!isLocked && (
-            <Polygon
-              points={hexPoints(
-                NODE_SIZE / 2,
-                NODE_SIZE / 2 - 4,
-                HEX_RADIUS - 10,
-              )}
-              fill="rgba(255,255,255,0.06)"
-            />
-          )}
-        </Svg>
-
-        {/* Center icon/label overlay */}
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-          <View
-            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+          <Svg
+            width={NODE_SIZE}
+            height={NODE_SIZE}
+            viewBox={`0 0 ${NODE_SIZE} ${NODE_SIZE}`}
           >
-            {isLocked ? (
-              <FontAwesome5
-                name="lock"
-                size={18}
-                color="rgba(255,255,255,0.3)"
-              />
-            ) : isCompleted ? (
-              <View style={{ alignItems: "center" }}>
-                <FontAwesome5 name="check" size={16} color="#FFFFFF" solid />
-                <Text style={styles.nodeIconEmoji}>{lessonIcon}</Text>
-              </View>
-            ) : (
-              <Text
-                style={[
-                  styles.nodeIconEmoji,
-                  isActive && styles.nodeIconActive,
-                ]}
+            <Defs>
+              <SvgGradient
+                id={`hexGrad-${node.id}`}
+                x1="0"
+                y1="0"
+                x2="1"
+                y2="1"
               >
-                {lessonIcon}
-              </Text>
+                <Stop
+                  offset="0"
+                  stopColor={isLocked ? "#8B8FA8" : Colors.primary}
+                />
+                <Stop
+                  offset="1"
+                  stopColor={isLocked ? "#5C6070" : Colors.secondary}
+                />
+              </SvgGradient>
+              {/* Outer shadow ring */}
+              <SvgGradient
+                id={`ringGrad-${node.id}`}
+                x1="0"
+                y1="0"
+                x2="1"
+                y2="1"
+              >
+                <Stop
+                  offset="0"
+                  stopColor={
+                    isActive
+                      ? Colors.primary
+                      : isCompleted
+                        ? Colors.primaryLight
+                        : "#4B4F64"
+                  }
+                  stopOpacity="0.9"
+                />
+                <Stop
+                  offset="1"
+                  stopColor={
+                    isActive
+                      ? Colors.secondary
+                      : isCompleted
+                        ? Colors.secondary
+                        : "#2E3044"
+                  }
+                  stopOpacity="0.9"
+                />
+              </SvgGradient>
+            </Defs>
+
+            {/* Outer ring (border) */}
+            <Polygon
+              points={hexPoints(NODE_SIZE / 2, NODE_SIZE / 2, HEX_RADIUS)}
+              fill={`url(#ringGrad-${node.id})`}
+              opacity={isLocked ? 0.4 : 1}
+            />
+
+            {/* Inner fill */}
+            <Polygon
+              points={hexPoints(NODE_SIZE / 2, NODE_SIZE / 2, HEX_RADIUS - 5)}
+              fill={
+                isCompleted
+                  ? `url(#hexGrad-${node.id})`
+                  : isLocked
+                    ? isDark
+                      ? "#252736"
+                      : "#D1D5DB"
+                    : isDark
+                      ? "#1A1B2E"
+                      : "#F3F4F6"
+              }
+              opacity={isLocked ? 0.6 : 1}
+            />
+
+            {/* Inner highlight shimmer line */}
+            {!isLocked && (
+              <Polygon
+                points={hexPoints(
+                  NODE_SIZE / 2,
+                  NODE_SIZE / 2 - 4,
+                  HEX_RADIUS - 10,
+                )}
+                fill="rgba(255,255,255,0.06)"
+              />
             )}
+          </Svg>
+
+          {/* Center icon/label overlay */}
+          <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+            <View
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {isLocked ? (
+                <FontAwesome5
+                  name="lock"
+                  size={18}
+                  color="rgba(255,255,255,0.3)"
+                />
+              ) : isCompleted ? (
+                <View style={{ alignItems: "center" }}>
+                  <FontAwesome5 name="check" size={16} color="#FFFFFF" solid />
+                  <Text style={styles.nodeIconEmoji}>{lessonIcon}</Text>
+                </View>
+              ) : (
+                <Text
+                  style={[
+                    styles.nodeIconEmoji,
+                    isActive && styles.nodeIconActive,
+                  ]}
+                >
+                  {lessonIcon}
+                </Text>
+              )}
+            </View>
           </View>
-        </View>
-      </AnimatedPressable>
+        </AnimatedPressable>
+      </SpotlightTarget>
 
       {/* Lesson Popover */}
       {isPopupVisible && (
         <Animated.View
-          entering={FadeInDown.duration(220).springify().damping(18)}
+          entering={FadeInDown.duration(200)}
           style={styles.popoverContainer}
         >
           <View style={styles.popoverArrow} />
@@ -762,6 +787,7 @@ export default function LearnScreen() {
   const CENTER_X = width / 2;
   const { energy, streak, coins, maxEnergy, refillEnergy, watchAdToRefill } =
     useGamification();
+  const { maybeAutoStart } = useTutorial();
 
   const [topics, setTopics] = useState<RoadmapTopicResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -818,6 +844,19 @@ export default function LearnScreen() {
       fetchRoadmap();
     }, []),
   );
+
+  /*
+   * Tour hướng dẫn lần đầu.
+   *
+   * Chỉ chạy sau khi lộ trình đã tải xong: các mốc được chiếu sáng (node bài học,
+   * viên chỉ số) phải có mặt trên cây view thì `measureInWindow` mới ra toạ độ
+   * thật. `maybeAutoStart` tự bỏ qua nếu người dùng đã xem tour rồi.
+   */
+  useEffect(() => {
+    if (isLoading) return;
+    const timer = setTimeout(maybeAutoStart, 450);
+    return () => clearTimeout(timer);
+  }, [isLoading, maybeAutoStart]);
 
   /*
    * KHÔNG suy diễn lại trạng thái bài học ở client.

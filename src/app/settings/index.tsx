@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
 import { useTheme } from "@/contexts/theme-context";
+import { useTutorial } from "@/contexts/tutorial-context";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import {
   Colors,
@@ -28,6 +29,7 @@ import type { ThemeMode } from "@/types";
 export default function SettingsScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
+  const { startTutorial } = useTutorial();
   const { showInfo, showSuccess } = useToast();
   const { colors, isDark, themeMode, setThemeMode } = useTheme();
   const [themeModalVisible, setThemeModalVisible] = useState(false);
@@ -246,6 +248,12 @@ export default function SettingsScreen() {
         ])}
 
         {renderSection("Khác", [
+          {
+            icon: "sparkles-outline",
+            label: "Xem lại hướng dẫn",
+            // Tour tự điều hướng tới màn hình của từng bước, nên bật tại chỗ là đủ.
+            onPress: startTutorial,
+          },
           {
             icon: "help-circle-outline",
             label: "Trợ giúp",

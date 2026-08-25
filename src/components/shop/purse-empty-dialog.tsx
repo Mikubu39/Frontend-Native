@@ -45,7 +45,7 @@ export function PurseEmptyDialog({
         <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
       </Pressable>
 
-      <Animated.View entering={FadeInDown.duration(260).springify()}>
+      <Animated.View entering={FadeInDown.duration(240)}>
         <LinearGradient
           colors={[ShopPalette.lacquer, ShopPalette.lacquerDeep]}
           start={{ x: 0, y: 0 }}

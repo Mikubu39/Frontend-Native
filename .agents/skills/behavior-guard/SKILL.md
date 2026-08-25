@@ -3,6 +3,8 @@ name: Behavior Guard
 description: Prevents tool-use loops, checks limits, and implements safety guards.
 ---
 
+> **Antigravity only.** Claude Code does not read `.agents/skills/` (only `.claude/skills/`). Its equivalent rules already live in `AGENTS.md` → "Behavior Rules" and the `tsc-gate` Stop hook — don't duplicate this file's content back into AGENTS.md.
+
 # Behavior Guard Skill
 
 ## Loop Prevention

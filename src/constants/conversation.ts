@@ -1,80 +1,58 @@
 /**
  * Hằng số hiển thị cho tính năng Luyện hội thoại.
  *
- * Nguyên tắc màu sắc quan trọng nhất ở đây: **KHÔNG dùng màu đỏ báo lỗi cho
- * `off_topic` và `wrong_time`.** Trong hai trường hợp đó câu tiếng Nhật của
- * người học thường là ĐÚNG - chỉ là chưa hợp ngữ cảnh hoặc chưa hợp bước.
- * Tô đỏ sẽ dạy họ rằng mình viết sai, trong khi thực tế không phải vậy.
- * Đỏ chỉ dành cho `invalid_input` (rác / sai hệ chữ viết) - lỗi thật sự.
+ * Nguyên tắc màu sắc quan trọng nhất ở đây: **chỉ `error` mới được tô đỏ.**
+ * `suggestion` nghĩa là câu của người học ĐÚNG, chỉ là có cách nói tự nhiên
+ * hơn - tô đỏ nó sẽ dạy họ rằng mình viết sai trong khi thực tế không phải
+ * vậy, và đó là cách nhanh nhất khiến người mới học ngại mở miệng.
  */
 
 import { Colors } from "@/constants/theme";
 import type {
-  ConversationOutcome,
-  GrammarNoteKind,
+  CorrectionCategory,
+  CorrectionSeverity,
 } from "@/types/conversation";
 
-export interface OutcomeStyle {
-  /** Màu viền trái của bong bóng bot. */
-  accent: string;
-  icon: string;
-  /** Nhãn ngắn hiện trên bong bóng; chuỗi rỗng = không hiện nhãn nào. */
-  label: string;
-}
+/**
+ * Độ dài một phiên luyện, tính bằng giây.
+ *
+ * Khớp với `SESSION_MINUTES` trong `ai-service/src/nihongo_ai/prompts.py`.
+ * Server vẫn là nơi quyết định thật sự (nó trả `durationSeconds` ở `/start`);
+ * hằng số này chỉ là giá trị dự phòng để đồng hồ có gì đó mà chạy trước khi
+ * phản hồi đầu tiên về tới.
+ */
+export const SESSION_DURATION_SECONDS = 300;
 
-export const OUTCOME_STYLES: Record<ConversationOutcome, OutcomeStyle> = {
-  advanced: { accent: Colors.success, icon: "checkmark-circle", label: "" },
-  completed: { accent: Colors.accent, icon: "trophy", label: "Hoàn thành" },
-  repeat: { accent: Colors.success, icon: "checkmark-circle", label: "" },
+/**
+ * Còn dưới ngần này giây thì đồng hồ chuyển sang màu cảnh báo và AI bắt đầu
+ * lái hội thoại về phần kết.
+ */
+export const WRAP_UP_WARNING_SECONDS = 60;
 
-  // Xanh dương = "thông tin", không phải lỗi. Câu vẫn đúng tiếng Nhật.
-  off_topic: {
-    accent: "#3B82F6",
-    icon: "compass-outline",
-    label: "Lạc chủ đề",
-  },
-  wrong_time: {
-    accent: "#3B82F6",
-    icon: "time-outline",
-    label: "Chưa hợp bước này",
-  },
+/** Id quy ước cho chủ đề người học tự nhập. Khớp với `CUSTOM_TOPIC_ID` ở server. */
+export const CUSTOM_TOPIC_ID = "custom";
 
-  // Vàng = "cần làm rõ thêm", vẫn không phải lỗi của người học.
-  clarify: {
-    accent: Colors.warning,
-    icon: "help-circle-outline",
-    label: "Cần nói rõ hơn",
-  },
-  not_understood: {
-    accent: Colors.warning,
-    icon: "ear-outline",
-    label: "Chưa nghe rõ",
-  },
+/** Dài hơn mức này thì gần như chắc chắn là dán nhầm cả đoạn văn. */
+export const MAX_CUSTOM_TOPIC_LENGTH = 80;
 
-  // Đỏ chỉ dùng ở đây: đầu vào thực sự không dùng được.
-  invalid_input: {
-    accent: Colors.error,
-    icon: "alert-circle-outline",
-    label: "Chưa đọc được",
-  },
-};
-
-export interface GrammarNoteStyle {
+export interface CorrectionStyle {
   accent: string;
   icon: string;
   title: string;
 }
 
-export const GRAMMAR_NOTE_STYLES: Record<GrammarNoteKind, GrammarNoteStyle> = {
-  spelling: {
+export const CORRECTION_STYLES: Record<CorrectionSeverity, CorrectionStyle> = {
+  // Đỏ CHỈ dùng ở đây: câu thật sự sai.
+  error: {
     accent: Colors.error,
     icon: "create-outline",
-    title: "Chính tả",
+    title: "Cần sửa",
   },
-  politeness: {
+  // Xanh dương = "thông tin", không phải lỗi. Câu vẫn đúng tiếng Nhật.
+  suggestion: {
     accent: "#3B82F6",
-    icon: "information-circle-outline",
-    title: "Mức lịch sự",
+    icon: "bulb-outline",
+    title: "Nói hay hơn",
   },
   praise: {
     accent: Colors.success,
@@ -83,8 +61,36 @@ export const GRAMMAR_NOTE_STYLES: Record<GrammarNoteKind, GrammarNoteStyle> = {
   },
 };
 
+/** Nhãn tiếng Việt cho từng loại lỗi, hiện dạng chip nhỏ trên thẻ góp ý. */
+export const CORRECTION_CATEGORY_LABELS: Record<CorrectionCategory, string> = {
+  grammar: "Ngữ pháp",
+  vocabulary: "Từ vựng",
+  politeness: "Mức lịch sự",
+  naturalness: "Độ tự nhiên",
+  spelling: "Chính tả",
+};
+
 /**
- * Sau ngần này lượt hỏng liên tiếp thì hiện gợi ý một cách nổi bật.
- * Khớp với `STUCK_AFTER` trong `ai-service/src/nihongo_ai/dialogue.py`.
+ * Ngưỡng điểm để đổi màu vòng điểm ở bản tổng kết.
+ *
+ * Cố ý dễ tính: người mới học nói hết được 5 phút bằng tiếng Nhật đã là thành
+ * tựu, và một con số đỏ lòm ở cuối phiên sẽ xoá sạch cảm giác đó.
  */
-export const HINTS_BECOME_PROMINENT_AFTER = 2;
+export const SCORE_THRESHOLDS = {
+  good: 75,
+  fair: 50,
+} as const;
+
+export function scoreColor(score: number): string {
+  if (score >= SCORE_THRESHOLDS.good) return Colors.success;
+  if (score >= SCORE_THRESHOLDS.fair) return Colors.accent;
+  return Colors.error;
+}
+
+/** `125` -> `"2:05"`. Đồng hồ đếm ngược không bao giờ hiện số âm. */
+export function formatDuration(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const minutes = Math.floor(safe / 60);
+  const seconds = safe % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}

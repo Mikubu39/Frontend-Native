@@ -20,6 +20,7 @@ import { QuizProvider } from "@/contexts/quiz-context";
 import { GamificationProvider } from "@/contexts/gamification-context";
 import { ToastProvider } from "@/contexts/toast-context";
 import { ThemeProvider, useTheme } from "@/contexts/theme-context";
+import { TutorialProvider } from "@/contexts/tutorial-context";
 import { Colors } from "@/constants/theme";
 import {
   useFonts,
@@ -209,7 +210,9 @@ export default function RootLayout() {
           <GamificationProvider>
             <OnboardingProvider>
               <QuizProvider>
-                <RootNavigation />
+                <TutorialProvider>
+                  <RootNavigation />
+                </TutorialProvider>
               </QuizProvider>
             </OnboardingProvider>
           </GamificationProvider>

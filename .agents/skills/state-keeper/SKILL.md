@@ -3,6 +3,8 @@ name: State Keeper
 description: Manages the active session state, plans, and decisions.
 ---
 
+> **Antigravity only.** Claude Code does not read `.agents/skills/` (only `.claude/skills/`). Its equivalent rules already live in `AGENTS.md` → "State Maintenance & Discipline" — don't duplicate this file's content back into AGENTS.md.
+
 # State Keeper Skill
 
 ## Responsibility

@@ -38,7 +38,9 @@ export function PictureQuestionCard({
   const { colors, isDark } = useTheme();
 
   useEffect(() => {
-    play();
+    // Câu chọn hình vốn không cần nghe (đề bài là chữ, đáp án là ảnh) nên phần
+    // lớn không có audio. Chỉ tự phát khi thật sự có file.
+    if (question.audioUrl) play();
   }, [question]);
 
   const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
@@ -61,9 +63,15 @@ export function PictureQuestionCard({
       </Text>
 
       <View style={styles.audioRow}>
-        <AudioButton isPlaying={isPlaying} onPress={play} size="medium" />
+        {/* Không có file thì không vẽ nút loa: một cái loa bấm vào không kêu
+            còn tệ hơn là không có loa. */}
+        {question.audioUrl ? (
+          <AudioButton isPlaying={isPlaying} onPress={play} size="medium" />
+        ) : null}
         <DualText
           text={question.word}
+          hint={question.romaji}
+          glossary={question.glossary}
           mainStyle={{
             ...styles.wordText,
             color: isDark ? "#F9FAFB" : Colors.textPrimary,

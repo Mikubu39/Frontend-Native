@@ -1,18 +1,15 @@
 # Phụ thuộc để CHẠY THẬT (production).
 #
-# Chú ý danh sách này KHÔNG có torch / sentence-transformers. Chúng chỉ được
-# dùng để ĐO ĐỐI CHỨNG lúc phát triển (xem requirements-dev.txt). Mô hình được
-# đưa vào chạy thật chỉ cần scikit-learn, và đó chính là điều giữ cho ảnh
-# triển khai đủ nhỏ để lọt gói hosting miễn phí 512 MB RAM.
+# Danh sách này cố ý RẤT ngắn. Từ bản 2.0 phần hiểu ngôn ngữ do Gemini đảm
+# nhiệm, nên toàn bộ scikit-learn / numpy / scipy (~120 MB) đã được gỡ bỏ.
+# Lời gọi Gemini dùng `urllib` của thư viện chuẩn chứ không dùng SDK chính
+# thức, vì SDK kéo theo grpcio + protobuf + google-auth mà ta chỉ cần đúng một
+# lời gọi POST.
 #
-# Tổng dung lượng cài đặt: ~120 MB (so với ~2.5 GB nếu kéo theo torch).
-
-scikit-learn==1.9.0
-numpy==2.5.2
-scipy==1.18.1
-joblib==1.5.3
-PyYAML==6.0.3
+# Hệ quả đo được: ảnh triển khai ~15 MB thay vì ~140 MB, và dịch vụ tỉnh dậy
+# sau khi ngủ đông trong vài giây thay vì ~30 giây.
 
 fastapi==0.141.1
 uvicorn==0.52.4
 pydantic==2.13.4
+PyYAML==6.0.3

@@ -29,7 +29,7 @@ import { useTheme } from "@/hooks/use-theme";
 export default function SignupScreen() {
   const router = useRouter();
   const colors = useTheme();
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle, signInWithFacebook } = useAuth();
   const { showError, showWarning } = useToast();
 
   const [age, setAge] = useState("");
@@ -151,15 +151,12 @@ export default function SignupScreen() {
         {/* Social Auth */}
         <SocialAuthSection
           onGooglePress={async () => {
-            await signUp("google@user.com", "googlepwd", "Google User");
+            // Backend's /social/google handles create-or-login in one call.
+            await signInWithGoogle();
             router.replace("/(onboarding)/goal");
           }}
           onFacebookPress={async () => {
-            await signUp("facebook@user.com", "fbpwd", "Facebook User");
-            router.replace("/(onboarding)/goal");
-          }}
-          onApplePress={async () => {
-            await signUp("apple@user.com", "applepwd", "Apple User");
+            await signInWithFacebook();
             router.replace("/(onboarding)/goal");
           }}
         />

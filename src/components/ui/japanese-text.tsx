@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Text,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   type TextStyle,
 } from "react-native";
+import type { Glossary } from "@/types/quiz";
 import {
   Colors,
   FontSizes,
@@ -20,6 +21,21 @@ import * as Haptics from "expo-haptics";
 interface JapaneseTextProps {
   text: string;
   style?: TextStyle | TextStyle[];
+  /**
+   * Từ điển của riêng câu hỏi đang hiện, do backend gửi kèm.
+   *
+   * Người học chưa biết một chữ tiếng Nhật nào, nên phải chạm được vào bất kỳ
+   * từ nào trên màn hình để xem cách đọc và nghĩa. Bảng `DICTIONARY` cứng bên
+   * dưới chỉ có hơn hai chục từ nên gần như không bao giờ khớp — bảng này mới
+   * là nguồn chính, và nó thắng khi cả hai cùng có một từ.
+   */
+  glossary?: Glossary;
+}
+
+/** Một từ tra được: cách đọc (romaji) và nghĩa tiếng Việt. */
+interface Lookup {
+  romaji?: string;
+  meaning: string;
 }
 
 // Simple local dictionary for the prototype
@@ -44,60 +60,69 @@ const DICTIONARY: Record<string, string> = {
   よろしくおねがいします: "Rất mong nhận được sự giúp đỡ",
 };
 
-export function JapaneseText({ text, style }: JapaneseTextProps) {
-  const [selectedWord, setSelectedWord] = useState<{
-    word: string;
-    meaning: string;
-  } | null>(null);
+export function JapaneseText({ text, style, glossary }: JapaneseTextProps) {
+  const [selectedWord, setSelectedWord] = useState<
+    (Lookup & { word: string }) | null
+  >(null);
 
-  // Parse text into chunks (words that are in dict, and words that aren't)
-  const chunks: { text: string; meaning?: string }[] = [];
+  // Từ điển của câu này thắng bảng cứng, vì nó lấy thẳng từ nội dung bài học.
+  const dictionary = useMemo<Record<string, Lookup>>(() => {
+    const merged: Record<string, Lookup> = {};
+    for (const [word, meaning] of Object.entries(DICTIONARY)) {
+      merged[word] = { meaning };
+    }
+    for (const [word, entry] of Object.entries(glossary || {})) {
+      if (entry?.v || entry?.r) {
+        merged[word] = { romaji: entry.r, meaning: entry.v || "" };
+      }
+    }
+    return merged;
+  }, [glossary]);
 
-  let currentText = text;
-
-  while (currentText.length > 0) {
-    let found = false;
-    // Check for longest matching word first
-    const sortedWords = Object.keys(DICTIONARY).sort(
+  // Tách câu thành các mẩu tra được và các mẩu không tra được. Khớp từ DÀI
+  // TRƯỚC để 「おはようございます」 không bị cắt nhầm thành 「おはよう」 + phần thừa.
+  const chunks = useMemo(() => {
+    const sortedWords = Object.keys(dictionary).sort(
       (a, b) => b.length - a.length,
     );
+    const out: { text: string; lookup?: Lookup }[] = [];
+    let rest = text || "";
 
-    for (const word of sortedWords) {
-      if (currentText.startsWith(word)) {
-        chunks.push({ text: word, meaning: DICTIONARY[word] });
-        currentText = currentText.substring(word.length);
-        found = true;
-        break;
+    while (rest.length > 0) {
+      const word = sortedWords.find((w) => rest.startsWith(w));
+      if (word) {
+        out.push({ text: word, lookup: dictionary[word] });
+        rest = rest.substring(word.length);
+        continue;
       }
-    }
-
-    if (!found) {
-      // Group non-dict characters together for efficiency
-      if (chunks.length > 0 && !chunks[chunks.length - 1].meaning) {
-        chunks[chunks.length - 1].text += currentText[0];
+      // Gộp các ký tự không tra được lại thành một mẩu cho đỡ số phần tử
+      const last = out[out.length - 1];
+      if (last && !last.lookup) {
+        last.text += rest[0];
       } else {
-        chunks.push({ text: currentText[0] });
+        out.push({ text: rest[0] });
       }
-      currentText = currentText.substring(1);
+      rest = rest.substring(1);
     }
-  }
+    return out;
+  }, [text, dictionary]);
 
-  const handleLongPress = (word: string, meaning: string) => {
+  const handleLongPress = (word: string, lookup: Lookup) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    setSelectedWord({ word, meaning });
+    setSelectedWord({ word, ...lookup });
   };
 
   return (
     <>
       <Text style={style}>
         {chunks.map((chunk, index) => {
-          if (chunk.meaning) {
+          if (chunk.lookup) {
             return (
               <Text
                 key={index}
                 style={styles.clickableWord}
-                onLongPress={() => handleLongPress(chunk.text, chunk.meaning!)}
-                onPress={() => handleLongPress(chunk.text, chunk.meaning!)} // Also allow tap for discovery
+                onLongPress={() => handleLongPress(chunk.text, chunk.lookup!)}
+                onPress={() => handleLongPress(chunk.text, chunk.lookup!)} // Also allow tap for discovery
                 suppressHighlighting={true}
               >
                 {chunk.text}
@@ -122,6 +147,9 @@ export function JapaneseText({ text, style }: JapaneseTextProps) {
         >
           <View style={styles.tooltipContainer}>
             <Text style={styles.tooltipWord}>{selectedWord?.word}</Text>
+            {selectedWord?.romaji ? (
+              <Text style={styles.tooltipRomaji}>{selectedWord.romaji}</Text>
+            ) : null}
             <View style={styles.divider} />
             <Text style={styles.tooltipMeaning}>{selectedWord?.meaning}</Text>
           </View>
@@ -156,6 +184,13 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
+    marginBottom: Spacing.four,
+  },
+  tooltipRomaji: {
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.medium,
+    color: Colors.textSecondary,
+    marginTop: -Spacing.three,
     marginBottom: Spacing.four,
   },
   divider: {

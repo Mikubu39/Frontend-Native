@@ -1,3 +1,3 @@
-"""Dịch vụ AI luyện hội thoại tiếng Nhật (phân loại ý định + FSM hội thoại)."""
+"""Dịch vụ AI luyện hội thoại tiếng Nhật theo chủ đề, chạy trên Gemini."""
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"

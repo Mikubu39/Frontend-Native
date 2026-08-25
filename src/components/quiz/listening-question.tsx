@@ -113,6 +113,22 @@ export function ListeningQuestionCard({
               >
                 {answer.text}
               </Text>
+              {/* Câu nghe thì đáp án luôn là chữ Nhật — không có phiên âm bên
+                  dưới thì người mới chỉ nhìn thấy 4 hình vẽ lạ như nhau. */}
+              {answer.romaji ? (
+                <Text
+                  style={[
+                    styles.answerRomaji,
+                    {
+                      color: isDark
+                        ? "rgba(255,255,255,0.45)"
+                        : Colors.textSecondary,
+                    },
+                  ]}
+                >
+                  {answer.romaji}
+                </Text>
+              ) : null}
             </AnimatedPressable>
           );
         })}
@@ -124,7 +140,7 @@ export function ListeningQuestionCard({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    gap: Spacing.six,
+    gap: Spacing.four,
     paddingHorizontal: Spacing.two,
   },
   instruction: {
@@ -137,11 +153,11 @@ const styles = StyleSheet.create({
   },
   audioCard: {
     width: "100%",
-    paddingVertical: Spacing.seven,
+    paddingVertical: Spacing.five,
     borderRadius: BorderRadius.xl,
     borderWidth: 1,
     alignItems: "center",
-    gap: Spacing.three,
+    gap: Spacing.two,
   },
   audioHint: {
     fontSize: FontSizes.sm,
@@ -149,10 +165,10 @@ const styles = StyleSheet.create({
   },
   answers: {
     width: "100%",
-    gap: Spacing.three,
+    gap: Spacing.two,
   },
   answerCard: {
-    paddingVertical: Spacing.four,
+    paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.five,
     borderRadius: BorderRadius.xl,
     borderWidth: 1.5,
@@ -163,5 +179,11 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     fontFamily: Fonts.rounded,
     fontWeight: FontWeights.bold,
+  },
+  answerRomaji: {
+    fontSize: FontSizes.xs,
+    fontFamily: Fonts.rounded,
+    fontWeight: FontWeights.medium,
+    marginTop: Spacing.half,
   },
 });

@@ -157,7 +157,7 @@ export default function QuizScreen() {
   // không đổi liên tục mỗi lần re-render trong lúc đang làm câu đó.
   const currentMascot = useMemo(
     () => QUESTION_MASCOTS[Math.floor(Math.random() * QUESTION_MASCOTS.length)],
-    [currentIndex]
+    [currentIndex],
   );
 
   const progress =
@@ -894,7 +894,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
+    paddingVertical: Spacing.three,
   },
   content: {
     width: "100%",
@@ -966,11 +966,11 @@ const styles = StyleSheet.create({
   },
   questionMascotWrap: {
     alignItems: "center",
-    marginBottom: Spacing.four,
+    marginBottom: Spacing.two,
   },
   questionMascotLottie: {
-    width: 160,
-    height: 200,
+    width: 100,
+    height: 125,
   },
   redoIntroLottie: {
     width: 220,

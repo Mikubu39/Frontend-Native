@@ -1,5 +1,5 @@
 /**
- * Màn chọn tình huống luyện hội thoại.
+ * Màn chọn chủ đề luyện hội thoại.
  *
  * Màn hình cố ý giữ MỎNG theo quy ước dự án: chỉ nạp dữ liệu, ghép layout và
  * điều hướng. Toàn bộ phần trình bày nằm trong `components/conversation/`.
@@ -18,9 +18,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { StaggeredList } from "@/components/ui/staggered-list";
-import { ScenarioCard } from "@/components/conversation";
+import { CustomTopicCard, TopicCard } from "@/components/conversation";
 import { conversationApi } from "@/services/api/conversation";
 import { useTheme } from "@/contexts/theme-context";
+import {
+  CUSTOM_TOPIC_ID,
+  SESSION_DURATION_SECONDS,
+} from "@/constants/conversation";
 import {
   BorderRadius,
   Colors,
@@ -28,13 +32,13 @@ import {
   FontWeights,
   Spacing,
 } from "@/constants/theme";
-import type { ConversationScenario } from "@/types/conversation";
+import type { ConversationTopic } from "@/types/conversation";
 
-export default function ConversationScenarioListScreen() {
+export default function ConversationTopicListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
 
-  const [scenarios, setScenarios] = useState<ConversationScenario[]>([]);
+  const [topics, setTopics] = useState<ConversationTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +46,7 @@ export default function ConversationScenarioListScreen() {
     setLoading(true);
     setError(null);
     try {
-      setScenarios(await conversationApi.getScenarios());
+      setTopics(await conversationApi.getTopics());
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Không tải được danh sách.",
@@ -56,8 +60,19 @@ export default function ConversationScenarioListScreen() {
     load();
   }, [load]);
 
-  const openScenario = (scenario: ConversationScenario) =>
-    router.push(`/conversation/${scenario.id}` as never);
+  const openTopic = (topic: ConversationTopic) =>
+    router.push(`/conversation/${topic.id}` as never);
+
+  /**
+   * Chủ đề tự nhập đi qua CÙNG một route với chủ đề dựng sẵn, chỉ khác ở tham
+   * số truy vấn. Nhờ vậy màn hội thoại không phải biết hai luồng khác nhau.
+   */
+  const openCustomTopic = (text: string) =>
+    router.push(
+      `/conversation/${CUSTOM_TOPIC_ID}?topic=${encodeURIComponent(text)}` as never,
+    );
+
+  const sessionMinutes = Math.round(SESSION_DURATION_SECONDS / 60);
 
   return (
     <SafeAreaView
@@ -88,6 +103,7 @@ export default function ConversationScenarioListScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View
           style={[
@@ -103,8 +119,8 @@ export default function ConversationScenarioListScreen() {
               Nói chuyện với người Nhật
             </Text>
             <Text style={[styles.introDesc, { color: colors.textSecondary }]}>
-              Chọn một tình huống, AI sẽ đóng vai và trò chuyện cùng bạn bằng
-              tiếng Nhật.
+              Mỗi phiên {sessionMinutes} phút. Hết giờ, AI sẽ chỉ ra lỗi của bạn
+              và cách nói tự nhiên hơn.
             </Text>
           </View>
         </View>
@@ -113,7 +129,7 @@ export default function ConversationScenarioListScreen() {
           <View style={styles.centerBox}>
             <ActivityIndicator size="large" color={Colors.primary} />
             <Text style={[styles.centerText, { color: colors.textSecondary }]}>
-              Đang tải tình huống…
+              Đang tải chủ đề…
             </Text>
           </View>
         ) : error ? (
@@ -137,15 +153,19 @@ export default function ConversationScenarioListScreen() {
             </AnimatedPressable>
           </View>
         ) : (
-          <StaggeredList staggerDelay={70}>
-            {scenarios.map((scenario) => (
-              <ScenarioCard
-                key={scenario.id}
-                scenario={scenario}
-                onPress={openScenario}
-              />
-            ))}
-          </StaggeredList>
+          <>
+            {/*
+              Đặt TRƯỚC danh sách: chủ đề tự do là thứ kiến trúc FSM cũ không
+              làm được, và cũng là lý do đáng giá nhất để chuyển sang LLM.
+            */}
+            <CustomTopicCard onStart={openCustomTopic} />
+
+            <StaggeredList staggerDelay={70}>
+              {topics.map((topic) => (
+                <TopicCard key={topic.id} topic={topic} onPress={openTopic} />
+              ))}
+            </StaggeredList>
+          </>
         )}
       </ScrollView>
     </SafeAreaView>

@@ -28,14 +28,17 @@ export default function FriendsSearchScreen() {
   const colors = useTheme();
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<UserSearchResponse[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const handleSearch = async () => {
     if (!keyword.trim()) return;
     setLoading(true);
     try {
-      const users = await userService.searchUsers(keyword.trim());
-      setResults(users);
+      const page = await userService.searchUsers(keyword.trim());
+      setResults(page.items);
+      setNextCursor(page.nextCursor);
     } catch (e) {
       console.error(e);
     } finally {
@@ -43,11 +46,28 @@ export default function FriendsSearchScreen() {
     }
   };
 
+  const handleLoadMore = async () => {
+    if (!nextCursor || loadingMore || loading) return;
+    setLoadingMore(true);
+    try {
+      const page = await userService.searchUsers(keyword.trim(), nextCursor);
+      setResults((prev) => [...prev, ...page.items]);
+      setNextCursor(page.nextCursor);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   const handleToggleFollow = async (id: number, currentIndex: number) => {
     try {
       const newStatus = await userService.toggleFollow(id);
       const newResults = [...results];
-      newResults[currentIndex].isFollowing = newStatus;
+      newResults[currentIndex] = {
+        ...newResults[currentIndex],
+        isFollowing: newStatus,
+      };
       setResults(newResults);
     } catch (e) {
       console.error(e);
@@ -95,6 +115,17 @@ export default function FriendsSearchScreen() {
           data={results}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
+          onEndReachedThreshold={0.4}
+          onEndReached={handleLoadMore}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator
+                style={{ marginVertical: Spacing.four }}
+                size="small"
+                color={Colors.primary}
+              />
+            ) : null
+          }
           renderItem={({ item, index }) => (
             <TouchableOpacity
               style={[

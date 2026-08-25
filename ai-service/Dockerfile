@@ -1,9 +1,11 @@
 # Ảnh triển khai cho dịch vụ AI hội thoại.
 #
-# Mô hình được HUẤN LUYỆN NGAY LÚC BUILD chứ không commit file .joblib vào git.
-# Như vậy trọng số mô hình luôn khớp với dataset trong cùng một commit - không
-# bao giờ xảy ra cảnh mô hình cũ chạy trên dữ liệu mới mà không ai biết.
-# Huấn luyện chỉ mất ~2 giây nên hoàn toàn nằm gọn trong thời gian build.
+# Từ bản 2.0 không còn bước huấn luyện lúc build: phần hiểu ngôn ngữ do Gemini
+# đảm nhiệm, nên ảnh chỉ còn FastAPI + PyYAML. Kích thước rơi từ ~140 MB xuống
+# ~15 MB và container khởi động gần như tức thì.
+#
+# Khoá Gemini KHÔNG được nướng vào ảnh. Truyền lúc chạy:
+#   docker run -e GEMINI_API_KEY=... -p 8000:8000 nihongo-ai
 
 FROM python:3.12-slim
 
@@ -18,9 +20,6 @@ COPY data/ ./data/
 
 ENV PYTHONPATH=/app/src \
     PYTHONUNBUFFERED=1
-
-# Huấn luyện lúc build -> ảnh chứa sẵn mô hình, khởi động runtime rất nhanh.
-RUN python -m nihongo_ai.train
 
 EXPOSE 8000
 

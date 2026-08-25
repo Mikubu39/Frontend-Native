@@ -1,8 +1,9 @@
 /**
  * Màn hình hội thoại.
  *
- * Toàn bộ logic vòng đời nằm trong `useConversation`; màn hình này chỉ ghép
- * layout và xử lý tương tác bàn phím / cuộn.
+ * Toàn bộ logic vòng đời (lịch sử, đồng hồ 5 phút, bản tổng kết) nằm trong
+ * `useConversation`; màn hình này chỉ ghép layout và xử lý tương tác bàn phím
+ * / giọng nói / cuộn.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -21,13 +22,16 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import {
   ChatBubble,
   ChatComposer,
-  GrammarNoteCard,
+  CorrectionCard,
   HintChips,
+  SessionSummary,
+  SessionTimer,
 } from "@/components/conversation";
 import { useConversation } from "@/hooks/use-conversation";
 import { useJapaneseSpeech } from "@/hooks/use-japanese-speech";
 import { useSpeechInput } from "@/hooks/use-speech-input";
 import { useTheme } from "@/contexts/theme-context";
+import { WRAP_UP_WARNING_SECONDS } from "@/constants/conversation";
 import {
   BorderRadius,
   Colors,
@@ -40,11 +44,27 @@ import type { ConversationUtterance } from "@/types/conversation";
 export default function ConversationChatScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const scenarioId = id ?? "";
+  // `topic` chỉ có mặt khi người học tự nhập chủ đề (route `/conversation/custom`).
+  const { id, topic: customTopic } = useLocalSearchParams<{
+    id: string;
+    topic?: string;
+  }>();
+  const topicId = id ?? "";
 
-  const { status, messages, hints, failures, rescue, error, send, restart } =
-    useConversation(scenarioId);
+  const {
+    status,
+    topic,
+    messages,
+    hints,
+    remainingSeconds,
+    summary,
+    error,
+    summaryError,
+    send,
+    finishNow,
+    retrySummary,
+    restart,
+  } = useConversation(topicId, customTopic);
 
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<ScrollView>(null);
@@ -97,6 +117,19 @@ export default function ConversationChatScreen() {
     speak(last.ja);
   }, [messages, autoSpeak, speak, speech.status]);
 
+  const finished = status === "finished";
+  const summarizing = status === "summarizing";
+  const sessionOver = finished || summarizing;
+
+  // Phiên kết thúc thì im ngay - để bot đọc nốt câu dở trong khi bản tổng kết
+  // hiện ra là thừa và gây nhiễu.
+  useEffect(() => {
+    if (sessionOver) {
+      stopSpeaking();
+      if (speech.status === "listening") speech.stop();
+    }
+  }, [sessionOver, stopSpeaking, speech]);
+
   // Cuộn xuống cuối mỗi khi có tin nhắn mới - người học phải luôn thấy lượt
   // mới nhất mà không phải tự vuốt.
   useEffect(() => {
@@ -105,7 +138,7 @@ export default function ConversationChatScreen() {
       80,
     );
     return () => clearTimeout(timer);
-  }, [messages.length, hints]);
+  }, [messages.length, hints, summary]);
 
   const handleSend = useCallback(async () => {
     const text = draft;
@@ -119,7 +152,7 @@ export default function ConversationChatScreen() {
     setDraft(hint.ja);
   }, []);
 
-  const finished = status === "finished";
+  const spokenTurns = messages.filter((m) => m.author === "user").length;
 
   return (
     <SafeAreaView
@@ -142,9 +175,27 @@ export default function ConversationChatScreen() {
           <Ionicons name="close" size={24} color={colors.text} />
         </AnimatedPressable>
 
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Hội thoại
-        </Text>
+        <View style={styles.headerTitleBox}>
+          <Text
+            style={[styles.headerTitle, { color: colors.text }]}
+            numberOfLines={1}
+          >
+            {topic?.title ?? "Hội thoại"}
+          </Text>
+          {topic?.personaName ? (
+            <Text
+              style={[styles.headerSubtitle, { color: colors.textSecondary }]}
+              numberOfLines={1}
+            >
+              {topic.personaEmoji} {topic.personaName}
+            </Text>
+          ) : null}
+        </View>
+
+        <SessionTimer
+          remainingSeconds={remainingSeconds}
+          paused={status === "loading" || status === "error"}
+        />
 
         <AnimatedPressable
           onPress={() => {
@@ -163,16 +214,6 @@ export default function ConversationChatScreen() {
             size={20}
             color={autoSpeak ? Colors.primary : colors.textSecondary}
           />
-        </AnimatedPressable>
-
-        <AnimatedPressable
-          onPress={restart}
-          pressScale={0.9}
-          accessibilityRole="button"
-          accessibilityLabel="Bắt đầu lại"
-          style={styles.headerButton}
-        >
-          <Ionicons name="refresh" size={20} color={colors.textSecondary} />
         </AnimatedPressable>
       </View>
 
@@ -228,45 +269,99 @@ export default function ConversationChatScreen() {
                     onSpeak={handleSpeak}
                     speaking={speakingText === message.ja}
                   />
-                  {message.grammarNotes?.length ? (
-                    <GrammarNoteCard notes={message.grammarNotes} />
+                  {/*
+                    Góp ý nằm dưới chính câu của NGƯỜI HỌC, không phải dưới câu
+                    đáp của AI - mắt phải nối được lỗi với chỗ viết sai.
+                  */}
+                  {message.corrections?.length ? (
+                    <CorrectionCard corrections={message.corrections} />
                   ) : null}
                 </React.Fragment>
               ))}
 
-              {finished ? (
+              {summarizing ? (
+                <View style={styles.summarizingBox}>
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                  <Text
+                    style={[styles.centerText, { color: colors.textSecondary }]}
+                  >
+                    Hết giờ rồi! AI đang xem lại cả buổi nói chuyện…
+                  </Text>
+                </View>
+              ) : null}
+
+              {finished && summary ? (
+                <SessionSummary summary={summary} />
+              ) : null}
+
+              {finished && summaryError ? (
                 <View
                   style={[
-                    styles.finishedCard,
+                    styles.summaryErrorCard,
                     {
-                      backgroundColor: Colors.accent + "18",
-                      borderColor: Colors.accent,
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
                     },
                   ]}
                 >
-                  <Ionicons name="trophy" size={28} color={Colors.accent} />
-                  <Text style={[styles.finishedTitle, { color: colors.text }]}>
-                    Hoàn thành hội thoại!
-                  </Text>
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={28}
+                    color={Colors.warning}
+                  />
                   <Text
-                    style={[
-                      styles.finishedDesc,
-                      { color: colors.textSecondary },
-                    ]}
+                    style={[styles.centerText, { color: colors.textSecondary }]}
                   >
-                    Bạn đã đi hết tình huống này bằng tiếng Nhật.
+                    {summaryError}
                   </Text>
+                  {spokenTurns > 0 ? (
+                    <AnimatedPressable
+                      onPress={retrySummary}
+                      pressScale={0.95}
+                      accessibilityRole="button"
+                      accessibilityLabel="Thử tổng kết lại"
+                      style={[
+                        styles.retryButton,
+                        { backgroundColor: Colors.primary },
+                      ]}
+                    >
+                      <Text style={styles.retryText}>Thử tổng kết lại</Text>
+                    </AnimatedPressable>
+                  ) : null}
+                </View>
+              ) : null}
+
+              {finished ? (
+                <View style={styles.finishedActions}>
                   <AnimatedPressable
                     onPress={restart}
                     pressScale={0.95}
                     accessibilityRole="button"
-                    accessibilityLabel="Luyện lại tình huống này"
+                    accessibilityLabel="Luyện lại chủ đề này"
                     style={[
-                      styles.retryButton,
+                      styles.primaryButton,
                       { backgroundColor: Colors.primary },
                     ]}
                   >
+                    <Ionicons name="refresh" size={18} color="#FFFFFF" />
                     <Text style={styles.retryText}>Luyện lại</Text>
+                  </AnimatedPressable>
+
+                  <AnimatedPressable
+                    onPress={() => router.back()}
+                    pressScale={0.95}
+                    accessibilityRole="button"
+                    accessibilityLabel="Chọn chủ đề khác"
+                    style={[
+                      styles.secondaryButton,
+                      { borderColor: colors.border },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.secondaryText, { color: colors.text }]}
+                    >
+                      Chọn chủ đề khác
+                    </Text>
                   </AnimatedPressable>
                 </View>
               ) : null}
@@ -277,7 +372,7 @@ export default function ConversationChatScreen() {
               gõ chữ vẫn dùng được bình thường. Giọng nói là tuỳ chọn thêm, hỏng
               nó không được làm hỏng cả bài luyện.
             */}
-            {error || speech.error ? (
+            {!sessionOver && (error || speech.error) ? (
               <View style={styles.errorBanner}>
                 <Ionicons
                   name="warning-outline"
@@ -290,12 +385,16 @@ export default function ConversationChatScreen() {
               </View>
             ) : null}
 
-            {!finished ? (
+            {!sessionOver ? (
               <>
                 <HintChips
                   hints={hints}
-                  failures={failures}
-                  rescue={rescue}
+                  // Nổi bật ở lượt đầu (chưa biết mở lời thế nào) và lúc sắp
+                  // hết giờ (mỗi giây do dự đều đắt).
+                  prominent={
+                    spokenTurns === 0 ||
+                    remainingSeconds <= WRAP_UP_WARNING_SECONDS
+                  }
                   onPick={handlePickHint}
                 />
                 <ChatComposer
@@ -308,6 +407,27 @@ export default function ConversationChatScreen() {
                   lowConfidence={speech.lowConfidence}
                   onToggleMic={handleToggleMic}
                 />
+                <AnimatedPressable
+                  onPress={finishNow}
+                  pressScale={0.97}
+                  accessibilityRole="button"
+                  accessibilityLabel="Kết thúc sớm và xem tổng kết"
+                  style={styles.finishEarlyButton}
+                >
+                  <Ionicons
+                    name="flag-outline"
+                    size={14}
+                    color={colors.textSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.finishEarlyText,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Kết thúc và xem tổng kết
+                  </Text>
+                </AnimatedPressable>
               </>
             ) : null}
           </>
@@ -323,21 +443,27 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    gap: Spacing.two,
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.three,
     borderBottomWidth: 1,
   },
   headerButton: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: {
+  headerTitleBox: {
     flex: 1,
-    textAlign: "center",
-    fontSize: FontSizes.lg,
+  },
+  headerTitle: {
+    fontSize: FontSizes.md,
     fontWeight: FontWeights.extrabold,
+  },
+  headerSubtitle: {
+    fontSize: FontSizes.xs,
+    marginTop: 1,
   },
   messages: {
     padding: Spacing.four,
@@ -354,6 +480,42 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     textAlign: "center",
   },
+  summarizingBox: {
+    alignItems: "center",
+    gap: Spacing.three,
+    paddingVertical: Spacing.six,
+  },
+  summaryErrorCard: {
+    alignItems: "center",
+    gap: Spacing.three,
+    borderWidth: 1,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.five,
+    marginTop: Spacing.three,
+  },
+  finishedActions: {
+    gap: Spacing.three,
+    marginTop: Spacing.four,
+  },
+  primaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.two,
+    paddingVertical: Spacing.four,
+    borderRadius: BorderRadius.full,
+  },
+  secondaryButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    paddingVertical: Spacing.four,
+    borderRadius: BorderRadius.full,
+  },
+  secondaryText: {
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.bold,
+  },
   retryButton: {
     paddingHorizontal: Spacing.six,
     paddingVertical: Spacing.three,
@@ -363,23 +525,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
-  },
-  finishedCard: {
-    alignItems: "center",
-    gap: Spacing.two,
-    borderWidth: 1,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.five,
-    marginTop: Spacing.three,
-  },
-  finishedTitle: {
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.extrabold,
-  },
-  finishedDesc: {
-    fontSize: FontSizes.sm,
-    textAlign: "center",
-    marginBottom: Spacing.two,
   },
   errorBanner: {
     flexDirection: "row",
@@ -393,5 +538,17 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FontSizes.xs,
     color: Colors.error,
+  },
+  finishEarlyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.two,
+    paddingBottom: Spacing.three,
+    paddingTop: Spacing.one,
+  },
+  finishEarlyText: {
+    fontSize: FontSizes.xs,
+    fontWeight: FontWeights.semibold,
   },
 });

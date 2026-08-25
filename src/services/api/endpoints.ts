@@ -7,6 +7,9 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: "/api/v1/auth/login",
     REGISTER: "/api/v1/auth/register",
+    SOCIAL_GOOGLE: "/api/v1/auth/social/google",
+    SOCIAL_FACEBOOK: "/api/v1/auth/social/facebook",
+    LOGOUT: "/api/v1/auth/logout",
   },
   USER: {
     ME: "/api/v1/users/me",
@@ -16,6 +19,9 @@ export const API_ENDPOINTS = {
     SEARCH: "/api/v1/users/search",
     PROFILE: (username: string) => `/api/v1/users/profile/${username}`,
     UPDATE_PROFILE: "/api/v1/users/me/profile",
+    PUBLIC_PROFILE: (id: number | string) => `/api/v1/users/${id}/profile`,
+    FOLLOWERS: (id: number | string) => `/api/v1/users/${id}/followers`,
+    FOLLOWING: (id: number | string) => `/api/v1/users/${id}/following`,
   },
   ROADMAP: {
     GET_TOPICS: "/api/v1/topics",
@@ -45,6 +51,7 @@ export const API_ENDPOINTS = {
   STREAK: {
     GET_INFO: "/api/v1/users/me/streak",
     BUY_FREEZE: "/api/v1/users/me/streak/freeze/buy",
+    CALENDAR: "/api/v1/users/me/streak/calendar",
   },
   QUESTS: {
     GET_ALL: "/api/v1/users/me/quests",
@@ -73,5 +80,20 @@ export const API_ENDPOINTS = {
     SUMMARY: "/api/v1/reviews/mistakes/summary",
     START: "/api/v1/reviews/mistakes/start",
     SUBMIT: "/api/v1/reviews/mistakes/submit",
+  },
+  ACHIEVEMENTS: {
+    GET_ALL: "/api/v1/users/me/achievements",
+  },
+  FEED: {
+    GET: "/api/v1/feed",
+  },
+  POSTS: {
+    CREATE: "/api/v1/posts",
+    DELETE: (id: number | string) => `/api/v1/posts/${id}`,
+    LIKE: (id: number | string) => `/api/v1/posts/${id}/like`,
+    COMMENTS: (id: number | string) => `/api/v1/posts/${id}/comments`,
+  },
+  COMMENTS: {
+    DELETE: (id: number | string) => `/api/v1/comments/${id}`,
   },
 } as const;

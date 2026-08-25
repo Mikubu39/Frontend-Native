@@ -4,3 +4,4 @@ export * from "./categories";
 export * from "./quiz";
 export * from "./dictionary";
 export * from "./review";
+export * from "./tutorial-steps";

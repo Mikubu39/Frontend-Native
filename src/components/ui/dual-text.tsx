@@ -2,6 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet, TextStyle, ViewStyle } from "react-native";
 import { Colors, FontSizes, FontWeights } from "@/constants/theme";
 import { getDualText } from "@/utils/japanese-converter";
+import { JapaneseText } from "@/components/ui/japanese-text";
+import type { Glossary } from "@/types/quiz";
 
 interface DualTextProps {
   text: string;
@@ -10,6 +12,11 @@ interface DualTextProps {
   subStyle?: TextStyle;
   containerStyle?: ViewStyle;
   align?: "center" | "flex-start" | "flex-end";
+  /**
+   * Có từ điển thì dòng chữ chính thành tra được: chạm giữ vào từ nào hiện cách
+   * đọc và nghĩa của từ đó. Không có thì vẫn là một dòng chữ thường như cũ.
+   */
+  glossary?: Glossary;
 }
 
 export function DualText({
@@ -19,12 +26,22 @@ export function DualText({
   subStyle,
   containerStyle,
   align = "center",
+  glossary,
 }: DualTextProps) {
   const { mainText, subText } = getDualText(text, hint);
+  const hasGlossary = !!glossary && Object.keys(glossary).length > 0;
 
   return (
     <View style={[styles.container, { alignItems: align }, containerStyle]}>
-      <Text style={[styles.mainText, mainStyle]}>{mainText}</Text>
+      {hasGlossary ? (
+        <JapaneseText
+          text={mainText}
+          style={StyleSheet.flatten([styles.mainText, mainStyle])}
+          glossary={glossary}
+        />
+      ) : (
+        <Text style={[styles.mainText, mainStyle]}>{mainText}</Text>
+      )}
       {subText ? (
         <Text style={[styles.subText, subStyle]}>{subText}</Text>
       ) : null}

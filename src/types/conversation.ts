@@ -3,7 +3,8 @@
  *
  * Khớp 1-1 với schema của dịch vụ Python ở `ai-service/src/nihongo_ai/api.py`.
  * Dịch vụ đó là hệ thống PHI TRẠNG THÁI: nó không nhớ phiên nào cả, nên client
- * phải tự giữ `state` và `consecutiveFailures` rồi gửi lại ở mỗi lượt.
+ * phải tự giữ toàn bộ lịch sử hội thoại và đồng hồ đếm ngược, rồi gửi lại ở
+ * mỗi lượt.
  */
 
 /** Một câu thoại song ngữ (tiếng Nhật + bản dịch tiếng Việt). */
@@ -12,8 +13,8 @@ export interface ConversationUtterance {
   vi: string;
 }
 
-/** Tóm tắt một kịch bản, dùng cho màn hình chọn tình huống. */
-export interface ConversationScenario {
+/** Tóm tắt một chủ đề, dùng cho màn hình chọn chủ đề. */
+export interface ConversationTopic {
   id: string;
   title: string;
   titleJa: string;
@@ -28,63 +29,107 @@ export interface ConversationScenario {
 }
 
 /**
- * Kết cục của một lượt. Đây là thứ quyết định UI hiển thị ra sao, nên nó được
- * phân biệt rất kỹ - đặc biệt là `off_topic` (lạc đề) và `wrong_time` (câu
- * đúng nhưng chưa hợp bước này). Gộp hai cái đó lại sẽ khiến người học tưởng
- * mình viết sai tiếng Nhật trong khi thực ra họ viết đúng.
+ * Mức độ của một góp ý.
+ *
+ * `suggestion` KHÔNG phải lỗi - câu vẫn đúng, chỉ là có cách nói hay hơn. Phân
+ * biệt rạch ròi với `error` là chuyện quan trọng: tô đỏ một câu vốn đúng sẽ
+ * dạy người học điều sai và làm họ ngại nói.
  */
-export type ConversationOutcome =
-  | "advanced" // hiểu đúng, hội thoại tiến lên
-  | "completed" // đã tới đích của kịch bản
-  | "repeat" // hiểu đúng nhưng ở nguyên bước
-  | "off_topic" // lạc khỏi tình huống
-  | "wrong_time" // tiếng Nhật đúng, nhưng chưa hợp lúc này
-  | "clarify" // AI phân vân giữa hai ý định
-  | "not_understood" // độ tin cậy dưới ngưỡng
-  | "invalid_input"; // bị tầng chặn từ chối (rác / sai chữ viết)
+export type CorrectionSeverity = "error" | "suggestion" | "praise";
 
-/** Loại góp ý ngữ pháp. `praise` là phần thưởng chứ không phải lỗi. */
-export type GrammarNoteKind = "spelling" | "politeness" | "praise";
+export type CorrectionCategory =
+  "grammar" | "vocabulary" | "politeness" | "naturalness" | "spelling";
 
-export interface GrammarNote {
-  kind: GrammarNoteKind;
-  messageVi: string;
-  /** Bản sửa cụ thể, chỉ có với lỗi chính tả. */
-  suggestion?: string | null;
-  original?: string | null;
+/** Góp ý cho một câu người học vừa nói. */
+export interface Correction {
+  severity: CorrectionSeverity;
+  category: CorrectionCategory;
+  /** Nguyên văn phần người học đã viết. */
+  original: string;
+  /** Bản sửa; rỗng khi đây là lời khen. */
+  suggestion: string;
+  explanationVi: string;
 }
 
-export interface ConversationStartRequest {
-  scenarioId: string;
+/**
+ * Một lượt trong lịch sử gửi lên server.
+ *
+ * Cố ý gọn hơn `ChatMessage`: server chỉ cần biết ai nói gì, không cần id hay
+ * góp ý - và mỗi byte thừa đều bị nhân lên theo số lượt của cả phiên.
+ */
+export interface ConversationHistoryTurn {
+  role: "ai" | "user";
+  text: string;
 }
 
 export interface ConversationStartResponse {
-  scenarioId: string;
-  state: string;
+  topic: ConversationTopic;
   reply: ConversationUtterance;
   hints: ConversationUtterance[];
+  /** Độ dài phiên do server quyết định, tính bằng giây. */
+  durationSeconds: number;
 }
 
 export interface ConversationRespondRequest {
-  scenarioId: string;
-  state: string;
+  topicId: string;
+  customTopic?: string;
   text: string;
-  consecutiveFailures: number;
+  history: ConversationHistoryTurn[];
+  /** Server dùng để nhắc AI lái hội thoại về phần kết khi sắp hết giờ. */
+  remainingSeconds: number;
 }
 
 export interface ConversationRespondResponse {
-  outcome: ConversationOutcome;
   reply: ConversationUtterance;
-  state: string;
   hints: ConversationUtterance[];
-  intent: string | null;
-  confidence: number;
-  consecutiveFailures: number;
-  /** Bật khi người học kẹt quá lâu - UI nên lộ luôn câu mẫu. */
-  rescue: boolean;
-  completed: boolean;
-  grammarNotes: GrammarNote[];
-  alternatives: { intent: string; probability: number }[];
+  corrections: Correction[];
+  /** false khi AI không hiểu được câu vừa rồi hoặc câu lạc hẳn chủ đề. */
+  understood: boolean;
+}
+
+export interface ConversationSummaryRequest {
+  topicId: string;
+  customTopic?: string;
+  history: ConversationHistoryTurn[];
+  durationSeconds: number;
+}
+
+/** Một lỗi cụ thể trong bản tổng kết, kèm câu đã sửa. */
+export interface SummaryMistake {
+  original: string;
+  corrected: string;
+  explanationVi: string;
+  category: CorrectionCategory;
+  severity: "error" | "suggestion";
+}
+
+/** Điểm ngữ pháp nên ôn lại, rút ra từ chính lỗi trong phiên. */
+export interface SummaryGrammarPoint {
+  pattern: string;
+  explanationVi: string;
+  exampleJa: string;
+  exampleVi: string;
+}
+
+/** Câu đúng ngữ pháp nhưng người Nhật không nói vậy. */
+export interface SummaryNaturalnessTip {
+  instead: string;
+  prefer: string;
+  whyVi: string;
+}
+
+/** Bản tổng kết cuối phiên - lý do tồn tại của giới hạn 5 phút. */
+export interface ConversationSummary {
+  overallVi: string;
+  /** 0-100. */
+  score: number;
+  strengths: string[];
+  mistakes: SummaryMistake[];
+  grammarPoints: SummaryGrammarPoint[];
+  naturalnessTips: SummaryNaturalnessTip[];
+  nextFocus: string[];
+  turnCount: number;
+  durationSeconds: number;
 }
 
 /** Một bong bóng chat trong lịch sử hội thoại. */
@@ -93,8 +138,6 @@ export interface ChatMessage {
   author: "bot" | "user";
   ja: string;
   vi: string;
-  /** Chỉ có ở tin nhắn của bot: kết cục của lượt vừa rồi. */
-  outcome?: ConversationOutcome;
-  grammarNotes?: GrammarNote[];
-  confidence?: number;
+  /** Chỉ có ở tin nhắn của NGƯỜI HỌC: góp ý cho chính câu đó. */
+  corrections?: Correction[];
 }

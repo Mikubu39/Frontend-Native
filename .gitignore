@@ -47,3 +47,6 @@ BE_NihongoApp/
 
 # KanjiVG SVG cache (sinh lại bằng `npm run seed:alphabets`)
 scripts/.cache/
+
+# Claude Code: junction -> .agents/skills/impeccable (khong commit ban sao thu ba)
+.claude/skills/impeccable/

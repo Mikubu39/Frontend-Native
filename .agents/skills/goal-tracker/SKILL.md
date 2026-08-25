@@ -3,6 +3,8 @@ name: Goal Tracker
 description: Tracks overall project mission alignment and success criteria.
 ---
 
+> **Antigravity only.** Claude Code does not read `.agents/skills/` (only `.claude/skills/`) — this file has no effect there.
+
 # Goal Tracker Skill
 
 ## Responsibility

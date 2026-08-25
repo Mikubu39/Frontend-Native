@@ -27,7 +27,7 @@ import { useTheme } from "@/hooks/use-theme";
 export default function LoginScreen() {
   const router = useRouter();
   const colors = useTheme();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, signInWithFacebook } = useAuth();
   const { showError, showWarning } = useToast();
   const [emailOrUser, setEmailOrUser] = useState("");
   const [password, setPassword] = useState("");
@@ -157,11 +157,7 @@ export default function LoginScreen() {
               router.replace("/(tabs)");
             }}
             onFacebookPress={async () => {
-              await signIn("facebook@user.com", "fbpwd");
-              router.replace("/(tabs)");
-            }}
-            onApplePress={async () => {
-              await signIn("apple@user.com", "applepwd");
+              await signInWithFacebook();
               router.replace("/(tabs)");
             }}
           />

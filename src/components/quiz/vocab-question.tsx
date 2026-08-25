@@ -17,6 +17,7 @@ import {
   Fonts,
 } from "@/constants/theme";
 import { DualText } from "@/components/ui/dual-text";
+import { useAudio } from "@/hooks/use-audio";
 import { useTheme } from "@/contexts/theme-context";
 
 interface VocabQuestionProps {
@@ -35,6 +36,7 @@ export function VocabQuestionCard({
 }: VocabQuestionProps) {
   const [showHint, setShowHint] = useState(false);
   const { colors, isDark } = useTheme();
+  const { isPlaying, play } = useAudio(question.audioUrl);
 
   const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
   const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
@@ -64,25 +66,43 @@ export function VocabQuestionCard({
             >
               {showHint && question.hint && (
                 <View style={styles.bubbleTooltipContainer}>
-                  <View style={[styles.tooltipBody, { backgroundColor: Colors.secondary }]}>
+                  <View
+                    style={[
+                      styles.tooltipBody,
+                      { backgroundColor: Colors.secondary },
+                    ]}
+                  >
                     <Text style={styles.tooltipText}>{question.hint}</Text>
                   </View>
-                  <View style={[styles.tooltipArrow, { borderTopColor: Colors.secondary }]} />
+                  <View
+                    style={[
+                      styles.tooltipArrow,
+                      { borderTopColor: Colors.secondary },
+                    ]}
+                  />
                 </View>
               )}
               <View style={styles.speechBubble}>
                 <View
                   style={[
                     styles.speechBubbleArrow,
-                    { borderRightColor: isDark ? "rgba(255,255,255,0.06)" : "#FFFFFF" },
+                    {
+                      borderRightColor: isDark
+                        ? "rgba(255,255,255,0.06)"
+                        : "#FFFFFF",
+                    },
                   ]}
                 />
                 <View
                   style={[
                     styles.speechBubbleBody,
                     {
-                      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#FFFFFF",
-                      borderColor: isDark ? "rgba(255,255,255,0.12)" : cardBorder,
+                      backgroundColor: isDark
+                        ? "rgba(255,255,255,0.06)"
+                        : "#FFFFFF",
+                      borderColor: isDark
+                        ? "rgba(255,255,255,0.12)"
+                        : cardBorder,
                     },
                   ]}
                 >
@@ -105,9 +125,20 @@ export function VocabQuestionCard({
         <Image source={{ uri: question.imageUrl }} style={styles.image} />
       ) : null}
 
-      <View style={styles.audioRow}>
-        <AudioButton variant="speaker" size="small" onPress={() => {}} />
-      </View>
+      {/* Nút loa CHỈ vẽ khi thật sự có file để phát. Trước đây nút này được vẽ
+          vô điều kiện với onPress rỗng, nên toàn bộ câu dịch (hơn một nửa số câu
+          trong bài) đều mọc ra một cái loa bấm vào không kêu. Câu dịch cũng
+          không cần nghe: đề bài đã in sẵn mặt chữ kèm phiên âm. */}
+      {question.audioUrl ? (
+        <View style={styles.audioRow}>
+          <AudioButton
+            variant="speaker"
+            size="small"
+            isPlaying={isPlaying}
+            onPress={() => play()}
+          />
+        </View>
+      ) : null}
 
       {!mascotSource && question.word ? (
         <Pressable
@@ -137,6 +168,7 @@ export function VocabQuestionCard({
             <DualText
               text={question.word}
               hint={question.hint}
+              glossary={question.glossary}
               mainStyle={{
                 ...styles.word,
                 color: isDark ? "#F9FAFB" : Colors.textPrimary,
@@ -187,6 +219,23 @@ export function VocabQuestionCard({
               >
                 {answer.text}
               </Text>
+              {/* Đáp án viết bằng chữ Nhật thì người mới không đọc nổi, phải có
+                  phiên âm ngay dưới. Đáp án tiếng Việt không có romaji nên dòng
+                  này tự biến mất. */}
+              {answer.romaji ? (
+                <Text
+                  style={[
+                    styles.answerRomaji,
+                    {
+                      color: isDark
+                        ? "rgba(255,255,255,0.45)"
+                        : Colors.textSecondary,
+                    },
+                  ]}
+                >
+                  {answer.romaji}
+                </Text>
+              ) : null}
             </AnimatedPressable>
           );
         })}
@@ -205,17 +254,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
+    width: "100%",
     gap: 0,
     marginBottom: Spacing.two,
   },
   mascotLottie: {
     width: 100,
     height: 130,
+    flexShrink: 0,
     // Kéo bong bóng đè nhẹ lên vùng rìa nhân vật để 2 thứ dính sát nhau hơn.
     marginRight: -12,
   },
   speechBubbleWrap: {
     position: "relative",
+    flexShrink: 1,
   },
   speechBubble: {
     flexDirection: "row",
@@ -232,6 +284,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "transparent",
   },
   speechBubbleBody: {
+    flexShrink: 1,
+    minWidth: 0,
     borderWidth: 1.5,
     borderRadius: BorderRadius.lg,
     paddingVertical: Spacing.three,
@@ -323,5 +377,12 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.rounded,
     fontWeight: FontWeights.bold,
     textAlign: "center",
+  },
+  answerRomaji: {
+    fontSize: FontSizes.xs,
+    fontFamily: Fonts.rounded,
+    fontWeight: FontWeights.medium,
+    textAlign: "center",
+    marginTop: Spacing.half,
   },
 });

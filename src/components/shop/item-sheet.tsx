@@ -102,10 +102,7 @@ export function ItemSheet({
       </Pressable>
 
       <Animated.View
-        entering={SlideInDown.duration(AnimationPresets.duration.normal)
-          .springify()
-          .damping(AnimationPresets.spring.damping)
-          .stiffness(AnimationPresets.spring.stiffness)}
+        entering={SlideInDown.duration(AnimationPresets.duration.normal)}
         style={[
           styles.sheet,
           {

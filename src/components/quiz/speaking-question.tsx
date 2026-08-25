@@ -17,6 +17,8 @@ import {
   Spacing,
 } from "@/constants/theme";
 import { JapaneseText } from "../ui/japanese-text";
+import { AudioButton } from "@/components/ui/audio-button";
+import { useAudio } from "@/hooks/use-audio";
 
 interface SpeakingQuestionProps {
   question: SpeakingQuestion;
@@ -30,6 +32,7 @@ export function SpeakingQuestionCard({
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
   const pulseScale = useSharedValue(1);
+  const { isPlaying, play } = useAudio(question.audioUrl);
 
   useEffect(() => {
     if (isRecording) {
@@ -64,8 +67,31 @@ export function SpeakingQuestionCard({
       <Text style={styles.instruction}>{question.instruction}</Text>
 
       <View style={styles.textContainer}>
-        <JapaneseText text={question.textToSpeak} style={styles.textToSpeak} />
+        <JapaneseText
+          text={question.textToSpeak}
+          style={styles.textToSpeak}
+          glossary={question.glossary}
+        />
+        {question.romaji ? (
+          <Text style={styles.romaji}>{question.romaji}</Text>
+        ) : null}
         <Text style={styles.translation}>{question.translation}</Text>
+
+        {/* Không nghe người bản xứ đọc trước thì người mới không có gì để bắt
+            chước. Đây là chỗ DUY NHẤT trong câu luyện nói cần âm thanh. */}
+        {question.audioUrl ? (
+          <View style={styles.sampleRow}>
+            <AudioButton
+              variant="speaker"
+              size="small"
+              isPlaying={isPlaying}
+              onPress={() => play()}
+            />
+            <Text style={styles.sampleHint}>
+              {isPlaying ? "Đang phát câu mẫu..." : "Nghe câu mẫu"}
+            </Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.recordContainer}>
@@ -127,11 +153,32 @@ const styles = StyleSheet.create({
     color: Colors.primaryDark,
     textAlign: "center",
   },
+  romaji: {
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.medium,
+    color: Colors.textSecondary,
+    textAlign: "center",
+  },
   translation: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
     fontStyle: "italic",
     textAlign: "center",
+  },
+  sampleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.primary + "12",
+  },
+  sampleHint: {
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.bold,
+    color: Colors.primaryDark,
   },
   recordContainer: {
     alignItems: "center",

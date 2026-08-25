@@ -5,6 +5,7 @@
 
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors, Spacing } from "@/constants/theme";
 
 interface AudioButtonProps {
@@ -18,7 +19,7 @@ interface AudioButtonProps {
 const SIZE_MAP = {
   small: 40,
   medium: 64,
-  large: 180,
+  large: 130,
 } as const;
 
 export function AudioButton({
@@ -37,7 +38,7 @@ export function AudioButton({
     : isSpeaker
       ? Colors.accent
       : "#FFB6C1";
-  const iconSize = size === "large" ? 60 : size === "medium" ? 32 : 18;
+  const iconSize = size === "large" ? 48 : size === "medium" ? 32 : 18;
 
   return (
     <View style={styles.wrapper}>
@@ -46,9 +47,9 @@ export function AudioButton({
           style={[
             styles.outerRing,
             {
-              width: buttonSize + 60,
-              height: buttonSize + 60,
-              borderRadius: (buttonSize + 60) / 2,
+              width: buttonSize + 40,
+              height: buttonSize + 40,
+              borderRadius: (buttonSize + 40) / 2,
               backgroundColor: isSpeaker ? Colors.accentPale : "#FFD1DC",
             },
           ]}
@@ -79,9 +80,11 @@ export function AudioButton({
         }
         accessibilityState={{ busy: isPlaying }}
       >
-        <Text style={[styles.icon, { fontSize: iconSize }]}>
-          {isSpeaker ? "🔊" : "🎤"}
-        </Text>
+        <Ionicons
+          name={isSpeaker ? "volume-high" : "mic"}
+          size={iconSize}
+          color="#FFFFFF"
+        />
       </TouchableOpacity>
       {label && <Text style={styles.label}>{label}</Text>}
     </View>
@@ -106,9 +109,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
-  },
-  icon: {
-    textAlign: "center",
   },
   label: {
     fontSize: 15,

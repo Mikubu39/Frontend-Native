@@ -48,6 +48,15 @@
             "com.google.android.googlequicksearchbox"
           ]
         }
+      ],
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "1776382180172619",
+          "clientToken": "3e3c730328a7d2b83cc855f65396915b",
+          "displayName": "Frontend",
+          "scheme": "fb1776382180172619"
+        }
       ]
     ],
     "experiments": {

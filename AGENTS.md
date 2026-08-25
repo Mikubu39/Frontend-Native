@@ -6,74 +6,16 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before 
 
 # Project Structure Rules
 
-## NEVER dump everything into a single file. Always separate concerns into the correct folders:
-
-### `src/types/`
-
-- All TypeScript interfaces, types, enums.
-- One file per domain/feature (e.g., `lesson.ts`, `user.ts`, `api.ts`).
-- Barrel export via `index.ts`.
-
-### `src/components/`
-
-- Reusable UI components used across multiple screens.
-- Feature-specific components go in a subfolder: `components/lessons/`, `components/auth/`, etc.
-- Each component = 1 file. Keep it focused and small.
-- `ui/` subfolder for generic primitives (Button, Card, Input, etc.).
-
-### `src/data/`
-
-- Mock/sample data, static content, seed data.
-- One file per domain (e.g., `lessons.ts`, `categories.ts`).
-- Barrel export via `index.ts`.
-
-### `src/app/`
-
-- Expo Router screens ONLY.
-- Screen files should be thin: import components, compose layout, handle navigation.
-- DO NOT put business logic, large component definitions, or data here.
-
-### `src/hooks/`
-
-- Custom React hooks. One hook per file.
-
-### `src/services/`
-
-- API clients, storage, push notifications, analytics.
-- Subfolder per service domain: `services/api/`, `services/storage/`.
-
-### `src/contexts/`
-
-- React Context providers and their hooks.
-
-### `src/constants/`
-
-- Theme, colors, spacing, font config, static app constants.
-
-### `src/config/`
-
-- Environment variables, feature flags, app metadata.
-
-### `src/utils/`
-
-- Pure utility/helper functions (format, validate, debounce, etc.).
-
-### `src/locales/`
-
-- i18n string resources.
+NEVER dump everything into one file — split by concern:
+`types/` interfaces/enums (1 file/domain, barrel) · `components/` 1 component = 1 file (`ui/` = generic primitives, feature subfolders e.g. `components/lessons/`) · `data/` mock/seed (1 file/domain, barrel) · `app/` Expo Router screens ONLY, thin — no business logic/data · `hooks/` 1 hook/file · `services/` API/storage/analytics, subfolder per domain (`services/api/`) · `contexts/` · `constants/` theme/spacing/tokens · `config/` env/feature flags · `utils/` pure functions · `locales/` i18n.
 
 ## Import Rules
 
-- Always use path alias `@/` (maps to `./src/`).
-- Always use barrel exports (`index.ts`) for cleaner imports.
-- Example: `import { Lesson } from '@/types'` not `from '@/types/lesson'`.
+- Path alias `@/` → `./src/`. Barrel exports (`index.ts`). E.g. `import { Lesson } from '@/types'`, not `from '@/types/lesson'`.
 
 ## Naming Conventions
 
-- Files: `kebab-case.ts` / `kebab-case.tsx`
-- Types/Interfaces: `PascalCase`
-- Functions/hooks: `camelCase`
-- Constants: `SCREAMING_SNAKE_CASE` or `PascalCase` object
+- Files `kebab-case`. Types/Interfaces `PascalCase`. Functions/hooks `camelCase`. Constants `SCREAMING_SNAKE_CASE` or `PascalCase` object.
 
 ---
 
@@ -83,6 +25,13 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before 
 
 - Act conservatively; prefer reversible changes.
 - Do not silently expand scope. If a task implies larger refactors or new features, propose a minimal path first.
+
+## Codebase Exploration — Use `codebase-memory-mcp`
+
+- Before reading/grepping multiple files to find a function, trace callers/callees, or assess the impact of a change, use the `codebase-memory-mcp` MCP tools (`search_graph`, `trace_path`, `get_code_snippet`, `detect_changes`, `get_architecture`) instead. It returns precise structural results at a fraction of the token cost of manual file reads.
+- Use `trace_path` (direction="both") before modifying a shared function/hook/service to see what depends on it.
+- Use `detect_changes()` to map the current git diff to affected symbols before declaring a change safe.
+- Fall back to Read/Grep only when the graph doesn't cover the answer (e.g. non-indexed file types, or `check_index_coverage` reports a gap).
 
 ## React Native Specifics
 
@@ -152,13 +101,4 @@ For changes that can break navigation, environment configs, or production settin
 
 # Project Skills Integration
 
-The workspace includes specialized skills in `.agents/skills/`. Always follow their guidance:
-
-- **`state-keeper`** ([SKILL.md](file:///c:/Users/Endministrator/Pictures/Frontend-Native/.agents/skills/state-keeper/SKILL.md)):
-  - Automatically manage `.state/session_state.md` using the exact structure (Mission, Session Goal, Plan, Progress, Blockers, Decisions).
-- **`goal-tracker`** ([SKILL.md](file:///c:/Users/Endministrator/Pictures/Frontend-Native/.agents/skills/goal-tracker/SKILL.md)):
-  - Align all implementation steps with project mission (ship fast, stable, accessible RN app). Prevent scope creep.
-- **`behavior-guard`** ([SKILL.md](file:///c:/Users/Endministrator/Pictures/Frontend-Native/.agents/skills/behavior-guard/SKILL.md)):
-  - Prevent command execution loops (max 3 identical runs).
-  - Verify static type-checks (`tsc --noEmit`).
-  - Require explicit user approval before destructive file or database operations.
+`.agents/skills/` (`state-keeper`, `goal-tracker`, `behavior-guard`) is read by **Antigravity only** — Claude Code reads `.claude/skills/`, not this path. Their rules are already covered above in this file ("State Maintenance & Discipline", "Behavior Rules") and in the `tsc-gate` Stop hook, so there is nothing further to fetch from there.

@@ -52,3 +52,82 @@ Chữ Nhật *nội dung* (bảng chữ cái, câu ví dụ) vẫn render bình 
 ## RTL v14 + React 19: `render()` trả về thenable
 
 `render(...)` của `@testing-library/react-native` trong repo này trả về một object kiểu Promise (act của React 19), nên phải `const { getByText } = await render(...)`. Không await thì `Object.keys(result)` rỗng và mọi query báo "getByText is not a function".
+
+## `.agents/skills/` vs `.claude/skills/` (đa công cụ trên cùng repo)
+
+- Antigravity đọc `.agents/skills/`, Gemini CLI đọc `.gemini/skills/`, Claude Code CHỈ đọc `.claude/skills/` (+ `~/.claude/skills/` + plugin). Không có công cụ nào đọc thư mục của công cụ khác.
+- Muốn dùng chung một skill mà không nhân bản vào git: `New-Item -ItemType Junction -Path .claude\skills\<ten> -Target .agents\skills\<ten>` (junction trên Windows KHÔNG cần quyền admin), rồi thêm đường dẫn junction vào `.gitignore` — git đi xuyên junction và sẽ thấy toàn bộ file như untracked.
+- **(2026-08-24) Đã dừng duy trì song song.** Ba skill quản trị (`state-keeper`, `goal-tracker`, `behavior-guard`) trong `.agents/skills/` giờ có banner "Antigravity only" ở đầu file, và mục "Project Skills Integration" trong `AGENTS.md` không còn chép lại nội dung của chúng nữa — chỉ còn một dòng trỏ tới các mục đã có sẵn trong AGENTS.md ("State Maintenance & Discipline", "Behavior Rules") + `tsc-gate` hook. Sửa 3 file SKILL.md đó giờ an toàn, không cần đồng bộ tay sang AGENTS.md nữa (vì AGENTS.md không còn bản sao nội dung của chúng).
+
+## Stop hook chặn `tsc` (`.claude/hooks/tsc-gate.mjs`)
+
+- Máy này KHÔNG có `jq`. Viết hook bằng Node (`node .claude/hooks/tsc-gate.mjs`) thay vì pipeline `jq` — Node chắc chắn có, và tự lo escape JSON.
+- Hook Stop trả `{"decision":"block","reason":"..."}` để buộc agent sửa rồi mới được kết thúc turn; trả exit 0 im lặng để cho qua.
+- Hai chi tiết bắt buộc: (1) chỉ chạy `tsc` khi `git status --porcelain -- '*.ts' '*.tsx'` có kết quả, nếu không mọi turn hỏi-đáp đều tốn ~7s; (2) đếm số lần chặn liên tiếp (file đếm trong `os.tmpdir()` theo `session_id`) và nhả sau 3 lần, nếu không một lỗi type không sửa được sẽ khoá vòng lặp vĩnh viễn.
+
+## RNTL trong repo nay: `render()` tra ve Promise
+
+`@testing-library/react-native` 14.0.1 o day tra ve Promise, khong phai object query.
+Viet `const { getByText } = render(...)` la dinh "getByText is not a function", con dung
+`screen` thi dinh "`render` function has not been called". Phai `await`:
+
+```tsx
+it("...", async () => {
+  const { getByText } = await render(<Foo />);
+});
+```
+
+Modal (vd o `JapaneseText`) chi xuat hien sau mot vong render nua -> dung `findByText` /
+`findAllByText` chu khong phai `getByText` ngay sau `fireEvent`.
+
+## `build.py` cua bo seed: sua noi dung o dau
+
+`BE_NihongoApp/test-data/demo-seed/` — `data_topics_a/b/c.py` la noi dung, `build.py` la
+cach sinh de tu noi dung do. Sua xong phai chay du 4 buoc, thieu buoc nao cung lech:
+`python build.py` -> `python build_users.py` -> `python make_media.py` -> `bash load_all.sh`.
+`build_users.py` import thang `S` cua `build.py` nen id bai/cau luon khop.
+
+## `ai-service` (Python): chay & thu tren may nay
+
+- Venv o `ai-service/.venv` — dung `.venv/Scripts/python.exe`, KHONG dung `python` he thong
+  (he thong khong co fastapi/yaml). Chay: `PYTHONPATH=src .venv/Scripts/python.exe -m uvicorn nihongo_ai.api:app --port 8000`.
+- Console Windows mac dinh cp1252 -> `print()` tieng Viet/Nhat se nem `UnicodeEncodeError`.
+  Luon dat `PYTHONIOENCODING=utf-8` truoc lenh python/pytest.
+- **`curl` trong Git Bash lam hong UTF-8 trong `-d`**: goi API kem tieng Viet co dau se toi
+  server duoi dang chuoi rong (bao 400 gia). Thu bang script `urllib` cua Python thay vi curl.
+- Ghi file `.py`/`.ts` bang `io.open(p,'w')` cua Python tren Windows se sinh CRLF -> prettier
+  bao hang tram loi `Delete ␍`. Dung `newline=''` (giu nguyen) hoac chay `npx eslint --fix` sau.
+
+## Gemini REST v1beta: khoa sai tra 400 chu khong phai 401
+
+Endpoint `generativelanguage.googleapis.com/v1beta/models/{model}:generateContent` tra
+**400** kem `"API key not valid"` khi khoa sai — khong theo thong le REST (401/403). Da bat
+rieng truong hop nay trong `llm._http_message`, co test o `tests/test_api.py`.
+
+## Gemini: model bi khai tu, va model moi nhat chua chac dung duoc
+
+- `gemini-2.0-flash` da chet (404: "no longer available"). Khi doi model, KHONG doan —
+  liet ke bang: `curl "https://generativelanguage.googleapis.com/v1beta/models?key=$KEY"`
+  roi loc `supportedGenerationMethods` co `generateContent`.
+- **Ban moi nhat thuong 503 "high demand"**: do 2026-08-25, `gemini-3.7-flash` va bi danh
+  `gemini-flash-latest` deu 0/3 lan thanh cong, trong khi 3.6/3.5/2.5-flash deu 3/3.
+  -> Ghim phien ban cu the, tranh bi danh `latest`. Mac dinh hien tai: `gemini-3.5-flash`
+  (~4.0s/luot). Ly do day du trong `ai-service/src/nihongo_ai/llm.py`.
+- Do tre thuc te qua HTTP: `/start` ~4s, `/respond` 4-6s, `/summary` ~12s.
+
+## Coach-mark / spotlight: `measureInWindow` khong cung he toa do voi lop phu
+
+`measureInWindow` tra toa do theo **CUA SO**, con lop phu tuyet doi (`StyleSheet.absoluteFill`)
+ve theo he toa do cua chinh no. Hai he chi trung nhau khi lop phu bat dau dung o (0,0) cua
+cua so — SAI khi goc app nam duoi thanh trang thai. Trieu chung: lo khoet lech xuong duoi
+~status-bar-height, "chieu" vao vung trong.
+
+Cach sua dung: lop phu tu `measureInWindow` CHINH NO mot lan moi buoc, roi tru goc do khoi
+rect cua phan tu dich (`origin` trong `src/components/tutorial/tutorial-overlay.tsx`). Tu chinh
+dung tren moi may/cau hinh edge-to-edge, khong phai doan chieu cao status bar.
+
+Hai diem kem theo:
+- View bao quanh phan tu dich PHAI co `collapsable={false}`, khong Android gop View vao cha
+  va `measureInWindow` tra ve 0.
+- Man trong `(tabs)` da mo la con song mai -> dang ky thu gi voi context toan cuc thi dung
+  `useFocusEffect`, KHONG dung `useEffect` (effect theo vong doi khong chay lai o lan ghe sau).

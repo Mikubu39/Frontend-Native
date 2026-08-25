@@ -1,11 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import { SpotlightTarget } from "@/components/tutorial";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useTheme } from "@/contexts/theme-context";
+import { useTutorial } from "@/contexts/tutorial-context";
 import { StaggeredList } from "@/components/ui/staggered-list";
 import {
   Colors,
@@ -15,6 +17,7 @@ import {
   BorderRadius,
   Shadows,
 } from "@/constants/theme";
+import type { TutorialScrollIntoView, TutorialTargetId } from "@/types";
 
 interface PracticeItem {
   id: string;
@@ -24,11 +27,19 @@ interface PracticeItem {
   route: string;
   badge?: string;
   color: string;
+  /** Mốc của tour hướng dẫn — bỏ trống thì thẻ này không được chiếu sáng. */
+  tutorialTarget?: TutorialTargetId;
 }
+
+/** Chỗ mong muốn của phần tử được chiếu sáng, tính từ mép trên cửa sổ. */
+const SPOTLIGHT_DESIRED_TOP = 200;
 
 export default function PracticeHubScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { registerScroller } = useTutorial();
+  const scrollRef = React.useRef<ScrollView>(null);
+  const scrollYRef = React.useRef(0);
   const [mistakeCount, setMistakeCount] = React.useState<number>(0);
   const [loading, setLoading] = React.useState<boolean>(true);
 
@@ -44,9 +55,31 @@ export default function PracticeHubScreen() {
     });
   }, []);
 
+  /*
+   * Tour hướng dẫn chiếu tới cả những thẻ nằm dưới nếp gấp. Màn hình tự nhận
+   * việc kéo chúng lên vì chỉ nó biết vị trí cuộn hiện tại — lớp phủ chỉ biết
+   * toạ độ tuyệt đối của phần tử.
+   */
+  const scrollIntoView = React.useCallback<TutorialScrollIntoView>((rect) => {
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, scrollYRef.current + rect.y - SPOTLIGHT_DESIRED_TOP),
+      animated: true,
+    });
+  }, []);
+
+  // Theo TIÊU ĐIỂM chứ không theo vòng đời: màn này nằm trong `(tabs)` nên một
+  // khi đã mở là còn sống mãi, `useEffect` sẽ không chạy lại ở lần ghé sau.
+  useFocusEffect(
+    React.useCallback(() => {
+      registerScroller(scrollIntoView);
+      return () => registerScroller(null);
+    }, [registerScroller, scrollIntoView]),
+  );
+
   const primaryItems: PracticeItem[] = [
     {
       id: "p1",
+      tutorialTarget: "review-mistakes",
       title: "Luyện tập Lỗi Sai",
       description: "Xem lại và giải quyết các câu bạn từng làm sai.",
       icon: "warning-outline",
@@ -60,6 +93,7 @@ export default function PracticeHubScreen() {
     },
     {
       id: "p2",
+      tutorialTarget: "review-conversation",
       title: "Luyện hội thoại AI",
       description: "Đóng vai tình huống thật và nói chuyện bằng tiếng Nhật.",
       icon: "chatbubbles-outline",
@@ -69,6 +103,7 @@ export default function PracticeHubScreen() {
     },
     {
       id: "p3",
+      tutorialTarget: "review-dictionary",
       title: "Sổ tay Từ điển",
       description: "Ôn tập và kiểm tra từ vựng bạn đã mở khóa.",
       icon: "book-outline",
@@ -96,45 +131,54 @@ export default function PracticeHubScreen() {
     },
   ];
 
-  const renderCard = (item: PracticeItem) => (
-    <AnimatedPressable
-      key={item.id}
-      style={[
-        styles.card,
-        { backgroundColor: colors.card, borderColor: colors.border },
-      ]}
-      onPress={() => router.push(item.route as any)}
-      pressScale={0.97}
-    >
-      <View
-        style={[styles.iconContainer, { backgroundColor: item.color + "15" }]}
+  const renderCard = (item: PracticeItem) => {
+    const card = (
+      <AnimatedPressable
+        key={item.id}
+        style={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+        onPress={() => router.push(item.route as any)}
+        pressScale={0.97}
       >
-        <Ionicons name={item.icon} size={28} color={item.color} />
-      </View>
-      <View style={styles.cardContent}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.itemTitle, { color: colors.text }]}>
-            {item.title}
-          </Text>
-          {item.badge ? (
-            <View style={[styles.badge, { backgroundColor: item.color }]}>
-              <Text style={styles.badgeText}>{item.badge}</Text>
-            </View>
-          ) : null}
+        <View
+          style={[styles.iconContainer, { backgroundColor: item.color + "15" }]}
+        >
+          <Ionicons name={item.icon} size={28} color={item.color} />
         </View>
-        <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
-          {item.description}
-        </Text>
-      </View>
-      <View style={styles.arrowContainer}>
-        <Ionicons
-          name="chevron-forward"
-          size={20}
-          color={Colors.textSecondary}
-        />
-      </View>
-    </AnimatedPressable>
-  );
+        <View style={styles.cardContent}>
+          <View style={styles.titleRow}>
+            <Text style={[styles.itemTitle, { color: colors.text }]}>
+              {item.title}
+            </Text>
+            {item.badge ? (
+              <View style={[styles.badge, { backgroundColor: item.color }]}>
+                <Text style={styles.badgeText}>{item.badge}</Text>
+              </View>
+            ) : null}
+          </View>
+          <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
+            {item.description}
+          </Text>
+        </View>
+        <View style={styles.arrowContainer}>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={Colors.textSecondary}
+          />
+        </View>
+      </AnimatedPressable>
+    );
+
+    if (!item.tutorialTarget) return card;
+    return (
+      <SpotlightTarget key={item.id} targetId={item.tutorialTarget}>
+        {card}
+      </SpotlightTarget>
+    );
+  };
 
   return (
     <SafeAreaView
@@ -154,8 +198,13 @@ export default function PracticeHubScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={(event) => {
+          scrollYRef.current = event.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={32}
       >
         {/* Intro Banner */}
         <Animated.View
@@ -196,9 +245,11 @@ export default function PracticeHubScreen() {
         >
           Các hoạt động ôn tập
         </Animated.Text>
-        <StaggeredList staggerDelay={80} initialDelay={400}>
-          {additionalItems.map(renderCard)}
-        </StaggeredList>
+        <SpotlightTarget targetId="review-extra">
+          <StaggeredList staggerDelay={80} initialDelay={400}>
+            {additionalItems.map(renderCard)}
+          </StaggeredList>
+        </SpotlightTarget>
       </ScrollView>
     </SafeAreaView>
   );

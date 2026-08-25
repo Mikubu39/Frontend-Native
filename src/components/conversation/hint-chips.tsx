@@ -1,11 +1,13 @@
 /**
  * Dải gợi ý câu nói - cơ chế CHỐNG NGÕ CỤT của tính năng.
  *
- * Luôn hiển thị, nhưng ĐỔI MỨC NỔI BẬT theo số lượt hỏng liên tiếp:
- *   0-1 lượt hỏng : chip nhạt, chỉ là gợi ý nếu cần
- *   >=2 lượt hỏng : chip đậm + tiêu đề "Thử câu này", vì lúc này người học
- *                   nhiều khả năng đang thật sự bí chứ không phải đang thử
- *                   nghiệm cho vui
+ * Gợi ý do chính LLM sinh ra ở mỗi lượt, nên chúng luôn là câu đáp hợp lý cho
+ * đúng câu AI vừa nói. Kiến trúc FSM cũ phải đếm số lượt hỏng liên tiếp rồi
+ * mới "cứu" bằng câu mẫu soạn sẵn; giờ thì không cần nữa - gợi ý lúc nào cũng
+ * tươi mới và lúc nào cũng có.
+ *
+ * Vì đồng hồ chỉ chạy 5 phút, gợi ý còn giữ một vai trò thứ hai: nó cắt thời
+ * gian người học ngồi nhìn màn hình nghĩ xem phải nói gì.
  *
  * Chạm vào một chip sẽ điền thẳng câu đó vào ô nhập (không tự gửi luôn) - để
  * người học còn kịp đọc và sửa, tức là vẫn học được gì đó chứ không chỉ bấm.
@@ -16,7 +18,6 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useTheme } from "@/contexts/theme-context";
-import { HINTS_BECOME_PROMINENT_AFTER } from "@/constants/conversation";
 import {
   BorderRadius,
   Colors,
@@ -28,17 +29,14 @@ import type { ConversationUtterance } from "@/types/conversation";
 
 interface HintChipsProps {
   hints: ConversationUtterance[];
-  failures: number;
-  /** Bật khi người học kẹt hẳn - hiện luôn cả bản dịch của câu mẫu. */
-  rescue?: boolean;
+  /** Làm nổi bật + hiện luôn bản dịch, dùng khi người học cần được đẩy đi tiếp. */
+  prominent?: boolean;
   onPick: (hint: ConversationUtterance) => void;
 }
 
-export function HintChips({ hints, failures, rescue, onPick }: HintChipsProps) {
+export function HintChips({ hints, prominent, onPick }: HintChipsProps) {
   const { colors } = useTheme();
   if (!hints.length) return null;
-
-  const prominent = failures >= HINTS_BECOME_PROMINENT_AFTER || !!rescue;
 
   return (
     <View style={styles.wrapper}>
@@ -46,7 +44,7 @@ export function HintChips({ hints, failures, rescue, onPick }: HintChipsProps) {
         <View style={styles.headerRow}>
           <Ionicons name="bulb" size={14} color={Colors.accent} />
           <Text style={[styles.header, { color: colors.textSecondary }]}>
-            {rescue ? "Cứ chép câu này nhé" : "Thử câu này xem"}
+            Thử câu này xem
           </Text>
         </View>
       ) : null}

@@ -33,8 +33,10 @@ export function KanaQuestionCard({
   const { isPlaying, play } = useAudio(question.audioUrl);
   const { colors, isDark } = useTheme();
 
-  const isListening =
-    !!question.audioUrl || question.instruction?.toLowerCase().includes("nghe");
+  // Chỉ dựa vào việc CÓ FILE hay không. Trước đây còn xét cả chữ "nghe" trong
+  // đề bài, mà đề bài dạng này luôn là "Nghe và sắp xếp câu" — thiếu file là
+  // hiện ra một nút loa bấm vào không kêu.
+  const isListening = !!question.audioUrl;
 
   useEffect(() => {
     setArranged([]);
@@ -143,6 +145,7 @@ export function KanaQuestionCard({
               >
                 <DualText
                   text={char}
+                  hint={question.blockRomaji?.[char]}
                   mainStyle={styles.tileText}
                   subStyle={styles.tileSubText}
                 />
@@ -196,8 +199,11 @@ export function KanaQuestionCard({
               onPress={() => selectTile(char)}
               activeOpacity={0.7}
             >
+              {/* Thẻ rời là chữ Nhật trần; không có phiên âm thì người mới
+                  không đọc được thẻ nào để mà xếp thành câu. */}
               <DualText
                 text={char}
+                hint={question.blockRomaji?.[char]}
                 mainStyle={{ ...styles.bankTileText, color: tileTextColor }}
                 subStyle={{ ...styles.bankTileSubText, color: tileSubColor }}
               />

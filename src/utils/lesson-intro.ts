@@ -29,6 +29,15 @@ interface QuestionMetadata {
   vn?: string;
   /** "HIRAGANA" | "KATAKANA" — chỉ có ở câu bảng chữ cái. */
   type?: string;
+  /**
+   * Cách đọc của từ/câu, dành RIÊNG cho pha dạy.
+   *
+   * Đề bài của câu dịch và câu chọn hình cố ý không có `audioUrl` — in sẵn mặt
+   * chữ ra rồi thì cái loa ở đó không phục vụ việc gì, chỉ tổ rác màn hình. Nhưng
+   * lúc GIỚI THIỆU một từ mới thì nghe phát âm lại là việc chính, nên backend để
+   * file ở trường riêng này. Chỉ `buildTeachCards` đọc tới, UI câu hỏi thì không.
+   */
+  teachAudio?: string;
 }
 
 /** Câu dài hoặc có dấu câu thì giới thiệu như một mẫu câu, không phải từ vựng. */
@@ -142,6 +151,7 @@ export function buildTeachCards(questions: StartLessonQuestion[]): TeachCard[] {
       romaji: meta.romaji,
       meaning: extractMeaning(question, meta, japanese),
       audioUrl:
+        resolveMediaUrl(meta.teachAudio) ??
         resolveMediaUrl(question.audioUrl) ??
         resolveMediaUrl(correctOption(question)?.audioUrl),
       imageUrl:

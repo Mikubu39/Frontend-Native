@@ -15,10 +15,12 @@ import { StyleSheet, View } from "react-native";
 import { Tabs } from "expo-router";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SpotlightTarget } from "@/components/tutorial";
 import { TabItem } from "@/components/ui/tab-item";
 import { MoreBottomSheet } from "@/components/ui/more-bottom-sheet";
 import { useTheme } from "@/contexts/theme-context";
 import { Colors, Spacing } from "@/constants/theme";
+import type { TutorialTargetId } from "@/types";
 
 // ------------------------------------------------------------------
 // Tab meta — order determines visual order in the bar
@@ -35,30 +37,35 @@ const TABS = [
     label: "Xếp hạng",
     icon: "trophy-outline" as const,
     iconActive: "trophy" as const,
+    tutorialTarget: "tab-leaderboard" as const,
   },
   {
     name: "search",
     label: "Cửa hàng",
     icon: "storefront-outline" as const,
     iconActive: "storefront" as const,
+    tutorialTarget: "tab-shop" as const,
   },
   {
     name: "quests",
     label: "Nhiệm vụ",
     icon: "flag-outline" as const,
     iconActive: "flag" as const,
+    tutorialTarget: "tab-quests" as const,
   },
   {
     name: "feed",
     label: "Bạn bè",
     icon: "people-outline" as const,
     iconActive: "people" as const,
+    tutorialTarget: "tab-friends" as const,
   },
   {
     name: "more",
     label: "Thêm",
     icon: "grid-outline" as const,
     iconActive: "grid" as const,
+    tutorialTarget: "tab-more" as const,
   },
 ] as const;
 
@@ -136,9 +143,8 @@ function CustomTabBar({
             }
           };
 
-          return (
+          const item = (
             <TabItem
-              key={tab.name}
               iconName={tab.icon}
               iconNameActive={tab.iconActive}
               label={tab.label}
@@ -146,6 +152,22 @@ function CustomTabBar({
               onPress={handlePress}
               onLongPress={handleLongPress}
             />
+          );
+
+          // Vài tab là mốc của tour hướng dẫn — bọc thêm một lớp đo toạ độ.
+          const tutorialTarget = (tab as { tutorialTarget?: TutorialTargetId })
+            .tutorialTarget;
+
+          return tutorialTarget ? (
+            <SpotlightTarget
+              key={tab.name}
+              targetId={tutorialTarget}
+              style={styles.tabSlot}
+            >
+              {item}
+            </SpotlightTarget>
+          ) : (
+            <React.Fragment key={tab.name}>{item}</React.Fragment>
           );
         })}
       </View>
@@ -214,5 +236,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.two,
+  },
+  // `TabItem` tự có `flex: 1`; lớp bọc phải nhận lại flex đó để bố cục không lệch.
+  tabSlot: {
+    flex: 1,
   },
 });

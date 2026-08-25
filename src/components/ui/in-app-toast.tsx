@@ -101,7 +101,7 @@ export function InAppToast({ toast, onDismiss }: InAppToastProps) {
       pointerEvents="box-none"
     >
       <Animated.View
-        entering={FadeInUp.springify().damping(15).stiffness(150)}
+        entering={FadeInUp.duration(220)}
         exiting={FadeOutUp.duration(200)}
         style={styles.animatedWrapper}
       >

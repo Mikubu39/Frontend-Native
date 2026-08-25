@@ -4,6 +4,9 @@
 
 export { ChatBubble } from "./chat-bubble";
 export { ChatComposer } from "./chat-composer";
-export { GrammarNoteCard } from "./grammar-note-card";
+export { CorrectionCard } from "./correction-card";
+export { CustomTopicCard } from "./custom-topic-card";
 export { HintChips } from "./hint-chips";
-export { ScenarioCard } from "./scenario-card";
+export { SessionSummary } from "./session-summary";
+export { SessionTimer } from "./session-timer";
+export { TopicCard } from "./topic-card";

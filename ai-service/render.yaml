@@ -2,12 +2,16 @@
 #
 # Vì sao chọn Render cho đồ án này:
 #   - Gói free thật sự miễn phí, không cần thẻ tín dụng.
-#   - 512 MB RAM - mô hình 930 KB + scikit-learn nằm gọn trong đó.
-#   - Tự build lại mỗi lần push, và bước build đã bao gồm huấn luyện mô hình.
+#   - Từ bản 2.0 dịch vụ chỉ còn FastAPI + PyYAML nên chạy thoải mái trong
+#     512 MB RAM và tỉnh dậy sau khi ngủ đông trong vài giây.
+#   - Tự build lại mỗi lần push.
+#
+# QUAN TRỌNG: `GEMINI_API_KEY` đặt `sync: false` nghĩa là Render sẽ HỎI giá trị
+# lúc tạo dịch vụ và lưu vào phần Environment của dashboard. Khoá không bao giờ
+# nằm trong git.
 #
 # Hạn chế đã biết của gói free: dịch vụ NGỦ ĐÔNG sau ~15 phút không có lưu
-# lượng, và lần gọi kế tiếp mất khoảng 30 giây để đánh thức. Vì thế client
-# React Native đặt timeout 30 giây và hiện thông báo chờ tử tế
+# lượng. Client React Native đặt timeout rộng và hiện thông báo chờ tử tế
 # (xem `src/services/api/conversation.ts`).
 
 services:
@@ -18,10 +22,7 @@ services:
     region: singapore # gần Việt Nam nhất -> độ trễ thấp nhất
     rootDir: ai-service
 
-    buildCommand: |
-      pip install -r requirements.txt
-      PYTHONPATH=src python -m nihongo_ai.train
-
+    buildCommand: pip install -r requirements.txt
     startCommand: PYTHONPATH=src uvicorn nihongo_ai.api:app --host 0.0.0.0 --port $PORT
 
     healthCheckPath: /health
@@ -31,3 +32,5 @@ services:
         value: "3.12.10"
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: GEMINI_API_KEY
+        sync: false # nhập tay trên dashboard, không bao giờ vào git

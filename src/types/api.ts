@@ -44,6 +44,14 @@ export interface RegisterRequest {
   displayName?: string;
 }
 
+export interface GoogleLoginRequest {
+  idToken: string;
+}
+
+export interface FacebookLoginRequest {
+  accessToken: string;
+}
+
 // ============== USER DTOs ==============
 export interface UpdatePhoneRequest {
   phoneNumber: string;
@@ -315,4 +323,77 @@ export interface MistakeSubmitResponse {
   resolvedCount: number;
   energyRewarded: number;
   currentEnergy: number;
+}
+
+// ============== ACHIEVEMENTS DTOs ==============
+export interface AchievementResponse {
+  achievementId: number;
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  type: string;
+  threshold: number;
+  secret: boolean;
+  unlocked: boolean;
+  progress: number;
+  active: boolean;
+}
+
+// ============== SOCIAL FEED DTOs ==============
+export interface CursorPage<T> {
+  items: T[];
+  nextCursor: string | null;
+}
+
+export interface FollowUserDto {
+  id: number;
+  displayName: string;
+  avatarUrl: string | null;
+  isFollowing: boolean;
+}
+
+export interface PublicProfileResponse {
+  id: number;
+  displayName: string;
+  avatarUrl: string | null;
+  rankName: string | null;
+  currentStreak: number;
+  followerCount: number;
+  followingCount: number;
+  isFollowing: boolean;
+}
+
+export type FeedPostType = "USER_STATUS" | "SYSTEM_ACHIEVEMENT";
+
+export interface FeedPostAuthor {
+  id: number;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface FeedPostResponse {
+  id: number;
+  author: FeedPostAuthor;
+  postType: FeedPostType;
+  content: string;
+  createdAt: string;
+  likeCount: number;
+  commentCount: number;
+  likedByMe: boolean;
+}
+
+export interface CreatePostRequest {
+  content: string;
+}
+
+export interface PostCommentResponse {
+  id: number;
+  author: FeedPostAuthor;
+  content: string;
+  createdAt: string;
+}
+
+export interface CreateCommentRequest {
+  content: string;
 }
