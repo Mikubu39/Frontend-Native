@@ -153,12 +153,12 @@ export default function LoginScreen() {
         <Animated.View entering={FadeInDown.delay(400).duration(400)}>
           <SocialAuthSection
             onGooglePress={async () => {
-              await signInWithGoogle();
-              router.replace("/(tabs)");
+              const success = await signInWithGoogle();
+              if (success) router.replace("/(tabs)");
             }}
             onFacebookPress={async () => {
-              await signInWithFacebook();
-              router.replace("/(tabs)");
+              const success = await signInWithFacebook();
+              if (success) router.replace("/(tabs)");
             }}
           />
         </Animated.View>

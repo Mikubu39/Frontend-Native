@@ -3,34 +3,33 @@
  * Enhanced with smoother native-like transitions and gesture support.
  */
 
-import React, { useState, useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  Easing,
-  Dimensions,
-} from "react-native";
-import { Stack } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
+import { Colors } from "@/constants/theme";
 import { AuthProvider } from "@/contexts/auth-context";
+import { GamificationProvider } from "@/contexts/gamification-context";
+import { GlossaryProvider } from "@/contexts/glossary-context";
 import { OnboardingProvider } from "@/contexts/onboarding-context";
 import { QuizProvider } from "@/contexts/quiz-context";
-import { GlossaryProvider } from "@/contexts/glossary-context";
-import { GamificationProvider } from "@/contexts/gamification-context";
-import { ToastProvider } from "@/contexts/toast-context";
 import { ThemeProvider, useTheme } from "@/contexts/theme-context";
+import { ToastProvider } from "@/contexts/toast-context";
 import { TutorialProvider } from "@/contexts/tutorial-context";
-import { Colors } from "@/constants/theme";
 import {
-  useFonts,
   Nunito_400Regular,
   Nunito_500Medium,
   Nunito_600SemiBold,
   Nunito_700Bold,
   Nunito_800ExtraBold,
+  useFonts,
 } from "@expo-google-fonts/nunito";
+import { LinearGradient } from "expo-linear-gradient";
+import { Stack } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Text,
+  View
+} from "react-native";
 
 const { width, height } = Dimensions.get("window");
 

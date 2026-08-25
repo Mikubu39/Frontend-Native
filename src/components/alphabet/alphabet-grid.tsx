@@ -2,12 +2,12 @@
  * AlphabetGrid - Ma trận bảng chữ cái, gom nhóm theo `groupName` (Hàng A, Hàng K...).
  */
 
+import { FontSizes, FontWeights, Spacing } from "@/constants/theme";
+import { useTheme } from "@/contexts/theme-context";
+import { AlphabetCharacter, AlphabetGroup } from "@/types/alphabet";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { useTheme } from "@/contexts/theme-context";
-import { FontSizes, FontWeights, Spacing } from "@/constants/theme";
-import { AlphabetCharacter, AlphabetGroup } from "@/types/alphabet";
 import { AlphabetCell } from "./alphabet-cell";
 
 interface AlphabetGridProps {

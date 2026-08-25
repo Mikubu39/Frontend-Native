@@ -6,9 +6,9 @@
  * tương đối từ backend (`/uploads/audios/...`) sẽ tự động được ghép base URL.
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
 import { resolveMediaUrl } from "@/utils/media";
+import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Cấu hình audio mode chỉ chạy 1 lần cho cả app.
@@ -84,7 +84,7 @@ export function useAudio(url?: string) {
 
   const stop = useCallback(async () => {
     if (soundRef.current) {
-      await soundRef.current.stopAsync().catch(() => {});
+      await soundRef.current.stopAsync().catch(() => { });
       setIsPlaying(false);
     }
   }, []);
@@ -94,7 +94,7 @@ export function useAudio(url?: string) {
     return () => {
       isMountedRef.current = false;
       if (soundRef.current) {
-        soundRef.current.unloadAsync().catch(() => {});
+        soundRef.current.unloadAsync().catch(() => { });
         soundRef.current = null;
       }
     };

@@ -6,6 +6,7 @@ import {
   FontWeights,
   Spacing,
 } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
@@ -37,6 +38,7 @@ export function StyledTextInput({
   secureTextEntry,
   ...props
 }: StyledTextInputProps) {
+  const colors = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const focusAnim = useSharedValue(0);
@@ -53,14 +55,14 @@ export function StyledTextInput({
     const borderColor = interpolateColor(
       focusAnim.value,
       [0, 1],
-      [Colors.inputBorder, Colors.primary],
+      [colors.border, Colors.primary],
     );
 
     return {
       borderColor,
       borderWidth: isFocused ? 2 : 1.5,
     };
-  });
+  }, [colors.border]);
 
   const shadowAnimStyle = useAnimatedStyle(() => ({
     shadowOpacity: focusAnim.value * 0.15,
@@ -72,10 +74,13 @@ export function StyledTextInput({
 
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && (
+        <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+      )}
       <AnimatedView
         style={[
           styles.inputWrapper,
+          { backgroundColor: colors.card, borderColor: colors.border },
           borderAnimStyle,
           shadowAnimStyle,
           error && styles.inputError,
@@ -83,8 +88,13 @@ export function StyledTextInput({
       >
         <View style={styles.inputContainer}>
           <RNTextInput
-            style={[styles.input, style, isPassword && { paddingRight: 50 }]}
-            placeholderTextColor={Colors.textSecondary}
+            style={[
+              styles.input,
+              { color: colors.text },
+              style,
+              isPassword && { paddingRight: 50 },
+            ]}
+            placeholderTextColor={colors.textSecondary}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             secureTextEntry={isPassword && !showPassword}
@@ -98,7 +108,7 @@ export function StyledTextInput({
               <Ionicons
                 name={showPassword ? "eye-off" : "eye"}
                 size={24}
-                color={Colors.textSecondary}
+                color={colors.textSecondary}
               />
             </TouchableOpacity>
           )}

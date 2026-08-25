@@ -64,13 +64,13 @@ const INERT: TutorialContextValue = {
   currentStep: null,
   spotlight: null,
   hasSeenTutorial: true,
-  registerTarget: () => {},
-  registerScroller: () => {},
-  startTutorial: () => {},
-  maybeAutoStart: () => {},
-  goNext: () => {},
-  goBack: () => {},
-  skipTutorial: () => {},
+  registerTarget: () => { },
+  registerScroller: () => { },
+  startTutorial: () => { },
+  maybeAutoStart: () => { },
+  goNext: () => { },
+  goBack: () => { },
+  skipTutorial: () => { },
 };
 
 const TutorialContext = createContext<TutorialContextValue | null>(null);
@@ -208,7 +208,7 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
   // ── Điều khiển ────────────────────────────────────────────────────────────
   const markSeen = useCallback(() => {
     setHasSeenTutorial(true);
-    storage.set(TUTORIAL_STORAGE_KEY, "true").catch(() => {});
+    storage.set(TUTORIAL_STORAGE_KEY, "true").catch(() => { });
   }, []);
 
   const startTutorial = useCallback(() => {

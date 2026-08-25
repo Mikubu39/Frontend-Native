@@ -101,6 +101,15 @@ export default function QuizScreen() {
   const [isReplay, setIsReplay] = useState<boolean>(false);
   const [heartsRemaining, setHeartsRemaining] = useState<number>(3);
 
+  // Đồng hồ đếm giờ cho TIMED_REVIEW: chạy thật (wall-clock) + cộng dồn phạt
+  // ngay khi trả lời sai (xem checkAnswer). `penaltySecondsRef` là nguồn sự
+  // thật cho phần phạt vì setInterval bên dưới đọc qua closure — dùng ref để
+  // không phải huỷ/tạo lại interval mỗi lần bị phạt.
+  const penaltySecondsRef = useRef(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [penaltyTick, setPenaltyTick] = useState(0);
+  const TIME_PENALTY_SECONDS = 10;
+
   const { refillEnergy, watchAdToRefill } = useGamification();
   const [showEnergyPopup, setShowEnergyPopup] = useState(false);
   const [adError, setAdError] = useState<string | null>(null);
@@ -127,6 +136,9 @@ export default function QuizScreen() {
       }
 
       startTime.current = Date.now();
+      penaltySecondsRef.current = 0;
+      setElapsedSeconds(0);
+      setPenaltyTick(0);
     } catch (error: any) {
       console.error("Failed to start lesson:", error);
       const errorMsg = error?.message || error?.response?.data?.message || "";
@@ -150,6 +162,22 @@ export default function QuizScreen() {
   useEffect(() => {
     fetchQuestions();
   }, [lessonId]);
+
+  // Đồng hồ đếm giờ chỉ chạy cho TIMED_REVIEW — tick mỗi giây, luôn cộng thêm
+  // phần phạt đã dồn (penaltySecondsRef) để hiển thị đúng con số sẽ gửi lên
+  // server lúc /submit.
+  useEffect(() => {
+    if (lessonType !== "TIMED_REVIEW") return;
+    const tick = () => {
+      setElapsedSeconds(
+        Math.floor((Date.now() - startTime.current) / 1000) +
+          penaltySecondsRef.current,
+      );
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [lessonType]);
 
   const currentQuestion = questions[currentIndex];
 
@@ -213,6 +241,17 @@ export default function QuizScreen() {
 
       if (lessonType === "JUMP_TEST") {
         setHeartsRemaining((prev) => Math.max(0, prev - 1));
+      }
+
+      if (lessonType === "TIMED_REVIEW") {
+        // Phạt giờ tức thì — đồng hồ trên header nhảy thêm +10s ngay khi sai,
+        // không đợi tick giây kế tiếp mới cộng dồn.
+        penaltySecondsRef.current += TIME_PENALTY_SECONDS;
+        setElapsedSeconds(
+          Math.floor((Date.now() - startTime.current) / 1000) +
+            penaltySecondsRef.current,
+        );
+        setPenaltyTick((prev) => prev + 1);
       }
 
       if (lessonType !== "JUMP_TEST") {
@@ -280,7 +319,9 @@ export default function QuizScreen() {
     if (isLastQuestion || isFailed) {
       setIsSubmitting(true);
       try {
-        const timeTaken = Math.floor((Date.now() - startTime.current) / 1000);
+        const timeTaken =
+          Math.floor((Date.now() - startTime.current) / 1000) +
+          penaltySecondsRef.current;
         const response = await lessonAttemptApi.submitLesson(
           lessonId as string,
           {
@@ -730,6 +771,8 @@ export default function QuizScreen() {
         onClose={() => router.back()}
         lessonType={lessonType}
         heartsRemaining={heartsRemaining}
+        elapsedSeconds={elapsedSeconds}
+        penaltyTick={penaltyTick}
       />
 
       <ScrollView

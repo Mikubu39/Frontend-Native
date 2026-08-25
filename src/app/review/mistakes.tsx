@@ -34,6 +34,7 @@ import {
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useGamification } from "@/contexts/gamification-context";
 import { useToast } from "@/contexts/toast-context";
+import { useTheme } from "@/contexts/theme-context";
 
 // Import all question cards
 import {
@@ -52,6 +53,7 @@ export default function MistakeReviewScreen() {
   const router = useRouter();
   const { setEnergy } = useGamification();
   const { showError } = useToast();
+  const { colors } = useTheme();
 
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -148,7 +150,13 @@ export default function MistakeReviewScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, styles.centered]}>
+      <SafeAreaView
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <ActivityIndicator size="large" color={Colors.primary} />
       </SafeAreaView>
     );
@@ -156,8 +164,14 @@ export default function MistakeReviewScreen() {
 
   if (message || questions.length === 0) {
     return (
-      <SafeAreaView style={[styles.container, styles.centered]}>
-        <Text style={styles.messageText}>
+      <SafeAreaView
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <Text style={[styles.messageText, { color: colors.textSecondary }]}>
           {message || "Không có lỗi sai nào"}
         </Text>
         <GradientButton
@@ -171,13 +185,22 @@ export default function MistakeReviewScreen() {
 
   if (showResults) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Kết Quả Ôn Tập</Text>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: colors.card, borderBottomColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            Kết Quả Ôn Tập
+          </Text>
         </View>
         <ScrollView contentContainerStyle={styles.resultList}>
-          <View style={styles.summaryBox}>
-            <Text style={styles.summaryText}>
+          <View style={[styles.summaryBox, { backgroundColor: colors.card }]}>
+            <Text style={[styles.summaryText, { color: colors.text }]}>
               Đã xóa nợ (Resolved): {resolvedCount} câu
             </Text>
             {energyRewarded > 0 ? (
@@ -185,7 +208,12 @@ export default function MistakeReviewScreen() {
                 + {energyRewarded} ⚡ Năng lượng
               </Text>
             ) : (
-              <Text style={styles.energyTextDesc}>
+              <Text
+                style={[
+                  styles.energyTextDesc,
+                  { color: colors.textSecondary },
+                ]}
+              >
                 Đã hết lượt thưởng năng lượng hôm nay.
               </Text>
             )}
@@ -195,10 +223,12 @@ export default function MistakeReviewScreen() {
             <Animated.View
               key={idx}
               entering={FadeInUp.delay(idx * 100)}
-              style={styles.resultCard}
+              style={[styles.resultCard, { backgroundColor: colors.card }]}
             >
               <View style={styles.resultHeader}>
-                <Text style={styles.qNum}>Câu {idx + 1}</Text>
+                <Text style={[styles.qNum, { color: colors.text }]}>
+                  Câu {idx + 1}
+                </Text>
                 <View
                   style={[
                     styles.badge,
@@ -224,7 +254,7 @@ export default function MistakeReviewScreen() {
             </Animated.View>
           ))}
         </ScrollView>
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { backgroundColor: colors.background }]}>
           <GradientButton title="Hoàn Thành" onPress={() => router.back()} />
         </View>
       </SafeAreaView>
@@ -311,9 +341,16 @@ export default function MistakeReviewScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.progressText}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.card, borderBottomColor: colors.border },
+        ]}
+      >
+        <Text style={[styles.progressText, { color: colors.textSecondary }]}>
           Câu {currentIndex + 1} / {questions.length}
         </Text>
       </View>
@@ -329,7 +366,7 @@ export default function MistakeReviewScreen() {
         </Animated.View>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: colors.background }]}>
         <GradientButton
           title={
             submitting
@@ -347,11 +384,10 @@ export default function MistakeReviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.cream },
+  container: { flex: 1 },
   centered: { justifyContent: "center", alignItems: "center", padding: 20 },
   messageText: {
     fontSize: FontSizes.lg,
-    color: Colors.textSecondary,
     textAlign: "center",
     fontWeight: "bold",
   },
@@ -359,18 +395,14 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
-    backgroundColor: "#FFF",
   },
   headerTitle: {
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
   },
   progressText: {
     fontSize: FontSizes.md,
     fontWeight: "bold",
-    color: Colors.textSecondary,
   },
   scrollContent: {
     flexGrow: 1,
@@ -381,11 +413,9 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingHorizontal: Spacing.six,
     paddingBottom: Spacing.six,
-    backgroundColor: Colors.cream,
   },
   resultList: { padding: Spacing.four },
   summaryBox: {
-    backgroundColor: "#FFF",
     padding: Spacing.five,
     borderRadius: BorderRadius.xl,
     marginBottom: Spacing.four,
@@ -395,7 +425,6 @@ const styles = StyleSheet.create({
   summaryText: {
     fontSize: FontSizes.lg,
     fontWeight: "bold",
-    color: Colors.textPrimary,
   },
   energyText: {
     fontSize: FontSizes.md,
@@ -405,11 +434,9 @@ const styles = StyleSheet.create({
   },
   energyTextDesc: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
     marginTop: Spacing.two,
   },
   resultCard: {
-    backgroundColor: "#FFF",
     padding: Spacing.four,
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.three,

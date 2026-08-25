@@ -152,12 +152,12 @@ export default function SignupScreen() {
         <SocialAuthSection
           onGooglePress={async () => {
             // Backend's /social/google handles create-or-login in one call.
-            await signInWithGoogle();
-            router.replace("/(onboarding)/goal");
+            const success = await signInWithGoogle();
+            if (success) router.replace("/(onboarding)/goal");
           }}
           onFacebookPress={async () => {
-            await signInWithFacebook();
-            router.replace("/(onboarding)/goal");
+            const success = await signInWithFacebook();
+            if (success) router.replace("/(onboarding)/goal");
           }}
         />
       </ScrollView>

@@ -57,7 +57,8 @@
           "displayName": "Frontend",
           "scheme": "fb1776382180172619"
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": false,

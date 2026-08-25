@@ -130,9 +130,7 @@ export function PostCard({
       {isAchievement ? (
         <View style={styles.achievementContent}>
           <Text style={styles.achievementEmoji}>🏆</Text>
-          <Text style={[styles.achievementText, { color: textColor }]}>
-            {post.content}
-          </Text>
+          <Text style={styles.achievementText}>{post.content}</Text>
         </View>
       ) : (
         <View
@@ -263,6 +261,9 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     lineHeight: 22,
+    // Achievement card keeps a fixed light-gold background in both themes,
+    // so its text must stay a fixed dark color instead of following textColor.
+    color: "#7A4F01",
   },
   footer: {
     flexDirection: "row",

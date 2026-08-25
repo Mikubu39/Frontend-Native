@@ -111,8 +111,8 @@ interface AuthContextType {
     password: string,
     displayName: string,
   ) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  signInWithFacebook: () => Promise<void>;
+  signInWithGoogle: () => Promise<boolean>;
+  signInWithFacebook: () => Promise<boolean>;
   signOut: () => Promise<void>;
 }
 
@@ -208,7 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.type === "cancelled") {
         console.log("Google Sign-In cancelled by user");
-        return;
+        return false;
       }
 
       const idToken = response.data?.idToken;
@@ -219,11 +219,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "Lỗi",
           "Không nhận được token từ Google. Vui lòng thử lại.",
         );
-        return;
+        return false;
       }
 
       const authResponse = await authService.loginWithGoogle({ idToken });
       await persistSession(authResponse);
+      return true;
     } catch (error: unknown) {
       const typedError = error as { code?: string; message?: string };
       if (typedError.code === statusCodes.SIGN_IN_CANCELLED) {
@@ -242,6 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           typedError.message || "Không thể đăng nhập bằng Google.",
         );
       }
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -257,7 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (loginResult.isCancelled) {
         console.log("Facebook Sign-In cancelled by user");
-        return;
+        return false;
       }
 
       if (loginResult.declinedPermissions?.includes("email")) {
@@ -265,7 +267,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "Thiếu quyền truy cập",
           "Ứng dụng cần quyền Email từ Facebook để đăng nhập.",
         );
-        return;
+        return false;
       }
 
       const tokenData = await FBAccessToken.getCurrentAccessToken();
@@ -274,19 +276,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "Lỗi",
           "Không nhận được access token từ Facebook. Vui lòng thử lại.",
         );
-        return;
+        return false;
       }
 
       const authResponse = await authService.loginWithFacebook({
         accessToken: tokenData.accessToken,
       });
       await persistSession(authResponse);
+      return true;
     } catch (error: any) {
       console.error("Facebook Sign-In error:", error?.message);
       Alert.alert(
         "Lỗi đăng nhập Facebook",
         error?.message || "Không thể đăng nhập bằng Facebook.",
       );
+      return false;
     } finally {
       setIsLoading(false);
     }

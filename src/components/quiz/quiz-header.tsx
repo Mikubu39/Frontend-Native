@@ -22,6 +22,10 @@ interface QuizHeaderProps {
   onClose: () => void;
   lessonType?: string;
   heartsRemaining?: number;
+  /** Giây đã trôi qua (đã cộng phạt) — chỉ hiển thị khi lessonType === "TIMED_REVIEW". */
+  elapsedSeconds?: number;
+  /** Tăng lên mỗi lần bị phạt giờ, dùng để kích hoạt hiệu ứng nhấp nháy trên đồng hồ. */
+  penaltyTick?: number;
 }
 
 function HeartIcon({
@@ -56,6 +60,62 @@ function HeartIcon({
         color={filled ? "#FF4B6E" : "rgba(255,75,110,0.22)"}
         solid={filled}
       />
+    </Animated.View>
+  );
+}
+
+function TimerChip({
+  seconds,
+  penaltyTick,
+  isDark,
+}: {
+  seconds: number;
+  penaltyTick: number;
+  isDark: boolean;
+}) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (penaltyTick > 0) {
+      scale.value = withSequence(
+        withSpring(1.25, { damping: 6 }),
+        withSpring(1, { damping: 10 }),
+      );
+    }
+  }, [penaltyTick]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const ss = String(seconds % 60).padStart(2, "0");
+
+  return (
+    <Animated.View
+      style={[
+        styles.timerChip,
+        animStyle,
+        {
+          backgroundColor: isDark
+            ? "rgba(255,255,255,0.08)"
+            : "rgba(0,0,0,0.06)",
+        },
+      ]}
+    >
+      <Ionicons
+        name="stopwatch-outline"
+        size={15}
+        color={penaltyTick > 0 ? "#FF4B6E" : Colors.accent}
+      />
+      <Animated.Text
+        style={[
+          styles.timerText,
+          { color: isDark ? "rgba(255,255,255,0.85)" : Colors.textPrimary },
+        ]}
+      >
+        {mm}:{ss}
+      </Animated.Text>
     </Animated.View>
   );
 }
@@ -110,10 +170,14 @@ export function QuizHeader({
   onClose,
   lessonType,
   heartsRemaining,
+  elapsedSeconds,
+  penaltyTick,
 }: QuizHeaderProps) {
   const { colors, isDark } = useTheme();
   const showHearts =
     lessonType === "JUMP_TEST" && heartsRemaining !== undefined;
+  const showTimer =
+    lessonType === "TIMED_REVIEW" && elapsedSeconds !== undefined;
 
   return (
     <View
@@ -154,7 +218,7 @@ export function QuizHeader({
           <SegmentedProgressBar progress={progress} isDark={isDark} />
         </View>
 
-        {/* Hearts (JUMP_TEST only) */}
+        {/* Hearts (JUMP_TEST) / Timer (TIMED_REVIEW) */}
         {showHearts ? (
           <View style={styles.heartsContainer}>
             {Array.from({ length: 3 }).map((_, i) => (
@@ -166,6 +230,12 @@ export function QuizHeader({
               />
             ))}
           </View>
+        ) : showTimer ? (
+          <TimerChip
+            seconds={elapsedSeconds ?? 0}
+            penaltyTick={penaltyTick ?? 0}
+            isDark={isDark}
+          />
         ) : (
           <View style={styles.closeBtnPlaceholder} />
         )}
@@ -223,5 +293,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
     alignItems: "center",
+  },
+  timerChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  timerText: {
+    fontSize: 13,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
   },
 });

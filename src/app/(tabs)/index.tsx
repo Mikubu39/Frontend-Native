@@ -282,14 +282,7 @@ const HexNode = React.memo(function HexNode({
     transform: [{ translateY: floatY.value }],
   }));
 
-  const lessonIcon =
-    node.lessonType === "GRAMMAR"
-      ? "📚"
-      : node.lessonType === "VOCABULARY"
-        ? "📝"
-        : node.lessonType === "KANJI"
-          ? "🈷️"
-          : "⭐";
+  const lessonIcon = node.lessonType === "TOPIC_REVIEW" ? "🧠" : "⭐";
 
   return (
     <Animated.View
@@ -488,15 +481,17 @@ const HexNode = React.memo(function HexNode({
             <View style={styles.popoverBadgeRow}>
               <View style={styles.popoverBadge}>
                 <Text style={styles.popoverBadgeText}>
-                  {node.lessonType ?? "BÀI HỌC"}
+                  {node.lessonType === "TOPIC_REVIEW"
+                    ? "BÀI ÔN TẬP"
+                    : "BÀI HỌC"}
                 </Text>
               </View>
               {/*
-                Sao chỉ có ý nghĩa với bài ôn tập tính giờ — `computeStars` phía
+                Sao chỉ có ý nghĩa với bài ôn tập (TOPIC_REVIEW) — `computeStars` phía
                 backend trả 0 cho mọi loại khác. Trước đây chỗ này vẽ cứng 3 sao
                 vàng cho MỌI bài, kể cả bài chưa từng học.
               */}
-              {node.lessonType === "TIMED_REVIEW" && (
+              {node.lessonType === "TOPIC_REVIEW" && (
                 <View style={styles.popoverStars}>
                   {[1, 2, 3].map((position) => (
                     <FontAwesome5
@@ -538,6 +533,194 @@ const HexNode = React.memo(function HexNode({
               ]}
             >
               {node.entryCostEnergy ?? DEFAULT_ENTRY_COST_ENERGY} ⚡ năng lượng
+            </Text>
+
+            <GradientButton
+              title="BẮT ĐẦU →"
+              onPress={onStart}
+              style={{ width: "100%", paddingVertical: 11, marginTop: 4 }}
+            />
+          </View>
+        </Animated.View>
+      )}
+    </Animated.View>
+  );
+});
+
+// ─── TimedReviewBadge ────────────────────────────────────────────────────────
+const TIMED_REVIEW_BADGE_SIZE = 56;
+
+/**
+ * Mascot cạnh đường đi cho bài "ôn tập tính giờ" (TIMED_REVIEW).
+ *
+ * Khác `HexNode`: không chiếm 1 vị trí trên path (không tham gia `generatePaths`
+ * / đánh index tuần tự) — chỉ đặt cạnh node gần nhất bằng toạ độ (x, y) tuyệt
+ * đối do `TopicSection` tính sẵn. Không bắt buộc phải hoàn thành (server luôn
+ * trả UNLOCKED, xem `LessonUnlockPolicy`), nên không có trạng thái LOCKED thật
+ * sự trong thực tế — vẫn xử lý phòng hờ để không vỡ UI nếu sau này đổi ý.
+ */
+const TimedReviewBadge = React.memo(function TimedReviewBadge({
+  node,
+  x,
+  y,
+  isPopupVisible,
+  onPress,
+  onStart,
+}: {
+  node: {
+    id: number | string;
+    title: string;
+    status: NodeStatus;
+    starsEarned?: number;
+    entryCostEnergy?: number;
+  };
+  x: number;
+  y: number;
+  isPopupVisible: boolean;
+  onPress: () => void;
+  onStart: () => void;
+}) {
+  const { isDark } = useTheme();
+  const isLocked = node.status === "LOCKED";
+  const isCompleted = node.status === "COMPLETED";
+
+  const bounce = useSharedValue(0);
+  useEffect(() => {
+    bounce.value = withRepeat(
+      withTiming(-6, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+  }, []);
+  const bounceStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: bounce.value }],
+  }));
+
+  return (
+    <Animated.View
+      entering={FadeIn.delay(250).duration(300)}
+      style={[
+        styles.timedReviewWrapper,
+        {
+          left: x - TIMED_REVIEW_BADGE_SIZE / 2,
+          top: y,
+          zIndex: isPopupVisible ? 100 : 3,
+        },
+      ]}
+    >
+      <Animated.View style={bounceStyle}>
+        <AnimatedPressable
+          onPress={onPress}
+          disabled={isLocked}
+          pressScale={isLocked ? 1 : 0.9}
+          accessibilityRole="button"
+          accessibilityLabel={`Ôn tập tính giờ: ${node.title}. Không bắt buộc.`}
+          style={[
+            styles.timedReviewBubble,
+            {
+              backgroundColor: isCompleted
+                ? "rgba(251,191,36,0.18)"
+                : isDark
+                  ? "rgba(255,255,255,0.06)"
+                  : "rgba(255,255,255,0.92)",
+              borderColor: isCompleted
+                ? Colors.accent
+                : "rgba(139,92,246,0.45)",
+              opacity: isLocked ? 0.5 : 1,
+            },
+          ]}
+        >
+          <Text style={styles.timedReviewEmoji}>🦉</Text>
+        </AnimatedPressable>
+        <View style={styles.timedReviewStars}>
+          {[1, 2, 3].map((position) => (
+            <FontAwesome5
+              key={position}
+              name="star"
+              size={8}
+              color={
+                position <= (node.starsEarned ?? 0)
+                  ? Colors.accent
+                  : isDark
+                    ? "rgba(255,255,255,0.2)"
+                    : "rgba(0,0,0,0.18)"
+              }
+              solid
+              style={{ marginHorizontal: 1 }}
+            />
+          ))}
+        </View>
+      </Animated.View>
+
+      {/* Popover — tái dùng đúng style token với HexNode để đồng bộ giao diện */}
+      {isPopupVisible && (
+        <Animated.View
+          entering={FadeInDown.duration(200)}
+          style={[
+            styles.popoverContainer,
+            { top: TIMED_REVIEW_BADGE_SIZE + 16 },
+          ]}
+        >
+          <View style={styles.popoverArrow} />
+          <View
+            style={[
+              styles.popoverBody,
+              {
+                backgroundColor: isDark
+                  ? "rgba(20,20,38,0.98)"
+                  : "rgba(255,255,255,0.98)",
+                borderColor: isDark
+                  ? "rgba(139,92,246,0.25)"
+                  : "rgba(139,92,246,0.2)",
+              },
+            ]}
+          >
+            <View style={styles.popoverBadgeRow}>
+              <View style={styles.popoverBadge}>
+                <Text style={styles.popoverBadgeText}>ÔN TẬP TÍNH GIỜ</Text>
+              </View>
+              <View style={styles.popoverStars}>
+                {[1, 2, 3].map((position) => (
+                  <FontAwesome5
+                    key={position}
+                    name="star"
+                    size={11}
+                    color={
+                      position <= (node.starsEarned ?? 0)
+                        ? Colors.accent
+                        : isDark
+                          ? "rgba(255,255,255,0.18)"
+                          : "rgba(0,0,0,0.15)"
+                    }
+                    solid
+                    style={{ marginLeft: 2 }}
+                  />
+                ))}
+              </View>
+            </View>
+
+            <Text
+              style={[
+                styles.popoverTitle,
+                { color: isDark ? "#FFFFFF" : Colors.textPrimary },
+              ]}
+              numberOfLines={2}
+            >
+              {node.title}
+            </Text>
+            <Text
+              style={[
+                styles.popoverSub,
+                {
+                  color: isDark
+                    ? "rgba(255,255,255,0.6)"
+                    : Colors.textSecondary,
+                },
+              ]}
+            >
+              Không bắt buộc — càng nhanh càng nhiều sao, trả lời sai sẽ bị cộng
+              thêm giờ. {node.entryCostEnergy ?? DEFAULT_ENTRY_COST_ENERGY} ⚡
+              năng lượng
             </Text>
 
             <GradientButton
@@ -616,10 +799,41 @@ const TopicSection = React.memo(function TopicSection({
 }: TopicSectionProps) {
   const { isDark } = useTheme();
   const lessons = topic.lessons;
-  const totalMapHeight = START_Y + lessons.length * NODE_SPACING + SECTION_TAIL;
+
+  // TIMED_REVIEW ("ôn tập tính giờ") không bắt buộc và không chiếm 1 vị trí
+  // trên đường đi chính — nó là mascot đặt CẠNH node gần nhất, đúng kiểu
+  // Duolingo (khác TOPIC_REVIEW/"cái tạ" nằm ngay trên path, xem index.tsx).
+  // `pathLessons` là những gì thực sự vẽ path + hexagon; `sideLessons` là
+  // các bài TIMED_REVIEW được ghim bên cạnh.
+  const pathLessons = React.useMemo(
+    () => lessons.filter((l) => l.lessonType !== "TIMED_REVIEW"),
+    [lessons],
+  );
+  const sideLessons = React.useMemo(
+    () => lessons.filter((l) => l.lessonType === "TIMED_REVIEW"),
+    [lessons],
+  );
+  // Với mỗi bài TIMED_REVIEW, tìm index (trong pathLessons) của bài path gần
+  // nhất đứng TRƯỚC nó theo đúng thứ tự orderIndex gốc — đó là node nó sẽ
+  // ghim cạnh vào. Nếu nó đứng trước mọi bài path (hiếm), neo vào node đầu.
+  const sideAnchorIndexByLessonId = React.useMemo(() => {
+    const map = new Map<number | string, number>();
+    let lastPathIndex = -1;
+    for (const lesson of lessons) {
+      if (lesson.lessonType === "TIMED_REVIEW") {
+        map.set(lesson.lessonId, Math.max(lastPathIndex, 0));
+      } else {
+        lastPathIndex += 1;
+      }
+    }
+    return map;
+  }, [lessons]);
+
+  const totalMapHeight =
+    START_Y + pathLessons.length * NODE_SPACING + SECTION_TAIL;
   const paths = React.useMemo(
-    () => generatePaths(lessons, centerX),
-    [lessons, centerX],
+    () => generatePaths(pathLessons, centerX),
+    [pathLessons, centerX],
   );
   const accent = TOPIC_ACCENTS[topicIndex % TOPIC_ACCENTS.length];
 
@@ -729,7 +943,7 @@ const TopicSection = React.memo(function TopicSection({
         </Svg>
 
         {/* Floating orbs as decorative ambience */}
-        {lessons.map((_, index) => {
+        {pathLessons.map((_, index) => {
           if (index % 3 !== 0) return null;
           const nodeOffset = getOffset(index);
           const side = nodeOffset >= 0 ? -1 : 1;
@@ -755,7 +969,7 @@ const TopicSection = React.memo(function TopicSection({
         })}
 
         {/* Render HexNodes */}
-        {lessons.map((lesson, index) => (
+        {pathLessons.map((lesson, index) => (
           <HexNode
             key={lesson.lessonId}
             node={{
@@ -774,6 +988,38 @@ const TopicSection = React.memo(function TopicSection({
             onStart={() => onStartLesson(lesson)}
           />
         ))}
+
+        {/* Render TIMED_REVIEW mascots — ghim cạnh node path gần nhất, không
+            chiếm chỗ trên đường đi chính. */}
+        {sideLessons.map((lesson) => {
+          const anchorIndex =
+            sideAnchorIndexByLessonId.get(lesson.lessonId) ?? 0;
+          const anchorOffset = getOffset(anchorIndex);
+          const anchorX = centerX + anchorOffset;
+          const anchorY = START_Y + anchorIndex * NODE_SPACING;
+          // Ghim về phía "trống" của node neo (đối diện hướng lượn của path)
+          // để mascot không đè lên track SVG.
+          const side = anchorOffset >= 0 ? -1 : 1;
+          const badgeX = anchorX + side * (NODE_SIZE / 2 + 44);
+          const badgeY = anchorY + 6;
+          return (
+            <TimedReviewBadge
+              key={lesson.lessonId}
+              node={{
+                id: lesson.lessonId,
+                title: lesson.title,
+                status: lesson.status as NodeStatus,
+                starsEarned: lesson.starsEarned,
+                entryCostEnergy: lesson.entryCostEnergy,
+              }}
+              x={badgeX}
+              y={badgeY}
+              isPopupVisible={selectedLessonId === lesson.lessonId}
+              onPress={() => onNodePress(lesson)}
+              onStart={() => onStartLesson(lesson)}
+            />
+          );
+        })}
       </View>
     </>
   );
@@ -882,7 +1128,13 @@ export default function LearnScreen() {
     const offsets: number[] = [];
     let cursor = 0;
     topics.forEach((topic, index) => {
-      const height = topicSectionHeight(topic.lessons.length, index > 0);
+      // Đúng số node THẬT SỰ chiếm chỗ trên path — TIMED_REVIEW ghim cạnh
+      // đường đi, không tính vào chiều cao đoạn bản đồ (khớp `pathLessons`
+      // trong TopicSection).
+      const pathLessonCount = topic.lessons.filter(
+        (l) => l.lessonType !== "TIMED_REVIEW",
+      ).length;
+      const height = topicSectionHeight(pathLessonCount, index > 0);
       offsets.push(cursor);
       heights.push(height);
       cursor += height;
@@ -1350,5 +1602,29 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.sans,
     color: "rgba(255,255,255,0.4)",
     marginBottom: Spacing.three,
+  },
+
+  // ── TimedReviewBadge (mascot cạnh đường đi) ──
+  timedReviewWrapper: {
+    position: "absolute",
+    width: TIMED_REVIEW_BADGE_SIZE,
+    alignItems: "center",
+  },
+  timedReviewBubble: {
+    width: TIMED_REVIEW_BADGE_SIZE,
+    height: TIMED_REVIEW_BADGE_SIZE,
+    borderRadius: TIMED_REVIEW_BADGE_SIZE / 2,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Shadows.md,
+  },
+  timedReviewEmoji: {
+    fontSize: 26,
+  },
+  timedReviewStars: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 4,
   },
 });

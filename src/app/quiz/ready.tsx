@@ -146,6 +146,7 @@ export default function QuizReadyScreen() {
   const isTheory = isRemoteLesson
     ? false
     : node?.nodeType === "theory" || !node?.nodeType;
+  const isTopicReview = isRemoteLesson && lessonTypeParam === "TOPIC_REVIEW";
 
   const tip =
     LESSON_TIPS[lessonId as keyof typeof LESSON_TIPS] || LESSON_TIPS.lp5;
@@ -156,12 +157,18 @@ export default function QuizReadyScreen() {
       ? tip.title
       : node?.title;
 
-  const nodeTypeIcon = isBoss ? "trophy" : isTheory ? "bulb" : "barbell";
+  const nodeTypeIcon = isBoss
+    ? "trophy"
+    : isTheory
+      ? "bulb"
+      : isTopicReview
+        ? "sync"
+        : "barbell";
   const nodeTypeLabel = isBoss
     ? "KIỂM TRA CHƯƠNG"
     : isRemoteLesson
-      ? lessonTypeParam === "TIMED_REVIEW"
-        ? "ÔN TẬP TÍNH GIỜ"
+      ? isTopicReview
+        ? "BÀI ÔN TẬP"
         : "BÀI HỌC"
       : isTheory
         ? "BÀI HỌC"
