@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { AuthProvider } from "@/contexts/auth-context";
 import { OnboardingProvider } from "@/contexts/onboarding-context";
 import { QuizProvider } from "@/contexts/quiz-context";
+import { GlossaryProvider } from "@/contexts/glossary-context";
 import { GamificationProvider } from "@/contexts/gamification-context";
 import { ToastProvider } from "@/contexts/toast-context";
 import { ThemeProvider, useTheme } from "@/contexts/theme-context";
@@ -208,13 +209,16 @@ export default function RootLayout() {
       <ToastProvider>
         <AuthProvider>
           <GamificationProvider>
-            <OnboardingProvider>
-              <QuizProvider>
-                <TutorialProvider>
-                  <RootNavigation />
-                </TutorialProvider>
-              </QuizProvider>
-            </OnboardingProvider>
+            {/* Nằm trong AuthProvider vì lời gọi /vocabulary/glossary cần token. */}
+            <GlossaryProvider>
+              <OnboardingProvider>
+                <QuizProvider>
+                  <TutorialProvider>
+                    <RootNavigation />
+                  </TutorialProvider>
+                </QuizProvider>
+              </OnboardingProvider>
+            </GlossaryProvider>
           </GamificationProvider>
         </AuthProvider>
       </ToastProvider>

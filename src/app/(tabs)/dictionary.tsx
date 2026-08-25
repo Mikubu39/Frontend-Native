@@ -1,35 +1,103 @@
 /**
- * Dictionary Screen - My dictionary with Words/Phrases/History tabs.
+ * Sổ tay Từ điển — các từ người học đã thật sự gặp trong bài.
+ *
+ * Trước đây màn này đọc `MOCK_WORDS`/`MOCK_PHRASES`: sáu từ cứng, nghĩa ghi bằng
+ * TIẾNG ANH ("Sun", "Moon") trong một app dạy Nhật cho người Việt, và không liên
+ * quan gì tới việc người dùng đã học được gì. Giờ nó đọc `/vocabulary/learned`,
+ * tức đúng những từ đã mở khoá, kèm trạng thái ôn tập của từng từ.
  */
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+
 import { WordCard } from "@/components/dictionary/word-card";
-import { MOCK_WORDS, MOCK_PHRASES } from "@/data";
+import { vocabularyApi } from "@/services/api/vocabulary";
+import { useTheme } from "@/contexts/theme-context";
+import type { DictionaryEntry, VocabularyItem } from "@/types";
 import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 
-const TABS = ["Words", "Phrases", "History"] as const;
+const TABS = ["Tất cả", "Cần ôn", "Chữ cái"] as const;
+
+/** Ghép mục kho từ về hình dạng mà `WordCard` đã dùng sẵn. */
+function toEntry(item: VocabularyItem): DictionaryEntry {
+  return {
+    id: String(item.id),
+    kanji: item.surface,
+    romaji: item.romaji ?? "",
+    meaning: item.meaningVn,
+    audioUrl: item.audioUrl ?? undefined,
+  };
+}
 
 export default function DictionaryScreen() {
+  const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState(0);
+  const [items, setItems] = useState<VocabularyItem[]>([]);
+  const [dueCount, setDueCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const entries =
-    activeTab === 0 ? MOCK_WORDS : activeTab === 1 ? MOCK_PHRASES : [];
+  const load = useCallback(async () => {
+    try {
+      const res = await vocabularyApi.getLearned(100);
+      setItems(res.items);
+      setDueCount(res.dueCount);
+      setError(null);
+    } catch {
+      setError(
+        "Không tải được sổ tay. Kiểm tra kết nối rồi kéo xuống để thử lại.",
+      );
+    }
+  }, []);
+
+  // Theo TIÊU ĐIỂM chứ không theo vòng đời: sổ tay nằm trong `(tabs)` nên còn
+  // sống mãi sau lần mở đầu. Học xong một bài là có từ mới, ôn xong một phiên
+  // là cột "cần ôn" đổi — `useEffect` sẽ không bao giờ thấy những thay đổi đó.
+  useFocusEffect(
+    useCallback(() => {
+      load().finally(() => setLoading(false));
+    }, [load]),
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
+
+  const visible =
+    activeTab === 1
+      ? items.filter((i) => i.due)
+      : activeTab === 2
+        ? items.filter((i) => i.itemType === "KANA")
+        : items;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <View style={styles.headerRow}>
-        <Text style={styles.title}>My dictionary</Text>
-        <TouchableOpacity>
-          <Text style={styles.closeBtn}>✕</Text>
-        </TouchableOpacity>
+        <Text style={[styles.title, { color: colors.text }]}>
+          Sổ tay của tôi
+        </Text>
+        {dueCount > 0 ? (
+          <View style={styles.duePill}>
+            <Ionicons name="time-outline" size={14} color={Colors.warning} />
+            <Text style={styles.duePillText}>{dueCount} cần ôn</Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.tabs}>
@@ -43,6 +111,7 @@ export default function DictionaryScreen() {
             <Text
               style={[
                 styles.tabText,
+                { color: colors.textSecondary },
                 activeTab === index && styles.tabTextActive,
               ]}
             >
@@ -53,17 +122,32 @@ export default function DictionaryScreen() {
         ))}
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      >
-        {entries.map((entry) => (
-          <WordCard key={entry.id} entry={entry} />
-        ))}
-        {activeTab === 2 && (
-          <Text style={styles.emptyText}>No history yet</Text>
-        )}
-      </ScrollView>
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {visible.map((item) => (
+            <WordCard key={item.id} entry={toEntry(item)} />
+          ))}
+
+          {visible.length === 0 ? (
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              {error ??
+                (items.length === 0
+                  ? "Chưa có từ nào. Học một bài để mở khoá từ đầu tiên nhé!"
+                  : "Không có từ nào trong mục này.")}
+            </Text>
+          ) : null}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -71,58 +155,60 @@ export default function DictionaryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
     gap: Spacing.four,
-    paddingTop: Spacing.four,
   },
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
   headerRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: Spacing.six,
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.five,
+    paddingTop: Spacing.four,
   },
   title: {
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
   },
-  closeBtn: {
-    fontSize: FontSizes.xl,
-    color: Colors.textSecondary,
+  duePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: Colors.warning + "22",
+  },
+  duePillText: {
+    fontSize: FontSizes.xs,
+    fontWeight: FontWeights.bold,
+    color: Colors.warning,
   },
   tabs: {
     flexDirection: "row",
-    paddingHorizontal: Spacing.six,
-    gap: Spacing.seven,
+    paddingHorizontal: Spacing.five,
+    gap: Spacing.six,
   },
-  tabItem: {
-    alignItems: "center",
-    gap: Spacing.two,
-  },
+  tabItem: { paddingBottom: Spacing.two },
   tabText: {
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.medium,
-    color: Colors.textSecondary,
-  },
-  tabTextActive: {
-    color: Colors.textPrimary,
+    fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
   },
+  tabTextActive: { color: Colors.primary },
   tabUnderline: {
     height: 3,
-    width: "100%",
-    backgroundColor: Colors.secondary,
-    borderRadius: 14,
+    borderRadius: 2,
+    backgroundColor: Colors.primary,
+    marginTop: Spacing.two,
   },
   list: {
-    gap: Spacing.four,
-    paddingHorizontal: Spacing.four,
-    paddingBottom: 100,
+    paddingHorizontal: Spacing.five,
+    paddingBottom: Spacing.eight,
+    gap: Spacing.three,
   },
   emptyText: {
     textAlign: "center",
-    color: Colors.textSecondary,
+    marginTop: Spacing.eight,
     fontSize: FontSizes.md,
-    paddingTop: Spacing.eight,
+    lineHeight: 22,
   },
 });

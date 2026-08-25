@@ -17,6 +17,9 @@ import {
   Fonts,
 } from "@/constants/theme";
 import { DualText } from "@/components/ui/dual-text";
+import { JapaneseText } from "@/components/ui/japanese-text";
+import { QuestionPrompt } from "@/components/quiz/question-prompt";
+import { GlossaryLockdown } from "@/contexts/glossary-context";
 import { useAudio } from "@/hooks/use-audio";
 import { useTheme } from "@/contexts/theme-context";
 
@@ -45,8 +48,15 @@ export function VocabQuestionCard({
 
   return (
     <View style={styles.container}>
+      {/* Yêu cầu đứng trước đề bài: người học phải biết mình cần làm gì rồi
+          mới nhìn tới chữ trong bong bóng. */}
+      <QuestionPrompt
+        instruction={question.instruction}
+        isNew={question.isNew}
+      />
+
       {/* Mascot + bong bóng thoại - chỉ hiện khi có mascotSource được truyền vào.
-          Khi có, bong bóng đã hiện question.word rồi nên KHÔNG lặp lại chữ to
+          Khi có, bong bóng đã hiện question.prompt rồi nên KHÔNG lặp lại chữ to
           bên dưới nữa - giữ nguyên tính năng nhấn-giữ-xem-hint bằng cách gắn
           luôn vào bong bóng. */}
       {mascotSource ? (
@@ -57,7 +67,7 @@ export function VocabQuestionCard({
             loop
             style={styles.mascotLottie}
           />
-          {question.word ? (
+          {question.prompt ? (
             <Pressable
               onLongPress={() => setShowHint(true)}
               onPressOut={() => setShowHint(false)}
@@ -106,14 +116,32 @@ export function VocabQuestionCard({
                     },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.speechBubbleText,
-                      { color: isDark ? "#F9FAFB" : Colors.textPrimary },
-                    ]}
-                  >
-                    {question.word}
-                  </Text>
+                  {question.promptRomaji ? (
+                    <Text style={styles.speechBubbleRomaji}>
+                      {question.promptRomaji}
+                    </Text>
+                  ) : null}
+                  {/* Chữ Nhật thì cho tra nghĩa tại chỗ; chữ tiếng Việt (câu
+                      hỏi chiều ngược) không có gì để tra nên in thẳng. */}
+                  {question.promptLang === "vi" ? (
+                    <Text
+                      style={[
+                        styles.speechBubbleText,
+                        { color: isDark ? "#F9FAFB" : Colors.textPrimary },
+                      ]}
+                    >
+                      {question.prompt}
+                    </Text>
+                  ) : (
+                    <JapaneseText
+                      text={question.prompt ?? ""}
+                      glossary={question.glossary}
+                      style={{
+                        ...styles.speechBubbleText,
+                        color: isDark ? "#F9FAFB" : Colors.textPrimary,
+                      }}
+                    />
+                  )}
                 </View>
               </View>
             </Pressable>
@@ -140,7 +168,7 @@ export function VocabQuestionCard({
         </View>
       ) : null}
 
-      {!mascotSource && question.word ? (
+      {!mascotSource && question.prompt ? (
         <Pressable
           onLongPress={() => setShowHint(true)}
           onPressOut={() => setShowHint(false)}
@@ -166,7 +194,7 @@ export function VocabQuestionCard({
               </View>
             )}
             <DualText
-              text={question.word}
+              text={question.prompt ?? ""}
               hint={question.hint}
               glossary={question.glossary}
               mainStyle={{
@@ -178,68 +206,66 @@ export function VocabQuestionCard({
         </Pressable>
       ) : null}
 
-      <Text
-        style={[
-          styles.instruction,
-          { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary },
-        ]}
-      >
-        {question.instruction}
-      </Text>
-
-      <View style={styles.answers}>
-        {question.answers.map((answer) => {
-          const isSelected = selectedAnswer === answer.id;
-          return (
-            <AnimatedPressable
-              key={answer.id}
-              style={[
-                styles.answerCard,
-                {
-                  backgroundColor: isSelected ? selectedBg : cardBg,
-                  borderColor: isSelected ? selectedBorder : cardBorder,
-                },
-              ]}
-              onPress={() => onSelectAnswer(answer.id)}
-              pressScale={0.97}
-            >
-              <Text
+      {/* Tra được nghĩa của đáp án là biết luôn đáp án — khoá từ điển ở đây. */}
+      <GlossaryLockdown>
+        <View style={styles.answers}>
+          {question.answers.map((answer) => {
+            const isSelected = selectedAnswer === answer.id;
+            return (
+              <AnimatedPressable
+                key={answer.id}
+                // Nội dung đáp án có thể trùng chữ với phiên âm hiện trong bong
+                // bóng (câu 「あ」 có romaji "a" và cũng có đáp án "a"), nên test
+                // cần một mốc chọn được đúng thẻ đáp án.
+                testID={`answer-${answer.id}`}
                 style={[
-                  styles.answerText,
+                  styles.answerCard,
                   {
-                    color: isSelected
-                      ? isDark
-                        ? Colors.primaryLight
-                        : Colors.primaryDark
-                      : isDark
-                        ? "#F9FAFB"
-                        : Colors.textPrimary,
+                    backgroundColor: isSelected ? selectedBg : cardBg,
+                    borderColor: isSelected ? selectedBorder : cardBorder,
                   },
                 ]}
+                onPress={() => onSelectAnswer(answer.id)}
+                pressScale={0.97}
               >
-                {answer.text}
-              </Text>
-              {/* Đáp án viết bằng chữ Nhật thì người mới không đọc nổi, phải có
-                  phiên âm ngay dưới. Đáp án tiếng Việt không có romaji nên dòng
-                  này tự biến mất. */}
-              {answer.romaji ? (
                 <Text
                   style={[
-                    styles.answerRomaji,
+                    styles.answerText,
                     {
-                      color: isDark
-                        ? "rgba(255,255,255,0.45)"
-                        : Colors.textSecondary,
+                      color: isSelected
+                        ? isDark
+                          ? Colors.primaryLight
+                          : Colors.primaryDark
+                        : isDark
+                          ? "#F9FAFB"
+                          : Colors.textPrimary,
                     },
                   ]}
                 >
-                  {answer.romaji}
+                  {answer.text}
                 </Text>
-              ) : null}
-            </AnimatedPressable>
-          );
-        })}
-      </View>
+                {/* Đáp án viết bằng chữ Nhật thì người mới không đọc nổi, phải có
+                  phiên âm ngay dưới. Đáp án tiếng Việt không có romaji nên dòng
+                  này tự biến mất. */}
+                {answer.romaji ? (
+                  <Text
+                    style={[
+                      styles.answerRomaji,
+                      {
+                        color: isDark
+                          ? "rgba(255,255,255,0.45)"
+                          : Colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {answer.romaji}
+                  </Text>
+                ) : null}
+              </AnimatedPressable>
+            );
+          })}
+        </View>
+      </GlossaryLockdown>
     </View>
   );
 }
@@ -313,13 +339,11 @@ const styles = StyleSheet.create({
   audioRow: {
     alignSelf: "flex-end",
   },
-  instruction: {
+  speechBubbleRomaji: {
     fontSize: FontSizes.sm,
-    fontFamily: Fonts.rounded,
-    fontWeight: FontWeights.bold,
-    textAlign: "center",
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    fontWeight: FontWeights.medium,
+    color: Colors.textSecondary,
+    marginBottom: 2,
   },
   wordContainer: {
     position: "relative",

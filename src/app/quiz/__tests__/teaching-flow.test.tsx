@@ -120,7 +120,7 @@ describe("QuizScreen — dạy trước khi hỏi", () => {
     expect(await findByText("CHỮ MỚI 1/2")).toBeTruthy();
     expect(getByText("あ")).toBeTruthy();
     expect(getByText("a")).toBeTruthy();
-    expect(queryByText("Chữ 「あ」 đọc là gì?")).toBeNull();
+    expect(queryByText("Từ này nghĩa là gì?")).toBeNull();
 
     // Nghe được ngay khi thẻ hiện ra: đây là điểm hỏng người dùng báo lại
     // (nút loa không ra tiếng vì URL tương đối chưa được ghép base URL).
@@ -137,7 +137,10 @@ describe("QuizScreen — dạy trước khi hỏi", () => {
 
     // Hết thẻ thì nút đổi nhãn và mới vào phần luyện tập.
     fireEvent.press(getByText("BẮT ĐẦU LUYỆN TẬP"));
-    expect(await findByText("Chữ 「あ」 đọc là gì?")).toBeTruthy();
+    // Yêu cầu tách hẳn khỏi đề bài: dòng trên là "phải làm gì", bong bóng chỉ
+    // còn đúng chữ cần xử lý — không còn nguyên câu "Chữ 「あ」 đọc là gì?".
+    expect(await findByText("Từ này nghĩa là gì?")).toBeTruthy();
+    expect(getByText("あ")).toBeTruthy();
   });
 
   it("cho phép bỏ qua phần dạy để vào thẳng câu hỏi", async () => {
@@ -146,7 +149,7 @@ describe("QuizScreen — dạy trước khi hỏi", () => {
     expect(await findByText("CHỮ MỚI 1/2")).toBeTruthy();
     fireEvent.press(getByText("TÔI ĐÃ BIẾT — BỎ QUA"));
 
-    expect(await findByText("Chữ 「あ」 đọc là gì?")).toBeTruthy();
+    expect(await findByText("Từ này nghĩa là gì?")).toBeTruthy();
   });
 
   it("báo lỗi khi nộp bài thất bại thay vì im lặng nuốt mất kết quả", async () => {
@@ -155,20 +158,20 @@ describe("QuizScreen — dạy trước khi hỏi", () => {
     // gì để bấm tiếp.
     mockedApi.submitLesson.mockRejectedValue(new Error("Network Error"));
 
-    const { findByText, getByText } = await renderScreen();
+    const { findByText, getByText, getByTestId } = await renderScreen();
 
     expect(await findByText("CHỮ MỚI 1/2")).toBeTruthy();
     await fireEvent.press(getByText("TÔI ĐÃ BIẾT — BỎ QUA"));
 
     // Câu 1 → chọn đáp án đúng → KIỂM TRA → TIẾP TỤC.
-    expect(await findByText("Chữ 「あ」 đọc là gì?")).toBeTruthy();
-    await fireEvent.press(getByText("a"));
+    expect(await findByText("Từ này nghĩa là gì?")).toBeTruthy();
+    await fireEvent.press(getByTestId("answer-4"));
     await fireEvent.press(getByText("KIỂM TRA"));
     await fireEvent.press(await findByText("TIẾP TỤC"));
 
     // Câu 2 là câu cuối → nút đổi thành HOÀN THÀNH, bấm là gọi submit.
-    expect(await findByText("Chữ 「い」 đọc là gì?")).toBeTruthy();
-    await fireEvent.press(getByText("i"));
+    expect(await findByText("い")).toBeTruthy();
+    await fireEvent.press(getByTestId("answer-8"));
     await fireEvent.press(getByText("KIỂM TRA"));
     await fireEvent.press(await findByText("HOÀN THÀNH"));
 

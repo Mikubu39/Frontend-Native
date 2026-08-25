@@ -15,6 +15,7 @@ import {
 } from "@/constants/theme";
 import { JapaneseText } from "../ui/japanese-text";
 import { useTheme } from "@/contexts/theme-context";
+import { QuestionPrompt } from "@/components/quiz/question-prompt";
 
 interface FillBlankQuestionProps {
   question: FillBlankQuestion;
@@ -93,14 +94,10 @@ export function FillBlankQuestionCard({
 
   return (
     <View style={styles.container}>
-      <Text
-        style={[
-          styles.instruction,
-          { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary },
-        ]}
-      >
-        {question.instruction}
-      </Text>
+      <QuestionPrompt
+        instruction={question.instruction}
+        isNew={question.isNew}
+      />
 
       {renderSentence()}
 

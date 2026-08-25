@@ -152,6 +152,11 @@ export interface StartLessonQuestion {
   audioUrl?: string;
   imageUrl?: string;
   metadataJson?: any;
+  /**
+   * Từ trọng tâm của câu này người học chưa từng gặp → hiện nhãn "TỪ VỰNG MỚI".
+   * Server tính vì chỉ server biết lịch sử học của từng người.
+   */
+  isNew?: boolean;
   options: StartLessonOption[];
 }
 

@@ -1,4 +1,5 @@
 export * from "./quiz-header";
+export * from "./question-prompt";
 export * from "./vocab-question";
 export * from "./kana-question";
 export * from "./picture-question";

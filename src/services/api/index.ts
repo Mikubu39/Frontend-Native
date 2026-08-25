@@ -19,3 +19,4 @@ export { mistakesApi } from "./mistakes";
 export { conversationApi } from "./conversation";
 export { achievementsApi } from "./achievements";
 export { feedApi } from "./feed";
+export * from "./vocabulary";

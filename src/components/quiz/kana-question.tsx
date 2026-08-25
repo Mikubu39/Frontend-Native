@@ -18,6 +18,8 @@ import {
 } from "@/constants/theme";
 import type { KanaQuestion } from "@/types";
 import { useTheme } from "@/contexts/theme-context";
+import { QuestionPrompt } from "@/components/quiz/question-prompt";
+import { GlossaryLockdown } from "@/contexts/glossary-context";
 
 interface KanaQuestionProps {
   question: KanaQuestion;
@@ -88,14 +90,10 @@ export function KanaQuestionCard({
         { backgroundColor: cardBg, borderColor: cardBorder },
       ]}
     >
-      <Text
-        style={[
-          styles.instruction,
-          { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary },
-        ]}
-      >
-        {question.instruction}
-      </Text>
+      <QuestionPrompt
+        instruction={question.instruction}
+        isNew={question.isNew}
+      />
 
       {isListening ? (
         <View style={styles.audioRow}>
@@ -176,41 +174,44 @@ export function KanaQuestionCard({
       </Text>
 
       {/* Bank */}
-      <View style={styles.bankContainer}>
-        {bank.map((char, index) => {
-          const tileTextColor = isDark ? "#F9FAFB" : Colors.textPrimary;
-          const tileSubColor = isDark
-            ? "rgba(255,255,255,0.45)"
-            : Colors.textSecondary;
-          return (
-            <TouchableOpacity
-              key={`bank-${index}`}
-              style={[
-                styles.bankTile,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(255,255,255,0.08)"
-                    : colors.backgroundElement,
-                  borderColor: isDark
-                    ? "rgba(255,255,255,0.14)"
-                    : colors.border,
-                },
-              ]}
-              onPress={() => selectTile(char)}
-              activeOpacity={0.7}
-            >
-              {/* Thẻ rời là chữ Nhật trần; không có phiên âm thì người mới
+      {/* Các thẻ rời ghép lại chính là câu đáp án — khoá tra từ. */}
+      <GlossaryLockdown>
+        <View style={styles.bankContainer}>
+          {bank.map((char, index) => {
+            const tileTextColor = isDark ? "#F9FAFB" : Colors.textPrimary;
+            const tileSubColor = isDark
+              ? "rgba(255,255,255,0.45)"
+              : Colors.textSecondary;
+            return (
+              <TouchableOpacity
+                key={`bank-${index}`}
+                style={[
+                  styles.bankTile,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255,255,255,0.08)"
+                      : colors.backgroundElement,
+                    borderColor: isDark
+                      ? "rgba(255,255,255,0.14)"
+                      : colors.border,
+                  },
+                ]}
+                onPress={() => selectTile(char)}
+                activeOpacity={0.7}
+              >
+                {/* Thẻ rời là chữ Nhật trần; không có phiên âm thì người mới
                   không đọc được thẻ nào để mà xếp thành câu. */}
-              <DualText
-                text={char}
-                hint={question.blockRomaji?.[char]}
-                mainStyle={{ ...styles.bankTileText, color: tileTextColor }}
-                subStyle={{ ...styles.bankTileSubText, color: tileSubColor }}
-              />
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                <DualText
+                  text={char}
+                  hint={question.blockRomaji?.[char]}
+                  mainStyle={{ ...styles.bankTileText, color: tileTextColor }}
+                  subStyle={{ ...styles.bankTileSubText, color: tileSubColor }}
+                />
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </GlossaryLockdown>
     </View>
   );
 }

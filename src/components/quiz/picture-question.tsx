@@ -20,6 +20,7 @@ import type { PictureQuestion } from "@/types";
 import { DualText } from "@/components/ui/dual-text";
 import { useTheme } from "@/contexts/theme-context";
 import { Ionicons } from "@expo/vector-icons";
+import { QuestionPrompt } from "@/components/quiz/question-prompt";
 
 interface PictureQuestionProps {
   question: PictureQuestion;
@@ -53,14 +54,10 @@ export function PictureQuestionCard({
         { backgroundColor: cardBg, borderColor: cardBorder },
       ]}
     >
-      <Text
-        style={[
-          styles.instruction,
-          { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary },
-        ]}
-      >
-        {question.instruction}
-      </Text>
+      <QuestionPrompt
+        instruction={question.instruction}
+        isNew={question.isNew}
+      />
 
       <View style={styles.audioRow}>
         {/* Không có file thì không vẽ nút loa: một cái loa bấm vào không kêu

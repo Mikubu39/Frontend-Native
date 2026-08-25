@@ -3,3 +3,8 @@ export { GamificationProvider, useGamification } from "./gamification-context";
 export { ToastProvider, useToast } from "./toast-context";
 export { ThemeProvider, useTheme } from "./theme-context";
 export { TutorialProvider, useTutorial } from "./tutorial-context";
+export {
+  GlossaryProvider,
+  useGlossary,
+  GlossaryLockdown,
+} from "./glossary-context";

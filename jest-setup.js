@@ -64,4 +64,10 @@ jest.mock("expo-speech-recognition", () => ({
 // resolve after that window, which triggers spurious "not configured to
 // support act()" warnings. Keeping the flag on for the whole test run is
 // the fix recommended by React/RTL for this scenario.
+
+// AsyncStorage là native module nên trong jest nó là null. Thư viện có sẵn mock
+// chính thức (lưu trong bộ nhớ), dùng nó thay vì tự viết giả.
+jest.mock("@react-native-async-storage/async-storage", () =>
+  require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
+);
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;

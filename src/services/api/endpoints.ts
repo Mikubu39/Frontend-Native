@@ -76,6 +76,16 @@ export const API_ENDPOINTS = {
     ADMIN_CREATE: "/api/v1/admin/alphabets",
     ADMIN_BULK_CREATE: "/api/v1/admin/alphabets/bulk",
   },
+  VOCABULARY: {
+    /** Từ đã tới hạn ôn hôm nay. */
+    DUE: "/api/v1/vocabulary/due",
+    /** Sổ tay: các từ đã gặp ít nhất một lần. */
+    LEARNED: "/api/v1/vocabulary/learned",
+    /** Toàn bộ kho từ, để client cache làm từ điển tra tại chỗ. */
+    GLOSSARY: "/api/v1/vocabulary/glossary",
+    /** Nộp kết quả phiên ôn -> server áp SM-2. */
+    REVIEW_SUBMIT: "/api/v1/vocabulary/review/submit",
+  },
   MISTAKES: {
     SUMMARY: "/api/v1/reviews/mistakes/summary",
     START: "/api/v1/reviews/mistakes/start",

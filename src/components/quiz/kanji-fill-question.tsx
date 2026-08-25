@@ -14,6 +14,7 @@ import {
 } from "@/constants/theme";
 import type { KanjiFillQuestion } from "@/types";
 import { JapaneseText } from "../ui/japanese-text";
+import { QuestionPrompt } from "@/components/quiz/question-prompt";
 
 interface KanjiFillQuestionProps {
   question: KanjiFillQuestion;
@@ -112,7 +113,10 @@ export function KanjiFillQuestionCard({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.instruction}>{question.instruction}</Text>
+      <QuestionPrompt
+        instruction={question.instruction}
+        isNew={question.isNew}
+      />
 
       <View style={styles.sentenceWrapper}>{renderSentence()}</View>
 

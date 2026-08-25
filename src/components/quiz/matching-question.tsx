@@ -10,6 +10,7 @@ import {
   Spacing,
   Fonts,
 } from "@/constants/theme";
+import { QuestionPrompt } from "@/components/quiz/question-prompt";
 
 interface MatchingQuestionProps {
   question: MatchingQuestion;
@@ -62,7 +63,10 @@ export function MatchingQuestionCard({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.instruction}>{question.instruction}</Text>
+      <QuestionPrompt
+        instruction={question.instruction}
+        isNew={question.isNew}
+      />
 
       <View style={styles.columns}>
         <View style={styles.column}>

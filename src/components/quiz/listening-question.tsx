@@ -17,6 +17,8 @@ import {
 } from "@/constants/theme";
 import { useAudio } from "@/hooks/use-audio";
 import { useTheme } from "@/contexts/theme-context";
+import { QuestionPrompt } from "@/components/quiz/question-prompt";
+import { GlossaryLockdown } from "@/contexts/glossary-context";
 
 interface ListeningQuestionProps {
   question: ListeningQuestion;
@@ -42,14 +44,10 @@ export function ListeningQuestionCard({
 
   return (
     <View style={styles.container}>
-      <Text
-        style={[
-          styles.instruction,
-          { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary },
-        ]}
-      >
-        {question.instruction}
-      </Text>
+      <QuestionPrompt
+        instruction={question.instruction}
+        isNew={question.isNew}
+      />
 
       {/* Audio player */}
       <View
@@ -81,58 +79,61 @@ export function ListeningQuestionCard({
         </Text>
       </View>
 
-      <View style={styles.answers}>
-        {question.answers.map((answer) => {
-          const isSelected = selectedAnswer === answer.id;
-          return (
-            <AnimatedPressable
-              key={answer.id}
-              style={[
-                styles.answerCard,
-                {
-                  backgroundColor: isSelected ? selectedBg : cardBg,
-                  borderColor: isSelected ? Colors.primary : cardBorder,
-                },
-              ]}
-              onPress={() => onSelectAnswer(answer.id)}
-              pressScale={0.97}
-            >
-              <Text
+      {/* Đáp án là chính từ đang được hỏi — tra nghĩa ở đây là lộ bài. */}
+      <GlossaryLockdown>
+        <View style={styles.answers}>
+          {question.answers.map((answer) => {
+            const isSelected = selectedAnswer === answer.id;
+            return (
+              <AnimatedPressable
+                key={answer.id}
                 style={[
-                  styles.answerText,
+                  styles.answerCard,
                   {
-                    color: isSelected
-                      ? isDark
-                        ? Colors.primaryLight
-                        : Colors.primaryDark
-                      : isDark
-                        ? "#F9FAFB"
-                        : Colors.textPrimary,
+                    backgroundColor: isSelected ? selectedBg : cardBg,
+                    borderColor: isSelected ? Colors.primary : cardBorder,
                   },
                 ]}
+                onPress={() => onSelectAnswer(answer.id)}
+                pressScale={0.97}
               >
-                {answer.text}
-              </Text>
-              {/* Câu nghe thì đáp án luôn là chữ Nhật — không có phiên âm bên
-                  dưới thì người mới chỉ nhìn thấy 4 hình vẽ lạ như nhau. */}
-              {answer.romaji ? (
                 <Text
                   style={[
-                    styles.answerRomaji,
+                    styles.answerText,
                     {
-                      color: isDark
-                        ? "rgba(255,255,255,0.45)"
-                        : Colors.textSecondary,
+                      color: isSelected
+                        ? isDark
+                          ? Colors.primaryLight
+                          : Colors.primaryDark
+                        : isDark
+                          ? "#F9FAFB"
+                          : Colors.textPrimary,
                     },
                   ]}
                 >
-                  {answer.romaji}
+                  {answer.text}
                 </Text>
-              ) : null}
-            </AnimatedPressable>
-          );
-        })}
-      </View>
+                {/* Câu nghe thì đáp án luôn là chữ Nhật — không có phiên âm bên
+                  dưới thì người mới chỉ nhìn thấy 4 hình vẽ lạ như nhau. */}
+                {answer.romaji ? (
+                  <Text
+                    style={[
+                      styles.answerRomaji,
+                      {
+                        color: isDark
+                          ? "rgba(255,255,255,0.45)"
+                          : Colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {answer.romaji}
+                  </Text>
+                ) : null}
+              </AnimatedPressable>
+            );
+          })}
+        </View>
+      </GlossaryLockdown>
     </View>
   );
 }

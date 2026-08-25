@@ -12,6 +12,7 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
 2. Sửa 3 lỗi chặn buổi demo với giáo viên: (a) bài học hỏi ngay chữ chưa dạy, (b) bản đồ lộ trình giật trên emulator, (c) nút loa không ra tiếng.
 3. Onboarding người dùng mới: tour hướng dẫn coach-mark có linh vật Lottie dẫn đường trên màn Học.
 3. **Chuyển hệ AI hội thoại sang LLM (Gemini)**: trò chuyện theo chủ đề, phiên 5 phút, hết giờ tổng kết lỗi + cách sửa ngữ pháp + cách nói tự nhiên.
+4. **Ôn tập ngắt quãng (SRS) + tra từ toàn cục** — người học được hỏi lại kiến thức cũ đúng lúc sắp quên; mọi chữ Nhật trên màn hình đều bấm-giữ ra nghĩa; đề bài tách khỏi yêu cầu (yêu cầu ở trên, chỉ chữ Nhật trong bong bóng) + nhãn "TỪ VỰNG MỚI".
 
 ## Plan
 
@@ -24,6 +25,15 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
   - Quiz: `kana/listening/picture/speaking/vocab-question.tsx`, `audio-button.tsx`, `dual-text.tsx`, `japanese-text.tsx`, `quiz-mapper.ts`, `lesson-intro.ts`, `types/quiz.ts`.
 
 - [x] Tour hướng dẫn lần đầu (coach-mark + linh vật) trên màn Học — HOÀN TẤT 2026-08-25 (xem Progress).
+
+- [ ] **SRS + tra từ + bố cục câu hỏi (bắt đầu 2026-08-25)** — user đã cấp quyền sửa `BE_NihongoApp`.
+  - [x] A1. `quiz-mapper.ts`: đọc `metadata_json.kana`/`.jp` làm nội dung đề bài, BỎ hack cắt chuỗi theo dấu `:`.
+  - [x] A2. `components/quiz/question-prompt.tsx` dùng chung: nhãn "TỪ VỰNG MỚI" + yêu cầu ở TRÊN, ngoài bong bóng.
+  - [x] A3. Áp bố cục mới cho cả 9 component quiz.
+  - [ ] A4. Truyền `glossary` xuống đủ 9 component (đang chỉ 3) + `JapaneseText` ở mọi chỗ có chữ Nhật.
+  - [x] B1. BE: bảng `vocabulary` + `question_vocabulary` + `user_vocabulary_progress`, seed từ `metadata_json.glossary`.
+  - [x] B2. BE: `Sm2Scheduler` + `GET /vocabulary/due` + `/learned` + `/glossary`.
+  - [x] B3. FE: màn ôn tập theo `due`, nối `dictionary.tsx` vào `/learned`, badge "N từ đến hạn", `GlossaryProvider`, cờ `isNew`.
 
 ## Progress
 
@@ -77,6 +87,45 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
   - KHÔNG đụng tới: `more-bottom-sheet.tsx` (vốn đã không spring), và các màn ăn mừng/thưởng (`chest-terminus`, `quiz-result-card`, `streak-extended`, `reward.tsx`) — nảy ở đó là cố ý; cũng không đụng animation vào màn của onboarding/quiz vì đó là chuyển màn chứ không phải popup.
   - Verify: `tsc --noEmit` 0 lỗi, `jest` 19 suites/108 tests pass, `eslint` 0 error.
 
+- **2026-08-25 — Tách YÊU CẦU khỏi ĐỀ BÀI trong câu hỏi + tra từ đúng chỗ (A1-A3).** User báo: bong bóng linh vật hiện nguyên cả câu tiếng Việt, và "chỉ vài câu" bấm giữ ra nghĩa được.
+  - **Nguyên nhân:** `quiz-mapper.ts` đọc `question_text` rồi CẮT CHUỖI theo dấu hai chấm để moi phần chữ Nhật. Đã query DB thật (`docker exec be_nihongoapp-db-1 mysql ...`, 1592 câu): mẫu phổ biến nhất là `「こんにちは」 (konnichiwa) nghĩa là gì?` — KHÔNG có dấu hai chấm, nên nguyên câu tiếng Việt nhảy vào bong bóng.
+  - **Dữ liệu backend vốn đã tách sẵn** trong `metadata_json`, chỉ là FE không đọc: `kana` (803 câu, mức từ), `jp` (484 câu, mức câu), `vn`, `romaji`, `glossary` (**1592/1592 câu đều có**). File `gemini-code-1785320053033.sql` ở gốc repo FE là seed CŨ toàn romaji, KHÔNG khớp DB sống — đừng dùng nó để suy luận.
+  - **Bẫy đã tránh:** không được in bừa `kana`/`jp`. Ở `TRANSLATE_TO_JP` và `LISTEN_AND_ARRANGE` thì chính `kana`/`jp` là ĐÁP ÁN — in ra là phát đáp án. Bảng chiều câu hỏi ghi trong comment ở `quiz-mapper.ts`. Có 2 test riêng canh việc này.
+  - `BaseQuestion` thêm `prompt` / `promptRomaji` / `promptLang` / `isNew` — khái niệm "đề bài" giờ dùng chung cho cả 9 loại thay vì mỗi loại một kiểu.
+  - `components/quiz/question-prompt.tsx` (MỚI): nhãn "TỪ VỰNG MỚI" + yêu cầu, chữ to đậm ở TRÊN CÙNG. Đã thay vào cả 9 component (trước đó cả 9 đều đặt yêu cầu ở DƯỚI bong bóng bằng chữ xám nhỏ).
+  - Bong bóng giờ dùng `JapaneseText` → bấm giữ ra nghĩa. Đo trên DB: **698/698 câu có `kana` đều có mục glossary khớp** (555 TRANSLATE_TO_VN + 143 SELECT_IMAGE), tức tra từ ở đề bài phủ 100% chứ không còn "vài câu".
+  - Sửa luôn `japanese-text.tsx` không theo dark mode (tooltip nền `#FFFFFF` cứng, trái ràng buộc PRODUCT.md).
+  - Thêm `testID={`answer-${id}`}` cho thẻ đáp án của `vocab-question` — romaji trong bong bóng có thể trùng chữ với đáp án (câu 「あ」 romaji "a", đáp án cũng "a") làm `getByText` mơ hồ.
+  - **CHƯA làm:** 4 loại `matching`/`flashcard`/`fill-blank`/`kanji-fill` KHÔNG được mapper sinh ra (BE chỉ có 6 loại → map thành picture/listening/kana/speaking/vocab). Chúng là UI chết với dữ liệu thật.
+  - Verify: `tsc --noEmit` 0 lỗi, `jest` 20 suites/114 tests pass (thêm `src/utils/__tests__/quiz-mapper-prompt.test.ts` 6 test), `eslint` 0 error.
+  - **CHƯA làm / cần user tự kiểm:** chưa nhìn trên emulator.
+
+- **2026-08-25 — BE: kho từ vựng + ôn tập ngắt quãng SM-2 (B1-B2). User đã cấp quyền sửa `BE_NihongoApp`.**
+  - `V40__create_vocabulary_and_srs.sql`: 3 bảng `vocabulary` / `question_vocabulary` / `user_vocabulary_progress`. Flyway đã áp thật lên DB docker (v39 -> v40, 2.18s).
+  - **Seed KHÔNG phải nhập tay:** bóc thẳng từ `metadata_json.glossary` có sẵn bằng `JSON_TABLE` — 5307 cặp (câu, từ) -> **467 từ** + 208 kana từ bảng `characters` = **675 từ**. `question_vocabulary` có 3247 liên kết trọng tâm, phủ **1592/1592 câu hỏi**.
+  - **BẪY COLLATION (mất 2 lần chạy lại):** schema mặc định `utf8mb4_unicode_ci` coi `'おちゃ' = 'オチャ'` là TRUE (kana-insensitive) và bỏ qua dakuten. Làm UNIQUE KEY gộp nhầm và JOIN sinh duplicate PK. Phải `COLLATE utf8mb4_bin` cho `vocabulary.surface`, cho cả cột của `JSON_TABLE`, và cho mọi phép so sánh với chuỗi rút từ JSON. V36 đã vấp đúng lỗi này với `characters.symbol` — **nhớ mặc định mọi cột định danh chữ Nhật đều phải là utf8mb4_bin**.
+  - `Sm2Scheduler.java`: SM-2 thuần Java, không thư viện. Hai điểm sửa so với bản gốc: (a) đơn vị **PHÚT** không phải ngày, có learning steps 10 phút -> 1 ngày -> 6 ngày -> nhân hệ số, để từ mới quay lại NGAY trong cùng phiên; (b) không có điểm tự chấm 0-5 nên `q` suy từ đúng/sai (4/1). CHỌN SM-2 CHỨ KHÔNG PHẢI HLR của Duolingo vì HLR cần ~13 triệu lượt học để train — cold-start. Thay riêng lớp này khi log đủ lớn, phần còn lại không phải đụng.
+  - **Chốt chống cày lịch ôn** (trong `VocabularyServiceImpl`): trả lời ĐÚNG khi từ CHƯA tới hạn thì ghi nhận `total_correct` nhưng KHÔNG đẩy `next_due_at`. Không có chốt này, làm lại một bài 5 lần trong một buổi là khoảng cách văng ra vài tháng. Sai thì LUÔN áp. Đã verify bằng curl thật: nộp lại ngay lập tức -> `total_correct` 1->2 nhưng `repetitions`/`interval_minutes` đứng yên.
+  - Đơn vị theo dõi là **TỪ**, không phải CÂU HỎI (khác `MistakeService`) — cùng một từ gặp ở nhiều bài đều cộng dồn vào một lịch. Chỉ từ `is_target` mới đẩy lịch; từ phụ trợ chỉ để tra nghĩa.
+  - API mới: `GET /api/v1/vocabulary/due|learned|glossary`. Verify end-to-end bằng curl với tài khoản thật: `/glossary` trả 675 từ đúng chữ Nhật + nghĩa tiếng Việt; học 1 bài 10 câu -> 5 từ vào sổ tay, lịch hẹn đúng 10 phút.
+  - **`CoinQuestChestIntegrationTest` ĐỎ SẴN TỪ TRƯỚC** (`coinsEarned` 12 vs 4) — đã xác minh bằng `git stash` phần sửa của mình rồi chạy lại: vẫn đỏ y hệt. KHÔNG phải do thay đổi này (test đó nộp bài không kèm `answers` nên code mới còn không chạy). Chưa sửa, nằm ngoài phạm vi.
+  - Verify: `mvnw test` 147 tests, chỉ còn đúng lỗi đỏ sẵn nói trên. `Sm2SchedulerTest` 6/6 pass, `LessonAttemptServiceImplTest` 34/34 pass.
+  - **CHƯA làm (B3):** FE chưa dùng các API này — màn ôn tập theo `due`, nối `dictionary.tsx` vào `/learned`, badge "N từ đến hạn", `GlossaryProvider` cache `/glossary` để tra từ toàn cục, và cờ `isNew` cho nhãn "TỪ VỰNG MỚI" chưa nối từ BE xuống.
+
+- **2026-08-25 — FE nối vào SRS + tra từ toàn cục (B3). HOÀN TẤT cả chuỗi A1-B3.**
+  - `contexts/glossary-context.tsx` (MỚI): tải MỘT lần `/vocabulary/glossary` (675 từ) rồi giữ trong bộ nhớ, cache bằng **`AsyncStorage`** — KHÔNG dùng `@/services/storage` vì cái đó chạy trên `expo-secure-store`, giới hạn ~2KB mỗi giá trị trên Android, kho từ sẽ bị cắt cụt âm thầm. Đọc cache trước rồi mới gọi mạng, nên tra từ dùng được cả khi offline.
+  - Đã **XOÁ bảng `DICTIONARY` cứng 18 từ** trong `japanese-text.tsx`. Thứ tự ưu tiên giờ là: glossary riêng của câu > kho toàn cục.
+  - **`GlossaryLockdown`** — chốt chống lộ đáp án. Ở câu "Đâu là 「trà」?" mà bấm giữ được vào đáp án `おちゃ` là đọc thẳng ra đáp án. Đã bọc vùng đáp án của `vocab` / `listening` / `kana` (thẻ rời ghép lại chính là câu đáp án). Đề bài thì tra thoải mái.
+  - `app/review/vocabulary.tsx` (MỚI): phiên ôn dựng từ `/due`. Đề = mặt chữ Nhật + 4 nghĩa, 3 nghĩa nhiễu lấy từ kho đã cache (không phải soạn tay câu hỏi cho 675 từ). CỐ Ý không dùng `JapaneseText` cho từ đang hỏi — tra được nghĩa thì còn gì để ôn.
+  - `(tabs)/review.tsx`: thêm thẻ "Ôn tập từ vựng" đứng ĐẦU + badge "N từ".
+  - `(tabs)/dictionary.tsx`: **viết lại**, bỏ `MOCK_WORDS`/`MOCK_PHRASES` (6 từ cứng, nghĩa ghi bằng TIẾNG ANH trong app Việt-Nhật), đọc `/vocabulary/learned`. 3 tab: Tất cả / Cần ôn / Chữ cái, có pull-to-refresh.
+  - BE thêm `POST /api/v1/vocabulary/review/submit` — không có nó thì phiên ôn không đẩy được lịch, SRS chỉ tiến khi học bài mới. KHÔNG áp chốt "chưa tới hạn" ở đây (khác `recordFromAnswers`): phiên ôn vốn chỉ gồm từ đã tới hạn, và người học chủ động vào ôn thì kết quả phải được tính.
+  - BE thêm `isNew` vào `StartLessonQuestion` (`VocabularyService.resolveNewQuestions`) → FE gắn nhãn "TỪ VỰNG MỚI". "Mới" = còn ÍT NHẤT MỘT từ trọng tâm chưa gặp.
+  - `jest-setup.js`: thêm mock chính thức của AsyncStorage — native module là null trong jest, thiếu mock là **mọi** suite chạm tới provider đều đỏ.
+  - **Verify end-to-end thật (không phải mock):** học 1 bài -> 5 từ hẹn 10 phút -> 25 phút sau `/due` trả đúng 5 từ -> nộp phiên ôn 1 đúng/1 sai -> 「おはよう」 giãn `10 phút -> 1 ngày` giữ hệ số 2.5; 「おはようございます」 về `10 phút` và hệ số tụt **2.5 -> 1.96** (tự đánh dấu là từ khó). `remainingDue` trả về 3.
+  - Verify: FE `tsc` 0 lỗi, `jest` **21 suites/118 tests pass** (thêm `review/__tests__/vocabulary-review.test.tsx` 4 test), `eslint` 0 error. BE `mvnw test` 147 tests, chỉ còn `CoinQuestChestIntegrationTest` đỏ sẵn từ trước (đã xác minh bằng git stash).
+  - **CHƯA làm / cần user tự kiểm:** chưa nhìn trên emulator. `GlossaryLockdown` hiện khoá đáp án VĨNH VIỄN trong câu hỏi — sau khi trả lời xong đáng lẽ nên mở khoá để người học tra hiểu vì sao mình sai, nhưng component câu hỏi chưa nhận prop "đã chấm" nào để biết lúc nào mở.
+
 ## Blockers
 
 - **BE-4 mới chặn được một nửa** — server chấm lại từ đáp án client gửi nhưng chưa lưu bộ đề của lượt làm bài, nên chưa khẳng định được "đã trả lời đủ".
@@ -87,6 +136,8 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
 - Toàn bộ quyết định kiến trúc/UI/thuật toán trước 2026-08-24 (theme, tab bar, leaderboard, shop, quests, stroke-order, FSM hội thoại, TF-IDF vs LLM, v.v.) nằm trong `.state/archive/session_state_2026-08-24.md`.
 
 ## Next Steps
+
+- [ ] **Trung tâm ôn tập là khu tự học, tách khỏi bản đồ bài học (bắt đầu 2026-08-25).** Đã xác nhận bằng graph: `VocabularyReviewScreen` chỉ gọi `vocabularyApi.getDue`/`submitReview`, còn tiến độ bản đồ chỉ đi qua `lessonAttemptApi.submitLesson` từ quiz. Cần bỏ thẻ “Thử thách thời gian” đang ép `lessonId=lp1`, vì nó khiến một hoạt động tự học chạy thuật toán hoàn tất bài học của node `lp1`; giữ các luồng ôn độc lập hiện có và thêm regression test cho điều này.
 
 - **Chạy thử tính năng hội thoại TRÊN EMULATOR** (backend đã nghiệm thu bằng HTTP, nhưng chưa ai bấm thử trong app thật): `cd ai-service && PYTHONPATH=src .venv/Scripts/python.exe -m uvicorn nihongo_ai.api:app --port 8000` rồi mở app. Cần mắt người kiểm: đồng hồ đếm ngược, thẻ góp ý dưới bong bóng người học, màn tổng kết sau 5 phút, và ô nhập chủ đề tự do.
 - Cân nhắc: AI xưng "em" với người học trong bản tổng kết (giọng giáo viên). Nếu muốn đổi cách xưng hô thì sửa `summary_system()` trong `ai-service/src/nihongo_ai/prompts.py`.

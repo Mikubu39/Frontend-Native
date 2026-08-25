@@ -20,3 +20,4 @@ export * from "./gamification";
 export * from "./toast";
 export * from "./theme";
 export * from "./tutorial";
+export * from "./vocabulary";

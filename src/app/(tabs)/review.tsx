@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SpotlightTarget } from "@/components/tutorial";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useTheme } from "@/contexts/theme-context";
+import { vocabularyApi } from "@/services/api/vocabulary";
 import { useTutorial } from "@/contexts/tutorial-context";
 import { StaggeredList } from "@/components/ui/staggered-list";
 import {
@@ -42,18 +43,42 @@ export default function PracticeHubScreen() {
   const scrollYRef = React.useRef(0);
   const [mistakeCount, setMistakeCount] = React.useState<number>(0);
   const [loading, setLoading] = React.useState<boolean>(true);
+  /** Số từ tới hạn ôn hôm nay — số này mới là thứ dẫn người học quay lại. */
+  const [dueCount, setDueCount] = React.useState<number>(0);
 
-  React.useEffect(() => {
-    import("@/services/api/mistakes").then(({ mistakesApi }) => {
-      mistakesApi
-        .getSummary()
-        .then((res) => {
-          setMistakeCount(res.activeCount);
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
-    });
-  }, []);
+  // Đọc lại MỖI LẦN màn này được tiêu điểm, không phải một lần lúc mount.
+  //
+  // Cả hai con số đều thay đổi ngay bên trong app: ôn xong một phiên là số từ
+  // tới hạn tụt xuống, làm xong một bài là số lỗi sai đổi. Màn này nằm trong
+  // `(tabs)` nên một khi đã mở là còn sống mãi — dùng `useEffect` thì người
+  // học ôn xong quay về vẫn thấy y nguyên con số cũ.
+  useFocusEffect(
+    React.useCallback(() => {
+      let cancelled = false;
+
+      // Hỏng thì để 0 chứ không chặn cả màn hình: các mục luyện tập khác vẫn
+      // phải bấm được.
+      vocabularyApi
+        .getDue(1)
+        .then((res) => !cancelled && setDueCount(res.dueCount))
+        .catch(() => !cancelled && setDueCount(0));
+
+      import("@/services/api/mistakes").then(({ mistakesApi }) => {
+        mistakesApi
+          .getSummary()
+          .then((res) => {
+            if (cancelled) return;
+            setMistakeCount(res.activeCount);
+            setLoading(false);
+          })
+          .catch(() => !cancelled && setLoading(false));
+      });
+
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
 
   /*
    * Tour hướng dẫn chiếu tới cả những thẻ nằm dưới nếp gấp. Màn hình tự nhận
@@ -77,6 +102,18 @@ export default function PracticeHubScreen() {
   );
 
   const primaryItems: PracticeItem[] = [
+    {
+      id: "p0",
+      title: "Ôn tập từ vựng",
+      description:
+        dueCount > 0
+          ? "Có từ sắp quên — ôn lại ngay để nhớ lâu."
+          : "Chưa có từ nào tới hạn. Học bài mới để mở thêm từ nhé!",
+      icon: "time-outline",
+      route: "/review/vocabulary",
+      badge: loading ? "..." : dueCount > 0 ? `${dueCount} từ` : undefined,
+      color: "#F59E0B",
+    },
     {
       id: "p1",
       tutorialTarget: "review-mistakes",
@@ -113,14 +150,6 @@ export default function PracticeHubScreen() {
   ];
 
   const additionalItems: PracticeItem[] = [
-    {
-      id: "p4",
-      title: "Thử thách thời gian",
-      description: "Luyện phản xạ nhanh để giành thêm Đá quý.",
-      icon: "flash-outline",
-      route: "/quiz/ready?lessonId=lp1",
-      color: Colors.accent,
-    },
     {
       id: "p5",
       title: "Luyện phát âm chuyên sâu",
@@ -243,7 +272,7 @@ export default function PracticeHubScreen() {
           entering={FadeIn.delay(300).duration(400)}
           style={[styles.sectionTitle, { marginTop: Spacing.four }]}
         >
-          Các hoạt động ôn tập
+          Hoạt động tự học
         </Animated.Text>
         <SpotlightTarget targetId="review-extra">
           <StaggeredList staggerDelay={80} initialDelay={400}>

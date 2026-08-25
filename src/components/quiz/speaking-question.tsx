@@ -19,6 +19,7 @@ import {
 import { JapaneseText } from "../ui/japanese-text";
 import { AudioButton } from "@/components/ui/audio-button";
 import { useAudio } from "@/hooks/use-audio";
+import { QuestionPrompt } from "@/components/quiz/question-prompt";
 
 interface SpeakingQuestionProps {
   question: SpeakingQuestion;
@@ -64,7 +65,10 @@ export function SpeakingQuestionCard({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.instruction}>{question.instruction}</Text>
+      <QuestionPrompt
+        instruction={question.instruction}
+        isNew={question.isNew}
+      />
 
       <View style={styles.textContainer}>
         <JapaneseText

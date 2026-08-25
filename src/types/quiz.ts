@@ -44,7 +44,28 @@ export interface QuizAnswer {
 export interface BaseQuestion {
   id: string;
   type: QuizType;
+  /**
+   * YÊU CẦU của câu hỏi ("Từ này nghĩa là gì?"). Hiện ở TRÊN CÙNG, bên ngoài
+   * bong bóng thoại — không được trộn chung với `prompt`.
+   */
   instruction: string;
+  /**
+   * NỘI DUNG đề bài, thứ duy nhất được in trong bong bóng của linh vật.
+   *
+   * Tách khỏi `instruction` vì hai thứ này đọc theo hai vai khác nhau: yêu cầu
+   * là lời người ra đề, còn đề bài là thứ người học phải xử lý. Gộp chung thì
+   * bong bóng hiện ra cả câu "「こんにちは」 (konnichiwa) nghĩa là gì?".
+   */
+  prompt?: string;
+  /** Phiên âm của `prompt`; chỉ có nghĩa khi `promptLang === "ja"`. */
+  promptRomaji?: string;
+  /**
+   * `prompt` đang là tiếng Nhật hay tiếng Việt. Quyết định có bật tra từ
+   * (bấm giữ ra nghĩa) hay không — chữ tiếng Việt thì không có gì để tra.
+   */
+  promptLang?: "ja" | "vi";
+  /** Người học chưa từng gặp từ này → hiện nhãn "TỪ VỰNG MỚI". */
+  isNew?: boolean;
   hint?: string;
   originalOptions?: any[];
   glossary?: Glossary;

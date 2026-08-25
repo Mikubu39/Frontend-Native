@@ -22,6 +22,7 @@ import { AudioButton } from "@/components/ui/audio-button";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/contexts/theme-context";
 import { Ionicons } from "@expo/vector-icons";
+import { QuestionPrompt } from "@/components/quiz/question-prompt";
 
 interface FlashcardQuestionProps {
   question: FlashcardQuestion;
@@ -70,14 +71,10 @@ export function FlashcardQuestionCard({
 
   return (
     <View style={styles.container}>
-      <Text
-        style={[
-          styles.instruction,
-          { color: isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary },
-        ]}
-      >
-        {question.instruction}
-      </Text>
+      <QuestionPrompt
+        instruction={question.instruction}
+        isNew={question.isNew}
+      />
 
       <TouchableOpacity
         activeOpacity={0.9}

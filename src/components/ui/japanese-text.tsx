@@ -17,6 +17,8 @@ import {
   Shadows,
 } from "@/constants/theme";
 import * as Haptics from "expo-haptics";
+import { useTheme } from "@/contexts/theme-context";
+import { useGlossary, useGlossaryLockdown } from "@/contexts/glossary-context";
 
 interface JapaneseTextProps {
   text: string;
@@ -24,10 +26,9 @@ interface JapaneseTextProps {
   /**
    * Từ điển của riêng câu hỏi đang hiện, do backend gửi kèm.
    *
-   * Người học chưa biết một chữ tiếng Nhật nào, nên phải chạm được vào bất kỳ
-   * từ nào trên màn hình để xem cách đọc và nghĩa. Bảng `DICTIONARY` cứng bên
-   * dưới chỉ có hơn hai chục từ nên gần như không bao giờ khớp — bảng này mới
-   * là nguồn chính, và nó thắng khi cả hai cùng có một từ.
+   * Không bắt buộc: kho từ toàn cục (`GlossaryProvider`) đã phủ hầu hết. Bảng
+   * riêng của câu vẫn THẮNG khi trùng, vì nó phản ánh đúng nghĩa trong ngữ cảnh
+   * của chính câu đó.
    */
   glossary?: Glossary;
 }
@@ -38,38 +39,24 @@ interface Lookup {
   meaning: string;
 }
 
-// Simple local dictionary for the prototype
-const DICTIONARY: Record<string, string> = {
-  こんにちは: "Xin chào (Dùng ban ngày)",
-  ありがとう: "Cám ơn",
-  さようなら: "Tạm biệt",
-  先生: "Giáo viên (Sensei)",
-  わたし: "Tôi / Tớ / Mình",
-  学生: "Học sinh",
-  おばあさん: "Bà ngoại / Bà nội",
-  おばさん: "Cô / Dì",
-  はじめまして: "Rất hân hạnh được gặp bạn",
-  です: "là (kính ngữ)",
-  これ: "Đây / Cái này",
-  本: "Sách",
-  にほんご: "Tiếng Nhật",
-  いぬ: "Chó",
-  がくせい: "Học sinh",
-  せんせい: "Giáo viên",
-  あなた: "Bạn / Anh / Chị",
-  よろしくおねがいします: "Rất mong nhận được sự giúp đỡ",
-};
-
 export function JapaneseText({ text, style, glossary }: JapaneseTextProps) {
+  const { colors, isDark } = useTheme();
+  const { glossary: globalGlossary } = useGlossary();
+  // Trong vùng đáp án thì tắt hẳn tra từ — tra được nghĩa của đáp án là biết
+  // luôn đáp án.
+  const locked = useGlossaryLockdown();
   const [selectedWord, setSelectedWord] = useState<
     (Lookup & { word: string }) | null
   >(null);
 
-  // Từ điển của câu này thắng bảng cứng, vì nó lấy thẳng từ nội dung bài học.
+  // Kho toàn cục làm nền, bảng riêng của câu hỏi ghi đè lên trên.
   const dictionary = useMemo<Record<string, Lookup>>(() => {
+    if (locked) return {};
     const merged: Record<string, Lookup> = {};
-    for (const [word, meaning] of Object.entries(DICTIONARY)) {
-      merged[word] = { meaning };
+    for (const [word, entry] of Object.entries(globalGlossary || {})) {
+      if (entry?.v || entry?.r) {
+        merged[word] = { romaji: entry.r, meaning: entry.v || "" };
+      }
     }
     for (const [word, entry] of Object.entries(glossary || {})) {
       if (entry?.v || entry?.r) {
@@ -77,7 +64,7 @@ export function JapaneseText({ text, style, glossary }: JapaneseTextProps) {
       }
     }
     return merged;
-  }, [glossary]);
+  }, [glossary, globalGlossary, locked]);
 
   // Tách câu thành các mẩu tra được và các mẩu không tra được. Khớp từ DÀI
   // TRƯỚC để 「おはようございます」 không bị cắt nhầm thành 「おはよう」 + phần thừa.
@@ -145,13 +132,56 @@ export function JapaneseText({ text, style, glossary }: JapaneseTextProps) {
           activeOpacity={1}
           onPress={() => setSelectedWord(null)}
         >
-          <View style={styles.tooltipContainer}>
-            <Text style={styles.tooltipWord}>{selectedWord?.word}</Text>
+          <View
+            style={[
+              styles.tooltipContainer,
+              {
+                backgroundColor: isDark ? "#1F2430" : "#FFFFFF",
+                borderWidth: isDark ? 1 : 0,
+                borderColor: "rgba(255,255,255,0.12)",
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.tooltipWord,
+                { color: isDark ? "#F9FAFB" : Colors.textPrimary },
+              ]}
+            >
+              {selectedWord?.word}
+            </Text>
             {selectedWord?.romaji ? (
-              <Text style={styles.tooltipRomaji}>{selectedWord.romaji}</Text>
+              <Text
+                style={[
+                  styles.tooltipRomaji,
+                  {
+                    color: isDark
+                      ? "rgba(255,255,255,0.55)"
+                      : Colors.textSecondary,
+                  },
+                ]}
+              >
+                {selectedWord.romaji}
+              </Text>
             ) : null}
-            <View style={styles.divider} />
-            <Text style={styles.tooltipMeaning}>{selectedWord?.meaning}</Text>
+            <View
+              style={[
+                styles.divider,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.12)"
+                    : colors.border,
+                },
+              ]}
+            />
+            <Text
+              style={[
+                styles.tooltipMeaning,
+                { color: isDark ? "#E5E7EB" : Colors.textSecondary },
+              ]}
+            >
+              {selectedWord?.meaning}
+            </Text>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -173,7 +203,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tooltipContainer: {
-    backgroundColor: "#FFFFFF",
     padding: Spacing.six,
     borderRadius: BorderRadius.xl,
     minWidth: 220,
@@ -183,26 +212,22 @@ const styles = StyleSheet.create({
   tooltipWord: {
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
     marginBottom: Spacing.four,
   },
   tooltipRomaji: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.medium,
-    color: Colors.textSecondary,
     marginTop: -Spacing.three,
     marginBottom: Spacing.four,
   },
   divider: {
     width: "100%",
     height: 2,
-    backgroundColor: Colors.lockedBg,
     marginBottom: Spacing.four,
   },
   tooltipMeaning: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
-    color: Colors.textSecondary,
     textAlign: "center",
   },
 });

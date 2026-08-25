@@ -131,3 +131,38 @@ Hai diem kem theo:
   va `measureInWindow` tra ve 0.
 - Man trong `(tabs)` da mo la con song mai -> dang ky thu gi voi context toan cuc thi dung
   `useFocusEffect`, KHONG dung `useEffect` (effect theo vong doi khong chay lai o lan ghe sau).
+
+
+## Metro KHONG thay file sua bang script (Windows)
+
+Trieu chung: sua code xong, app tren emulator van hien y nguyen giao dien cu, ke ca khi
+da reload. `grep` trong `src/` xac nhan chuoi cu da bien mat -> nguon dung, bundle sai.
+
+Nguyen nhan: du an khong co watchman, Metro dua vao `fs.watch` cua Node. Ghi file tu
+tien trinh NGOAI (script python/sed, khong phai editor) rat hay bi bo sot -> Metro giu
+nguyen ban da transform tu truoc.
+
+Cach xac minh dut diem (khong doan): tai thang bundle roi grep dinh danh ASCII chi co o
+code moi.
+
+```bash
+curl -s "http://localhost:8081/node_modules/expo-router/entry.bundle?platform=android&dev=true&transform.routerRoot=src/app" -o b.js
+grep -c TenComponentMoi b.js   # 0 = Metro dang phuc vu cache cu
+```
+
+Bundle that ~15 MB. Neu chi ~6 MB va khong co dinh danh nao cua app thi chac chan la cache hong.
+
+Cach sua:
+
+```bash
+# dung Metro (lay PID tu cong 8081), roi:
+rm -rf "$LOCALAPPDATA/Temp/metro-cache" "$LOCALAPPDATA/Temp"/metro-file-map-*
+npx expo start --clear
+```
+
+Ghi chu them khi lai emulator bang adb:
+- Git Bash doi `/sdcard/ui.xml` thanh `C:/Program Files/Git/sdcard/...`. Dung `MSYS_NO_PATHCONV=1`.
+- `uiautomator dump` bao "could not get idle state" tren man co Lottie chay lien tuc.
+- Deep link vao thang man hinh nhanh hon mo toa do tap:
+  `adb shell am start -a android.intent.action.VIEW -d "frontend://quiz/1?lessonId=1"`
+- Ho `sleep` bi chan trong Bash tool -> dung `adb shell sleep 3` (chay tren may ao).

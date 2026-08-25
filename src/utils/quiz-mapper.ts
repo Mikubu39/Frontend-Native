@@ -32,6 +32,40 @@ function readGlossary(metadataJson: any): Glossary | undefined {
 }
 
 /**
+ * Nội dung tiếng Nhật SẠCH của đề bài — thứ được in trong bong bóng thoại.
+ *
+ * Backend đã tách sẵn: `kana` cho câu hỏi mức TỪ (「おはようございます」), `jp` cho
+ * câu hỏi mức CÂU (「せんせい、おはようございます。」). Chỉ một trong hai có mặt.
+ *
+ * Trước đây chỗ này đọc `question_text` rồi cắt chuỗi theo dấu hai chấm để moi
+ * lấy phần chữ Nhật. Cách đó hỏng với mọi câu không có dấu hai chấm — và phần
+ * lớn dữ liệu thật không có: `「こんにちは」 (konnichiwa) nghĩa là gì?` sẽ nhảy
+ * NGUYÊN CẢ CÂU TIẾNG VIỆT vào bong bóng. Đọc thẳng trường đã tách thì không
+ * còn phải đoán.
+ */
+function readPrompt(metadataJson: any): string | undefined {
+  const kana = metadataJson?.kana;
+  if (typeof kana === "string" && kana.trim()) return kana.trim();
+  const jp = metadataJson?.jp;
+  if (typeof jp === "string" && jp.trim()) return jp.trim();
+  return undefined;
+}
+
+/**
+ * Đường lui cho dữ liệu cũ chưa có `kana`/`jp`: bóc phần nằm trong ngoặc 「」,
+ * rồi mới tới cách cắt theo dấu hai chấm như bản trước.
+ */
+function legacyPrompt(content: string | undefined): string {
+  const text = content || "";
+  const bracketed = text.match(/「([^」]+)」/);
+  if (bracketed) return bracketed[1].trim();
+  if (text.includes(":")) {
+    return text.split(":").slice(1).join(":").trim();
+  }
+  return text;
+}
+
+/**
  * Maps Backend API Questions to Frontend UI Quiz Questions.
  */
 export function mapApiQuestionsToQuizQuestions(
@@ -54,6 +88,24 @@ export function mapApiQuestionsToQuizQuestions(
     const romaji = q.metadataJson?.romaji || undefined;
     const glossary = readGlossary(q.metadataJson);
     const originalOptions = q.options;
+    const isNew = q.isNew === true;
+
+    /**
+     * Đề bài tiếng Nhật (「おはようございます」). CHỈ dùng cho những loại câu mà
+     * chữ Nhật là ĐỀ, không phải ĐÁP ÁN — xem bảng ngay dưới.
+     */
+    const jpPrompt = readPrompt(q.metadataJson) || legacyPrompt(q.content);
+    /** Nghĩa tiếng Việt; là đề bài của những câu hỏi ngược chiều. */
+    const vnPrompt = q.metadataJson?.vn || undefined;
+
+    // Chiều của câu hỏi quyết định được in cái gì:
+    //
+    //   SELECT_IMAGE / TRANSLATE_TO_VN  →  đề là chữ Nhật, đáp án là tiếng Việt/ảnh
+    //   TRANSLATE_TO_JP                 →  đề là TIẾNG VIỆT, `kana` chính là ĐÁP ÁN
+    //   LISTEN_AND_ARRANGE              →  đề là audio + nghĩa, `jp` là ĐÁP ÁN cần xếp
+    //   LISTEN_AND_SELECT               →  đề CHỈ là audio, không in gì
+    //
+    // In nhầm `kana`/`jp` ở hai loại giữa là phát đáp án cho người học.
 
     // Based on questionType from backend, determine the frontend QuizType
     switch (q.questionType) {
@@ -61,11 +113,15 @@ export function mapApiQuestionsToQuizQuestions(
         return {
           id: questionId,
           type: "picture",
-          instruction: "Chọn hình ảnh đúng",
-          word: q.content,
+          instruction: "Chọn hình đúng với từ này",
+          prompt: jpPrompt,
+          promptRomaji: romaji,
+          promptLang: "ja",
+          word: jpPrompt,
           romaji,
           hint,
           glossary,
+          isNew,
           originalOptions,
           audioUrl: resolveMediaUrl(q.audioUrl),
           images: answers,
@@ -76,8 +132,10 @@ export function mapApiQuestionsToQuizQuestions(
           id: questionId,
           type: "listening",
           instruction: "Nghe và chọn đáp án đúng",
+          // Không có `prompt`: nghe được đề rồi thì in chữ ra là mất chỗ để nghe.
           hint,
           glossary,
+          isNew,
           originalOptions,
           audioUrl: resolveMediaUrl(q.audioUrl) ?? "",
           answers,
@@ -109,9 +167,14 @@ export function mapApiQuestionsToQuizQuestions(
         return {
           id: questionId,
           type: "kana",
-          instruction: "Nghe và sắp xếp câu",
+          instruction: "Nghe và sắp xếp thành câu",
+          // Đề là AUDIO; `jp` là đáp án cần xếp nên tuyệt đối không in ra.
+          // Nghĩa tiếng Việt thì in được, đó là gợi ý chứ không phải đáp án.
+          prompt: vnPrompt,
+          promptLang: "vi",
           hint,
           glossary,
+          isNew,
           originalOptions,
           imageUrl: resolveMediaUrl(q.imageUrl) ?? "",
           audioUrl: resolveMediaUrl(q.audioUrl),
@@ -126,12 +189,20 @@ export function mapApiQuestionsToQuizQuestions(
         return {
           id: questionId,
           type: "speaking",
-          instruction: "Đọc to câu sau",
-          textToSpeak: firstOption?.content || q.content || "",
+          instruction: "Nhấn micro và đọc to câu sau",
+          prompt: readPrompt(q.metadataJson) || firstOption?.content || "",
+          promptRomaji: firstOption?.metadataJson?.romaji || romaji,
+          promptLang: "ja",
+          textToSpeak:
+            readPrompt(q.metadataJson) ||
+            firstOption?.content ||
+            q.content ||
+            "",
           translation: q.metadataJson?.vn || hint || "",
           romaji: firstOption?.metadataJson?.romaji || romaji,
           hint,
           glossary,
+          isNew,
           originalOptions,
           // Câu mẫu người bản xứ đọc: nghe trước rồi bắt chước mới nói được.
           audioUrl:
@@ -143,22 +214,27 @@ export function mapApiQuestionsToQuizQuestions(
       case "TRANSLATE_TO_VN":
       case "TRANSLATE_TO_JP":
       default: {
-        let cleanWord = q.content || "";
-        if (cleanWord.includes(":")) {
-          const parts = cleanWord.split(":");
-          cleanWord = parts.slice(1).join(":").trim();
-        }
+        // Hai chiều ngược nhau: TO_VN in chữ Nhật rồi hỏi nghĩa; TO_JP in
+        // tiếng Việt rồi hỏi cách nói — ở chiều đó `kana` là ĐÁP ÁN.
+        const toJp = q.questionType === "TRANSLATE_TO_JP";
+        const word = toJp ? vnPrompt || legacyPrompt(q.content) : jpPrompt;
+        const isSentence = (word || "").length > 8;
         return {
           id: questionId,
           type: "vocab",
-          instruction:
-            q.questionType === "TRANSLATE_TO_VN"
-              ? "Dịch sang tiếng Việt"
-              : "Dịch sang tiếng Nhật",
-          word: cleanWord || q.content,
-          romaji,
+          instruction: toJp
+            ? "Nói thế nào bằng tiếng Nhật?"
+            : isSentence
+              ? "Câu này nghĩa là gì?"
+              : "Từ này nghĩa là gì?",
+          prompt: word,
+          promptRomaji: toJp ? undefined : romaji,
+          promptLang: toJp ? "vi" : "ja",
+          word,
+          romaji: toJp ? undefined : romaji,
           hint,
           glossary,
+          isNew,
           originalOptions,
           imageUrl: resolveMediaUrl(q.imageUrl) ?? "",
           // Câu dịch không có âm thanh (đề bài đã in sẵn chữ), nhưng vẫn đọc từ
