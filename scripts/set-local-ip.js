@@ -5,15 +5,23 @@ const path = require("path");
 const nets = networkInterfaces();
 let localIp = "localhost"; // fallback
 
-// Find the first non-internal IPv4 address
+const candidates = [];
+
 for (const name of Object.keys(nets)) {
+  const isVirtual = /vEthernet|wsl|virtual|vmware|loopback/i.test(name);
   for (const net of nets[name]) {
     if (net.family === "IPv4" && !net.internal) {
-      localIp = net.address;
-      break;
+      if (!isVirtual) {
+        candidates.unshift(net.address); // Prioritize real physical Wi-Fi / Ethernet
+      } else {
+        candidates.push(net.address);
+      }
     }
   }
-  if (localIp !== "localhost") break;
+}
+
+if (candidates.length > 0) {
+  localIp = candidates[0];
 }
 
 const envPath = path.join(process.cwd(), ".env");
@@ -23,6 +31,15 @@ const newApiUrl = `http://${localIp}:${port}`;
 let envContent = "";
 if (fs.existsSync(envPath)) {
   envContent = fs.readFileSync(envPath, "utf8");
+}
+
+const currentUrlMatch = envContent.match(/EXPO_PUBLIC_API_URL=(.*)/);
+const currentUrl = currentUrlMatch ? currentUrlMatch[1].trim() : "";
+const force = process.argv.includes("--force") || process.argv.includes("--local");
+
+if (currentUrl && (currentUrl.startsWith("https://") || currentUrl.includes("ngrok")) && !force) {
+  console.log(`ℹ️ Preserving existing external API URL: ${currentUrl}`);
+  process.exit(0);
 }
 
 if (envContent.includes("EXPO_PUBLIC_API_URL=")) {

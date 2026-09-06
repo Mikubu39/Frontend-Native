@@ -167,6 +167,7 @@ const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
+    paddingBottom: Spacing.two,
     borderTopWidth: 1,
   },
   inputRow: {

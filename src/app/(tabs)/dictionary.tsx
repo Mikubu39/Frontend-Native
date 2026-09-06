@@ -27,7 +27,7 @@ import { useTheme } from "@/contexts/theme-context";
 import type { DictionaryEntry, VocabularyItem } from "@/types";
 import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 
-const TABS = ["Tất cả", "Cần ôn", "Chữ cái"] as const;
+const TABS = ["Tất cả", "Cần ôn"] as const;
 
 /** Ghép mục kho từ về hình dạng mà `WordCard` đã dùng sẵn. */
 function toEntry(item: VocabularyItem): DictionaryEntry {
@@ -77,12 +77,7 @@ export default function DictionaryScreen() {
     setRefreshing(false);
   }, [load]);
 
-  const visible =
-    activeTab === 1
-      ? items.filter((i) => i.due)
-      : activeTab === 2
-        ? items.filter((i) => i.itemType === "KANA")
-        : items;
+  const visible = activeTab === 1 ? items.filter((i) => i.due) : items;
 
   return (
     <SafeAreaView
@@ -107,6 +102,8 @@ export default function DictionaryScreen() {
             onPress={() => setActiveTab(index)}
             style={styles.tabItem}
             activeOpacity={0.7}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === index }}
           >
             <Text
               style={[

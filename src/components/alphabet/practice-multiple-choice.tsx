@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInRight } from "react-native-reanimated";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
@@ -33,7 +33,7 @@ export function PracticeMultipleChoice({
   locked = false,
   onSelect,
 }: PracticeMultipleChoiceProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { isPlaying, play } = useAudio(question.audioUrl ?? undefined);
 
   useEffect(() => {
@@ -81,12 +81,19 @@ export function PracticeMultipleChoice({
       <View style={styles.options}>
         {question.options.map((option) => {
           const selected = option.optionId === selectedOptionId;
+          const selectedBg = isDark ? "rgba(59, 76, 130, 0.22)" : "#E8EAF4";
           return (
             <AnimatedPressable
               key={option.optionId}
               style={[
                 styles.option,
-                { backgroundColor: colors.card, borderColor: colors.border },
+                {
+                  backgroundColor: selected ? selectedBg : colors.card,
+                  borderColor: selected ? Colors.primary : colors.border,
+                  borderBottomColor: selected
+                    ? Colors.primaryDark
+                    : colors.borderSubtle,
+                },
                 selected && styles.optionSelected,
               ]}
               onPress={() => onSelect(option.optionId)}
@@ -156,12 +163,13 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.five,
     borderRadius: BorderRadius.xl,
     borderWidth: 2,
+    borderBottomWidth: 4,
     alignItems: "center",
-    ...Shadows.sm,
+    ...(Platform.OS === "ios" ? Shadows.sm : {}),
   },
   optionSelected: {
     borderColor: Colors.primary,
-    backgroundColor: "rgba(139, 92, 246, 0.12)",
+    borderBottomColor: Colors.primaryDark,
   },
   optionText: {
     fontSize: 32,

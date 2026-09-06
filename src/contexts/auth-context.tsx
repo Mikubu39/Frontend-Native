@@ -14,6 +14,7 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import { Alert } from "react-native";
@@ -21,7 +22,7 @@ import { Alert } from "react-native";
 import { GOOGLE_WEB_CLIENT_ID } from "@/config/google-auth";
 import { FACEBOOK_APP_ID, FACEBOOK_CLIENT_TOKEN } from "@/config/facebook-auth";
 
-import { TOKEN_KEY } from "@/services/api/client";
+import { apiClient, TOKEN_KEY } from "@/services/api/client";
 import { authService } from "@/services/api/auth";
 import { AuthResponse } from "@/types/api";
 import { storage } from "@/services/storage/async-storage";
@@ -97,8 +98,10 @@ interface User {
   id: string;
   email: string;
   displayName: string;
+  username?: string;
   avatarUrl?: string;
   roles?: string[];
+  phoneNumber?: string;
 }
 
 interface AuthContextType {
@@ -114,9 +117,12 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<boolean>;
   signInWithFacebook: () => Promise<boolean>;
   signOut: () => Promise<void>;
+  updateUser: (updates: Partial<User>) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined,
+);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -146,16 +152,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     };
+    const unsubscribeUnauthorized = apiClient.onUnauthorized(() => {
+      setUser(null);
+    });
+
     loadSession();
+
+    return () => {
+      unsubscribeUnauthorized();
+    };
   }, []);
 
   const persistSession = useCallback(async (response: AuthResponse) => {
     await storage.set(TOKEN_KEY, response.accessToken);
-    const userData = {
+    const userData: User = {
       id: response.user.id.toString(),
       email: response.user.email,
       displayName: response.user.displayName || response.user.username,
+      username: response.user.username,
       roles: [response.user.role],
+      phoneNumber: response.user.phoneNumber,
     };
     await storage.set("user_data", JSON.stringify(userData));
     setUser(userData);
@@ -319,22 +335,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: user !== null,
-        isLoading,
-        signIn,
-        signUp,
-        signInWithGoogle,
-        signInWithFacebook,
-        signOut,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const updateUser = useCallback(
+    async (updates: Partial<User>) => {
+      if (!user) return;
+      const updatedUser = { ...user, ...updates };
+      await storage.set("user_data", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    },
+    [user],
   );
+
+  const value = useMemo<AuthContextType>(
+    () => ({
+      user,
+      isAuthenticated: user !== null,
+      isLoading,
+      signIn,
+      signUp,
+      signInWithGoogle,
+      signInWithFacebook,
+      signOut,
+      updateUser,
+    }),
+    [
+      user,
+      isLoading,
+      signIn,
+      signUp,
+      signInWithGoogle,
+      signInWithFacebook,
+      signOut,
+      updateUser,
+    ],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextType {
@@ -343,4 +378,8 @@ export function useAuth(): AuthContextType {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
+}
+
+export function useOptionalAuth(): AuthContextType | undefined {
+  return useContext(AuthContext);
 }

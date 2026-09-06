@@ -34,7 +34,7 @@ import { vocabularyApi } from "@/services/api/vocabulary";
 import type { Glossary } from "@/types/quiz";
 import type { VocabularyItem } from "@/types";
 
-const CACHE_KEY = "vocabulary_glossary_v1";
+const CACHE_KEY = "vocabulary_glossary_v2";
 
 interface GlossaryContextValue {
   /** Bảng tra toàn cục: mặt chữ -> { romaji, nghĩa }. Rỗng khi chưa tải xong. */
@@ -51,11 +51,19 @@ const GlossaryContext = createContext<GlossaryContextValue>({
   refresh: async () => {},
 });
 
-/** Chuyển danh sách từ API sang bảng tra mà `JapaneseText` hiểu. */
 function toGlossary(items: VocabularyItem[]): Glossary {
   const out: Glossary = {};
+
   for (const item of items) {
     if (!item?.surface) continue;
+
+    // 1. Loại bỏ triệt để mọi item thuộc bảng chữ cái KANA (bao gồm cả ký tự đơn lẫn 66 âm ghép yōon).
+    // KANA thuộc về tính năng học bảng chữ cái, không đưa vào từ điển tra từ vựng/ngữ pháp
+    // để tránh việc nuốt nhầm các âm ghép (như 'じゃ' trong 'じゃありません', 'しゃ' trong 'はいしゃ').
+    if (item.itemType === "KANA") {
+      continue;
+    }
+
     out[item.surface] = {
       r: item.romaji ?? undefined,
       v: item.meaningVn,

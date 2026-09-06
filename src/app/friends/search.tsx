@@ -20,12 +20,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "@/hooks/use-theme";
-import { resolveMediaUrl } from "@/utils/media";
+import { useTheme } from "@/contexts/theme-context";
+import { resolveAvatarUri } from "@/utils/media";
+import { BackButton } from "@/components/ui/back-button";
 
 export default function FriendsSearchScreen() {
   const router = useRouter();
-  const colors = useTheme();
+  const { colors } = useTheme();
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<UserSearchResponse[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -63,12 +64,11 @@ export default function FriendsSearchScreen() {
   const handleToggleFollow = async (id: number, currentIndex: number) => {
     try {
       const newStatus = await userService.toggleFollow(id);
-      const newResults = [...results];
-      newResults[currentIndex] = {
-        ...newResults[currentIndex],
-        isFollowing: newStatus,
-      };
-      setResults(newResults);
+      setResults((prev) =>
+        prev.map((user, idx) =>
+          idx === currentIndex ? { ...user, isFollowing: newStatus } : user,
+        ),
+      );
     } catch (e) {
       console.error(e);
     }
@@ -79,9 +79,7 @@ export default function FriendsSearchScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={[styles.backText, { color: colors.text }]}>←</Text>
-        </TouchableOpacity>
+        <BackButton onPress={() => router.back()} />
         <TextInput
           style={[
             styles.searchInput,
@@ -92,15 +90,20 @@ export default function FriendsSearchScreen() {
             },
           ]}
           placeholderTextColor={colors.textSecondary}
-          placeholder="Search by username..."
+          placeholder="Tìm theo tên người dùng..."
           value={keyword}
           onChangeText={setKeyword}
           onSubmitEditing={handleSearch}
           returnKeyType="search"
           autoCapitalize="none"
         />
-        <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
-          <Text style={styles.searchBtnText}>Search</Text>
+        <TouchableOpacity
+          style={styles.searchBtn}
+          onPress={handleSearch}
+          accessibilityRole="button"
+          accessibilityLabel="Tìm kiếm"
+        >
+          <Text style={styles.searchBtnText}>Tìm kiếm</Text>
         </TouchableOpacity>
       </View>
 
@@ -154,7 +157,7 @@ export default function FriendsSearchScreen() {
             >
               {item.avatarUrl ? (
                 <Image
-                  source={{ uri: resolveMediaUrl(item.avatarUrl) }}
+                  source={{ uri: resolveAvatarUri(item.avatarUrl) }}
                   style={styles.avatar}
                 />
               ) : (
@@ -168,7 +171,11 @@ export default function FriendsSearchScreen() {
                 <Text style={[styles.fullName, { color: colors.text }]}>
                   {item.displayName}
                 </Text>
-                <Text style={styles.username}>Lv {item.level}</Text>
+                <Text
+                  style={[styles.username, { color: colors.textSecondary }]}
+                >
+                  Lv {item.level}
+                </Text>
               </View>
               <TouchableOpacity
                 style={[
@@ -192,14 +199,16 @@ export default function FriendsSearchScreen() {
                     ],
                   ]}
                 >
-                  {item.isFollowing ? "Following" : "Follow"}
+                  {item.isFollowing ? "Đang theo dõi" : "Theo dõi"}
                 </Text>
               </TouchableOpacity>
             </TouchableOpacity>
           )}
           ListEmptyComponent={
             !loading && keyword ? (
-              <Text style={styles.emptyText}>No users found.</Text>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                Không tìm thấy người dùng nào.
+              </Text>
             ) : null
           }
         />

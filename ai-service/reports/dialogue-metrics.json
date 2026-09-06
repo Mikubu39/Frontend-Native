@@ -6,30 +6,12 @@
         "reachable": 30,
         "coverage": 0.8333333333333334,
         "holes": [
-          [
-            "approach",
-            "affirm"
-          ],
-          [
-            "approach",
-            "deny"
-          ],
-          [
-            "got_direction",
-            "affirm"
-          ],
-          [
-            "got_direction",
-            "deny"
-          ],
-          [
-            "confirmed",
-            "affirm"
-          ],
-          [
-            "confirmed",
-            "deny"
-          ]
+          ["approach", "affirm"],
+          ["approach", "deny"],
+          ["got_direction", "affirm"],
+          ["got_direction", "deny"],
+          ["confirmed", "affirm"],
+          ["confirmed", "deny"]
         ]
       },
       "restaurant": {
@@ -37,66 +19,21 @@
         "reachable": 55,
         "coverage": 0.7857142857142857,
         "holes": [
-          [
-            "welcome",
-            "affirm"
-          ],
-          [
-            "welcome",
-            "deny"
-          ],
-          [
-            "welcome",
-            "restaurant_ask_bill"
-          ],
-          [
-            "welcome",
-            "restaurant_order"
-          ],
-          [
-            "seated",
-            "affirm"
-          ],
-          [
-            "seated",
-            "deny"
-          ],
-          [
-            "seated",
-            "restaurant_ask_bill"
-          ],
-          [
-            "order_taken",
-            "restaurant_ask_bill"
-          ],
-          [
-            "order_taken",
-            "restaurant_seat"
-          ],
-          [
-            "eating",
-            "affirm"
-          ],
-          [
-            "eating",
-            "deny"
-          ],
-          [
-            "eating",
-            "restaurant_seat"
-          ],
-          [
-            "paying",
-            "deny"
-          ],
-          [
-            "paying",
-            "restaurant_order"
-          ],
-          [
-            "paying",
-            "restaurant_seat"
-          ]
+          ["welcome", "affirm"],
+          ["welcome", "deny"],
+          ["welcome", "restaurant_ask_bill"],
+          ["welcome", "restaurant_order"],
+          ["seated", "affirm"],
+          ["seated", "deny"],
+          ["seated", "restaurant_ask_bill"],
+          ["order_taken", "restaurant_ask_bill"],
+          ["order_taken", "restaurant_seat"],
+          ["eating", "affirm"],
+          ["eating", "deny"],
+          ["eating", "restaurant_seat"],
+          ["paying", "deny"],
+          ["paying", "restaurant_order"],
+          ["paying", "restaurant_seat"]
         ]
       },
       "self_intro": {
@@ -104,54 +41,18 @@
         "reachable": 72,
         "coverage": 0.8571428571428571,
         "holes": [
-          [
-            "first_meet",
-            "affirm"
-          ],
-          [
-            "first_meet",
-            "deny"
-          ],
-          [
-            "asked_name",
-            "affirm"
-          ],
-          [
-            "asked_name",
-            "deny"
-          ],
-          [
-            "asked_origin",
-            "affirm"
-          ],
-          [
-            "asked_origin",
-            "deny"
-          ],
-          [
-            "asked_job",
-            "affirm"
-          ],
-          [
-            "asked_job",
-            "deny"
-          ],
-          [
-            "asked_hobby",
-            "affirm"
-          ],
-          [
-            "asked_hobby",
-            "deny"
-          ],
-          [
-            "wrap_up",
-            "affirm"
-          ],
-          [
-            "wrap_up",
-            "deny"
-          ]
+          ["first_meet", "affirm"],
+          ["first_meet", "deny"],
+          ["asked_name", "affirm"],
+          ["asked_name", "deny"],
+          ["asked_origin", "affirm"],
+          ["asked_origin", "deny"],
+          ["asked_job", "affirm"],
+          ["asked_job", "deny"],
+          ["asked_hobby", "affirm"],
+          ["asked_hobby", "deny"],
+          ["wrap_up", "affirm"],
+          ["wrap_up", "deny"]
         ]
       },
       "shopping": {
@@ -159,42 +60,15 @@
         "reachable": 43,
         "coverage": 0.8269230769230769,
         "holes": [
-          [
-            "welcome",
-            "affirm"
-          ],
-          [
-            "welcome",
-            "shopping_pay"
-          ],
-          [
-            "welcome",
-            "shopping_try_on"
-          ],
-          [
-            "browsing",
-            "affirm"
-          ],
-          [
-            "browsing",
-            "deny"
-          ],
-          [
-            "trying",
-            "shopping_try_on"
-          ],
-          [
-            "paying",
-            "affirm"
-          ],
-          [
-            "paying",
-            "deny"
-          ],
-          [
-            "paying",
-            "shopping_try_on"
-          ]
+          ["welcome", "affirm"],
+          ["welcome", "shopping_pay"],
+          ["welcome", "shopping_try_on"],
+          ["browsing", "affirm"],
+          ["browsing", "deny"],
+          ["trying", "shopping_try_on"],
+          ["paying", "affirm"],
+          ["paying", "deny"],
+          ["paying", "shopping_try_on"]
         ]
       }
     },

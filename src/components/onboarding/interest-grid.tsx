@@ -13,7 +13,9 @@ import {
   FontWeights,
   BorderRadius,
   Spacing,
+  Fonts,
 } from "@/constants/theme";
+import { useTheme } from "@/contexts/theme-context";
 
 interface InterestGridProps {
   selectedInterests: string[];
@@ -24,6 +26,8 @@ export function InterestGrid({
   selectedInterests,
   onToggle,
 }: InterestGridProps) {
+  const { colors, isDark } = useTheme();
+
   return (
     <View style={styles.grid}>
       {ONBOARDING_INTERESTS.map((interest) => {
@@ -31,9 +35,19 @@ export function InterestGrid({
         return (
           <AnimatedPressable
             key={interest.id}
-            style={[styles.card, isSelected && styles.cardSelected]}
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: isSelected ? Colors.secondary : colors.border,
+              },
+              isSelected && styles.cardSelected,
+            ]}
             onPress={() => onToggle(interest.id)}
             pressScale={0.96}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: isSelected }}
+            accessibilityLabel={interest.label}
           >
             <Image source={{ uri: interest.imageUrl }} style={styles.image} />
             {isSelected && (
@@ -46,7 +60,20 @@ export function InterestGrid({
                 </Animated.View>
               </View>
             )}
-            <Text style={styles.label}>{interest.label}</Text>
+            <Text
+              style={[
+                styles.label,
+                {
+                  color: isSelected
+                    ? isDark
+                      ? "#D97456"
+                      : Colors.secondary
+                    : colors.text,
+                },
+              ]}
+            >
+              {interest.label}
+            </Text>
           </AnimatedPressable>
         );
       })}
@@ -62,45 +89,44 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   card: {
-    width: "45%",
-    borderRadius: BorderRadius.lg,
+    width: "46%",
+    borderRadius: BorderRadius.xl,
     overflow: "hidden",
-    backgroundColor: Colors.surface,
     borderWidth: 2,
-    borderColor: "transparent",
+    borderBottomWidth: 4,
   },
   cardSelected: {
     borderColor: Colors.secondary,
   },
   image: {
     width: "100%",
-    height: 120,
+    height: 110,
     resizeMode: "cover",
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(233, 30, 142, 0.3)",
+    backgroundColor: "rgba(190, 74, 52, 0.35)",
     alignItems: "center",
     justifyContent: "center",
-    height: 120,
+    height: 110,
   },
   checkCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 32,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.secondary,
     alignItems: "center",
     justifyContent: "center",
   },
   checkMark: {
-    color: Colors.textOnDark,
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.bold,
+    color: "#FFFFFF",
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.extrabold,
   },
   label: {
     fontSize: FontSizes.md,
-    fontWeight: FontWeights.semibold,
-    color: Colors.textPrimary,
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
     textAlign: "center",
     paddingVertical: Spacing.three,
   },

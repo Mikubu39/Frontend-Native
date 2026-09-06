@@ -20,7 +20,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/use-theme";
-import { resolveMediaUrl } from "@/utils/media";
+import { resolveAvatarUri } from "@/utils/media";
+import { BackButton } from "@/components/ui/back-button";
 
 /**
  * Danh sách người theo dõi / đang theo dõi của 1 user (theo id).
@@ -101,9 +102,7 @@ export default function ConnectionsScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={[styles.backText, { color: colors.text }]}>←</Text>
-        </TouchableOpacity>
+        <BackButton onPress={() => router.back()} />
         <Text style={[styles.title, { color: colors.text }]}>
           {isFollowers ? "Người theo dõi" : "Đang theo dõi"}
         </Text>
@@ -156,7 +155,7 @@ export default function ConnectionsScreen() {
             >
               {item.avatarUrl ? (
                 <Image
-                  source={{ uri: resolveMediaUrl(item.avatarUrl) }}
+                  source={{ uri: resolveAvatarUri(item.avatarUrl) }}
                   style={styles.avatar}
                 />
               ) : (

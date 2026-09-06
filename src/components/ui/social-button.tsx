@@ -4,7 +4,8 @@
  */
 
 import React from "react";
-import { Text, StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import {
   Colors,
@@ -14,6 +15,7 @@ import {
   Spacing,
   Shadows,
 } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 type SocialProvider = "google" | "facebook" | "apple";
 
@@ -24,29 +26,43 @@ interface SocialButtonProps {
 
 const PROVIDER_CONFIG: Record<
   SocialProvider,
-  { icon: string; label: string; iconColor: string; bgColor: string }
+  {
+    icon: React.ComponentProps<typeof Ionicons>["name"];
+    label: string;
+    iconColor: string;
+    bgColor: string;
+  }
 > = {
   google: {
-    icon: "G",
+    icon: "logo-google",
     label: "Google",
     iconColor: "#DB4437",
     bgColor: "#FEE2E2",
   },
   facebook: {
-    icon: "f",
+    icon: "logo-facebook",
     label: "Facebook",
     iconColor: "#4267B2",
     bgColor: "#DBEAFE",
   },
-  apple: { icon: "", label: "Apple", iconColor: "#000000", bgColor: "#F3F4F6" },
+  apple: {
+    icon: "logo-apple",
+    label: "Apple",
+    iconColor: "#000000",
+    bgColor: "#F3F4F6",
+  },
 };
 
 export function SocialButton({ provider, onPress }: SocialButtonProps) {
   const config = PROVIDER_CONFIG[provider];
+  const colors = useTheme();
 
   return (
     <AnimatedPressable
-      style={styles.button}
+      style={[
+        styles.button,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
       onPress={onPress}
       pressScale={0.97}
       accessibilityRole="button"
@@ -58,11 +74,11 @@ export function SocialButton({ provider, onPress }: SocialButtonProps) {
         accessible={false}
         importantForAccessibility="no"
       >
-        <Text style={[styles.icon, { color: config.iconColor }]}>
-          {config.icon}
-        </Text>
+        <Ionicons name={config.icon} size={20} color={config.iconColor} />
       </View>
-      <Text style={styles.label}>Đăng nhập bằng {config.label}</Text>
+      <Text style={[styles.label, { color: colors.text }]}>
+        Đăng nhập bằng {config.label}
+      </Text>
     </AnimatedPressable>
   );
 }
@@ -74,9 +90,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     height: 54,
     borderWidth: 1.5,
-    borderColor: Colors.lockedBg,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.surface,
     paddingHorizontal: Spacing.six,
     gap: Spacing.three,
     ...Shadows.sm,
@@ -95,13 +109,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  icon: {
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.bold,
-  },
   label: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
-    color: Colors.textPrimary,
   },
 });

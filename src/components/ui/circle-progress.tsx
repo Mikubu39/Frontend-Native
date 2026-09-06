@@ -48,7 +48,7 @@ export function CircleProgress({
       duration: 800,
       easing: Easing.out(Easing.cubic),
     });
-  }, [progress]);
+  }, [progress, animatedProgress]);
 
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: circumference * (1 - animatedProgress.value),

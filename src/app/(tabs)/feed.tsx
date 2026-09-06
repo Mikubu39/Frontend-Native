@@ -3,11 +3,20 @@
  * đăng trạng thái, like, bình luận. Xem FE_API_GUIDE_SOCIAL_FEED.md.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
-import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import {
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AnimatedScreen } from "@/components/ui/animated-screen";
-import { ComposeBar } from "@/components/feed/compose-bar";
 import { PostCard } from "@/components/feed/post-card";
 import { CommentsModal } from "@/components/feed/comments-modal";
 import {
@@ -16,15 +25,16 @@ import {
   FontWeights,
   Spacing,
   Shadows,
+  BorderRadius,
 } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
+import { useTheme } from "@/contexts/theme-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
 import { feedApi } from "@/services/api/feed";
 import { FeedPostResponse } from "@/types/api";
 
 export default function FeedScreen() {
-  const colors = useTheme();
+  const { colors } = useTheme();
   const { user } = useAuth();
   const { showError } = useToast();
   const currentUserId = user?.id ? Number(user.id) : null;
@@ -34,9 +44,9 @@ export default function FeedScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [composeText, setComposeText] = useState("");
-  const [posting, setPosting] = useState(false);
   const [activePost, setActivePost] = useState<FeedPostResponse | null>(null);
+  const [statusText, setStatusText] = useState("");
+  const [posting, setPosting] = useState(false);
 
   const loadFeed = useCallback(async () => {
     try {
@@ -52,9 +62,11 @@ export default function FeedScreen() {
     }
   }, [showError]);
 
-  useEffect(() => {
-    loadFeed();
-  }, [loadFeed]);
+  useFocusEffect(
+    useCallback(() => {
+      loadFeed();
+    }, [loadFeed]),
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -104,22 +116,6 @@ export default function FeedScreen() {
     }
   };
 
-  const handlePost = async () => {
-    const content = composeText.trim();
-    if (!content) return;
-    setPosting(true);
-    try {
-      await feedApi.createPost({ content });
-      setComposeText("");
-      await loadFeed();
-    } catch (e) {
-      console.error(e);
-      showError("Lỗi", "Không thể đăng bài.");
-    } finally {
-      setPosting(false);
-    }
-  };
-
   const handleDelete = async (post: FeedPostResponse) => {
     try {
       await feedApi.deletePost(post.id);
@@ -140,8 +136,24 @@ export default function FeedScreen() {
     );
   };
 
+  const handleCreatePost = async () => {
+    const trimmed = statusText.trim();
+    if (!trimmed || posting) return;
+    setPosting(true);
+    try {
+      await feedApi.createPost({ content: trimmed });
+      setStatusText("");
+      await loadFeed();
+    } catch (e) {
+      console.error(e);
+      showError("Lỗi", "Không thể đăng bài.");
+    } finally {
+      setPosting(false);
+    }
+  };
+
   return (
-    <AnimatedScreen>
+    <AnimatedScreen skipEntering>
       <SafeAreaView
         style={[styles.container, { backgroundColor: colors.background }]}
         edges={["top"]}
@@ -160,6 +172,41 @@ export default function FeedScreen() {
           </Text>
         </View>
 
+        <View
+          style={[
+            styles.composeBar,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.borderSubtle,
+            },
+          ]}
+        >
+          <TextInput
+            style={[styles.composeInput, { color: colors.text }]}
+            placeholder="Hôm nay bạn học được gì?"
+            placeholderTextColor={colors.textSecondary}
+            value={statusText}
+            onChangeText={setStatusText}
+            maxLength={500}
+            multiline
+          />
+          <TouchableOpacity
+            testID="compose-send-button"
+            onPress={handleCreatePost}
+            disabled={posting || !statusText.trim()}
+            style={[
+              styles.sendButton,
+              {
+                backgroundColor: statusText.trim()
+                  ? Colors.primary
+                  : colors.borderSubtle,
+              },
+            ]}
+          >
+            <Ionicons name="send" size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+
         <FlatList
           data={posts}
           keyExtractor={(item) => item.id.toString()}
@@ -174,23 +221,11 @@ export default function FeedScreen() {
           }
           onEndReachedThreshold={0.4}
           onEndReached={handleLoadMore}
-          ListHeaderComponent={
-            <ComposeBar
-              value={composeText}
-              onChangeText={setComposeText}
-              onSubmit={handlePost}
-              posting={posting}
-              avatarUrl={user?.avatarUrl}
-              displayName={user?.displayName}
-              cardColor={colors.card}
-              textColor={colors.text}
-              placeholderColor={colors.textSecondary}
-            />
-          }
           ListEmptyComponent={
             !loading ? (
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                Chưa có bài đăng nào. Hãy theo dõi bạn bè hoặc tự đăng 1 bài!
+                Chưa có hoạt động nào gần đây. Hãy hoàn thành bài học để khoe
+                thành tích với bạn bè nhé!
               </Text>
             ) : null
           }
@@ -234,17 +269,39 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   header: {
-    backgroundColor: "#FFFFFF",
     paddingVertical: Spacing.four,
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
     ...Shadows.sm,
   },
   headerTitle: {
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
+  },
+  composeBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: Spacing.five,
+    marginTop: Spacing.four,
+    marginBottom: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    gap: Spacing.three,
+  },
+  composeInput: {
+    flex: 1,
+    fontSize: FontSizes.md,
+    maxHeight: 80,
+  },
+  sendButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollContent: {
     paddingHorizontal: Spacing.five,

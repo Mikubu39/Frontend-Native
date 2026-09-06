@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     padding: Spacing.five,
     borderWidth: 2,
     marginBottom: Spacing.five,
-    ...Shadows.glow(Colors.primary),
+    ...Shadows.lg,
   },
   header: {
     flexDirection: "row",

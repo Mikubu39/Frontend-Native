@@ -15,6 +15,7 @@ import {
 import type { KanjiFillQuestion } from "@/types";
 import { JapaneseText } from "../ui/japanese-text";
 import { QuestionPrompt } from "@/components/quiz/question-prompt";
+import { useTheme } from "@/contexts/theme-context";
 
 interface KanjiFillQuestionProps {
   question: KanjiFillQuestion;
@@ -27,6 +28,7 @@ export function KanjiFillQuestionCard({
 }: KanjiFillQuestionProps) {
   const [selectedBlank, setSelectedBlank] = useState<number | null>(0);
   const [fills, setFills] = useState<Record<number, string>>({});
+  const { colors, isDark } = useTheme();
 
   useEffect(() => {
     // Reset state when question changes
@@ -80,12 +82,26 @@ export function KanjiFillQuestionCard({
 
           return (
             <React.Fragment key={index}>
-              <JapaneseText text={part} style={styles.sentenceText} />
+              <JapaneseText
+                text={part}
+                style={[styles.sentenceText, { color: colors.text }]}
+              />
               {hasBlank && (
                 <TouchableOpacity
                   style={[
                     styles.blankBox,
-                    isCurrent && styles.blankBoxActive,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                    },
+                    isCurrent && [
+                      styles.blankBoxActive,
+                      {
+                        backgroundColor: isDark
+                          ? Colors.primary + "22"
+                          : "#EEF2FF",
+                      },
+                    ],
                     filledValue && styles.blankBoxFilled,
                   ]}
                   onPress={() =>
@@ -112,28 +128,58 @@ export function KanjiFillQuestionCard({
   };
 
   return (
-    <View style={styles.card}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.cardQuiz,
+          borderColor: colors.cardQuizBorder,
+        },
+      ]}
+    >
       <QuestionPrompt
         instruction={question.instruction}
         isNew={question.isNew}
       />
 
-      <View style={styles.sentenceWrapper}>{renderSentence()}</View>
+      <View
+        style={[
+          styles.sentenceWrapper,
+          { backgroundColor: colors.backgroundElement },
+        ]}
+      >
+        {renderSentence()}
+      </View>
 
-      <View style={styles.divider} />
+      <View
+        style={[styles.divider, { backgroundColor: colors.borderSubtle }]}
+      />
 
-      <Text style={styles.label}>Kanji Options:</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>
+        Kanji Options:
+      </Text>
       <View style={styles.bankContainer}>
         {question.kanjiBank.map((kanji, index) => {
           const isUsed = Object.values(fills).includes(kanji);
           return (
             <TouchableOpacity
               key={index}
-              style={[styles.kanjiTile, isUsed && styles.kanjiTileUsed]}
+              testID={`kanji-choice-${kanji}`}
+              style={[
+                styles.kanjiTile,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                isUsed && styles.kanjiTileUsed,
+              ]}
               onPress={() => !isUsed && selectKanji(kanji)}
               disabled={isUsed || selectedBlank === null}
             >
-              <Text style={[styles.kanjiText, isUsed && styles.kanjiTextUsed]}>
+              <Text
+                style={[
+                  styles.kanjiText,
+                  { color: colors.text },
+                  isUsed && styles.kanjiTextUsed,
+                ]}
+              >
                 {kanji}
               </Text>
             </TouchableOpacity>

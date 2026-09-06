@@ -4,13 +4,14 @@
  */
 
 import React, { useEffect } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { QuizResultCard } from "@/components/quiz/quiz-result-card";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { PromotionModal } from "@/components/gamification";
 import { useGamification } from "@/contexts/gamification-context";
 import { useTheme } from "@/contexts/theme-context";
 import { Colors, Spacing } from "@/constants/theme";
@@ -19,8 +20,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function QuizResultScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { setEnergy, addExp, fetchGamificationData } = useGamification();
+  const { fetchGamificationData, newlyUnlockedAchievements } =
+    useGamification();
   const { isDark } = useTheme();
+  const [showPromotionModal, setShowPromotionModal] = React.useState(false);
 
   const correctCount = parseInt((params.correctCount as string) || "0", 10);
   const wrongCount = parseInt((params.wrongCount as string) || "0", 10);
@@ -28,41 +31,43 @@ export default function QuizResultScreen() {
   const starsEarned = parseInt((params.starsEarned as string) || "0", 10);
   const coinsEarned = parseInt((params.coinsEarned as string) || "0", 10);
   const status = params.status as string;
-  const currentEnergyStr = params.currentEnergy as string;
+  const lessonType = (params.lessonType as string) || "NORMAL";
 
   const isFailed = status === "IN_PROGRESS";
+  const isTimedReview = lessonType === "TIMED_REVIEW";
+  const stars = isTimedReview ? Math.max(0, starsEarned) : 0;
 
   useEffect(() => {
-    if (currentEnergyStr) {
-      setEnergy(parseInt(currentEnergyStr, 10));
-    }
-    if (expEarned > 0) {
-      addExp(expEarned);
-    }
     fetchGamificationData();
 
     if (params.isPromoted === "true" && params.newRankName) {
-      setTimeout(() => {
-        Alert.alert(
-          "🎉 THĂNG HẠNG! 🎉",
-          `Chúc mừng bạn đã xuất sắc thăng hạng lên ${params.newRankName}!`,
-        );
-      }, 500);
+      setShowPromotionModal(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleContinue = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const lastShown = await AsyncStorage.getItem("lastStreakExtendedDate");
 
-      if (lastShown !== today && expEarned > 0) {
+      const hasNewAchievements =
+        newlyUnlockedAchievements && newlyUnlockedAchievements.length > 0;
+      const shouldShowStreak = lastShown !== today && expEarned > 0;
+
+      if (hasNewAchievements) {
+        if (shouldShowStreak) {
+          await AsyncStorage.setItem("pendingStreakExtended", "true");
+        }
+        router.push("/profile/achievement-unlocked");
+      } else if (shouldShowStreak) {
         await AsyncStorage.setItem("lastStreakExtendedDate", today);
         router.push("/lesson/streak-extended");
       } else {
         router.replace("/(tabs)");
       }
-    } catch (error) {
+    } catch {
       router.replace("/(tabs)");
     }
   };
@@ -74,20 +79,20 @@ export default function QuizResultScreen() {
     correctCategories: [
       {
         name: `+${expEarned} EXP${coinsEarned > 0 ? `, +${coinsEarned} Coin` : ""}`,
-        stars: starsEarned || (expEarned > 0 ? 3 : 0),
+        stars: stars,
       },
     ],
     wrongCategories: [],
   };
 
-  // Cinematic gradient — dark mode: deep violet sweep; light mode: soft lavender
+  // Cinematic gradient — dark mode: indigo-night sweep; light mode: washi wash
   const gradientColors: [string, string, string] = isDark
     ? isFailed
       ? ["#1A0A0A", "#3B0F0F", "#1A0A0A"]
-      : ["#0A0A14", "#1B0A2E", "#0A0A14"]
+      : ["#15161F", "#1B1D2B", "#15161F"]
     : isFailed
       ? ["#FFF1F2", "#FFE4E6", "#FFF1F2"]
-      : ["#F5F3FF", "#EDE9FE", "#F5F3FF"];
+      : ["#F7EFDE", "#EFE2C4", "#F7EFDE"];
 
   return (
     <LinearGradient
@@ -135,6 +140,12 @@ export default function QuizResultScreen() {
           </Animated.View>
         </View>
       </SafeAreaView>
+
+      <PromotionModal
+        visible={showPromotionModal}
+        newRankName={(params.newRankName as string) || ""}
+        onClose={() => setShowPromotionModal(false)}
+      />
     </LinearGradient>
   );
 }

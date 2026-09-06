@@ -9,6 +9,7 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useMemo,
   type ReactNode,
 } from "react";
 import type {
@@ -72,18 +73,21 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     state.selectedInterests.length > 0 &&
     state.selectedLevel !== null;
 
+  const value = useMemo<OnboardingContextType>(
+    () => ({
+      state,
+      setGoal,
+      toggleInterest,
+      setLevel,
+      setStep,
+      isComplete,
+      reset,
+    }),
+    [state, setGoal, toggleInterest, setLevel, setStep, isComplete, reset],
+  );
+
   return (
-    <OnboardingContext.Provider
-      value={{
-        state,
-        setGoal,
-        toggleInterest,
-        setLevel,
-        setStep,
-        isComplete,
-        reset,
-      }}
-    >
+    <OnboardingContext.Provider value={value}>
       {children}
     </OnboardingContext.Provider>
   );

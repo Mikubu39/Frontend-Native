@@ -79,26 +79,38 @@ export default function CharactersScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<AlphabetCharacter | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await alphabetApi.getAlphabets(activeType);
-      setGroups(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setGroups([]);
-      setError(e instanceof Error ? e.message : "Không tải được bảng chữ cái.");
-    } finally {
-      setLoading(false);
-    }
-  }, [activeType]);
+  const load = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError(null);
+      try {
+        const data = await alphabetApi.getAlphabets(activeType);
+        const nextGroups = Array.isArray(data) ? data : [];
+        setGroups((prev) =>
+          prev.length === nextGroups.length &&
+          JSON.stringify(prev) === JSON.stringify(nextGroups)
+            ? prev
+            : nextGroups,
+        );
+      } catch (e) {
+        if (!silent) {
+          setGroups([]);
+          setError(
+            e instanceof Error ? e.message : "Không tải được bảng chữ cái.",
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [activeType],
+  );
 
   // Tải lại mỗi khi màn hình được focus để tiến độ cập nhật ngay sau khi luyện tập.
   useFocusEffect(
     useCallback(() => {
-      load();
-    }, [load]),
+      load(groups.length > 0);
+    }, [load, groups.length]),
   );
 
   const characters = groups.flatMap((group) => group.characters);
@@ -130,7 +142,9 @@ export default function CharactersScreen() {
         <View
           style={[
             styles.tabContainer,
-            { backgroundColor: isDark ? "#232338" : Colors.cream },
+            {
+              backgroundColor: isDark ? colors.backgroundElement : Colors.cream,
+            },
           ]}
         >
           {TABS.map((tab) => {
@@ -150,6 +164,7 @@ export default function CharactersScreen() {
                   setSelected(null);
                 }}
                 pressScale={0.97}
+                accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
               >
                 <Text

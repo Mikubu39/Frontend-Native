@@ -30,6 +30,16 @@ jest.mock("@/contexts/theme-context", () => ({
   useTheme: jest.fn(),
 }));
 
+jest.mock("expo-router", () => {
+  const { useEffect } = require("react");
+  return {
+    useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() }),
+    useFocusEffect: (callback: () => void) => {
+      useEffect(callback, [callback]);
+    },
+  };
+});
+
 jest.mock("@/contexts/toast-context", () => ({
   useToast: jest.fn(),
 }));

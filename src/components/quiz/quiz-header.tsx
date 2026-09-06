@@ -26,6 +26,8 @@ interface QuizHeaderProps {
   elapsedSeconds?: number;
   /** Tăng lên mỗi lần bị phạt giờ, dùng để kích hoạt hiệu ứng nhấp nháy trên đồng hồ. */
   penaltyTick?: number;
+  /** Số câu trả lời đúng liên tiếp trong bài học (combo streak). */
+  comboCount?: number;
 }
 
 function HeartIcon({
@@ -46,7 +48,7 @@ function HeartIcon({
         withSpring(1, { damping: 10 }),
       );
     }
-  }, [filled]);
+  }, [filled, scale]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -57,7 +59,7 @@ function HeartIcon({
       <FontAwesome5
         name="heart"
         size={18}
-        color={filled ? "#FF4B6E" : "rgba(255,75,110,0.22)"}
+        color={filled ? Colors.secondary : `${Colors.secondary}38`}
         solid={filled}
       />
     </Animated.View>
@@ -82,7 +84,7 @@ function TimerChip({
         withSpring(1, { damping: 10 }),
       );
     }
-  }, [penaltyTick]);
+  }, [penaltyTick, scale]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -106,7 +108,7 @@ function TimerChip({
       <Ionicons
         name="stopwatch-outline"
         size={15}
-        color={penaltyTick > 0 ? "#FF4B6E" : Colors.accent}
+        color={penaltyTick > 0 ? Colors.secondary : Colors.accent}
       />
       <Animated.Text
         style={[
@@ -116,6 +118,40 @@ function TimerChip({
       >
         {mm}:{ss}
       </Animated.Text>
+    </Animated.View>
+  );
+}
+
+function ComboChip({ count, isDark }: { count: number; isDark: boolean }) {
+  const scale = useSharedValue(0.8);
+  useEffect(() => {
+    scale.value = withSequence(
+      withSpring(1.35, { damping: 6 }),
+      withSpring(1, { damping: 10 }),
+    );
+  }, [count, scale]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        styles.comboChip,
+        animStyle,
+        {
+          backgroundColor: isDark
+            ? "rgba(255, 150, 0, 0.15)"
+            : "rgba(255, 150, 0, 0.12)",
+          borderColor: isDark
+            ? "rgba(255, 150, 0, 0.45)"
+            : "rgba(255, 150, 0, 0.35)",
+        },
+      ]}
+    >
+      <FontAwesome5 name="fire" size={13} color="#FF9600" solid />
+      <Animated.Text style={styles.comboText}>{count}</Animated.Text>
     </Animated.View>
   );
 }
@@ -134,7 +170,7 @@ function SegmentedProgressBar({
       duration: 600,
       easing: Easing.out(Easing.cubic),
     });
-  }, [progress]);
+  }, [progress, animatedWidth]);
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${animatedWidth.value * 100}%` as any,
@@ -172,8 +208,9 @@ export function QuizHeader({
   heartsRemaining,
   elapsedSeconds,
   penaltyTick,
+  comboCount,
 }: QuizHeaderProps) {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
   const showHearts =
     lessonType === "JUMP_TEST" && heartsRemaining !== undefined;
   const showTimer =
@@ -218,7 +255,7 @@ export function QuizHeader({
           <SegmentedProgressBar progress={progress} isDark={isDark} />
         </View>
 
-        {/* Hearts (JUMP_TEST) / Timer (TIMED_REVIEW) */}
+        {/* Hearts (JUMP_TEST) / Timer (TIMED_REVIEW) / Combo Streak */}
         {showHearts ? (
           <View style={styles.heartsContainer}>
             {Array.from({ length: 3 }).map((_, i) => (
@@ -236,6 +273,8 @@ export function QuizHeader({
             penaltyTick={penaltyTick ?? 0}
             isDark={isDark}
           />
+        ) : comboCount && comboCount >= 3 ? (
+          <ComboChip count={comboCount} isDark={isDark} />
         ) : (
           <View style={styles.closeBtnPlaceholder} />
         )}
@@ -305,6 +344,21 @@ const styles = StyleSheet.create({
   timerText: {
     fontSize: 13,
     fontWeight: "800",
+    fontVariant: ["tabular-nums"],
+  },
+  comboChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  comboText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#FF9600",
     fontVariant: ["tabular-nums"],
   },
 });

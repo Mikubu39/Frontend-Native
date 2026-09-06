@@ -3,10 +3,7 @@
   "best_params": {
     "clf__C": 30.0,
     "vec__min_df": 1,
-    "vec__ngram_range": [
-      2,
-      5
-    ],
+    "vec__ngram_range": [2, 5],
     "vec__preprocessor": "fold_katakana=True",
     "vec__sublinear_tf": true
   },

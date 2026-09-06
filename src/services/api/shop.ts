@@ -27,12 +27,4 @@ export const shopApi = {
       API_ENDPOINTS.SHOP.CONSUME(inventoryId),
     );
   },
-
-  equipItem: async (
-    inventoryId: number | string,
-  ): Promise<InventoryItemDto> => {
-    return apiClient.post<InventoryItemDto>(
-      API_ENDPOINTS.SHOP.EQUIP(inventoryId),
-    );
-  },
 };

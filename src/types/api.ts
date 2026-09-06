@@ -30,6 +30,7 @@ export interface AuthResponse {
     displayName: string;
     username: string;
     role: string;
+    phoneNumber?: string;
   };
 }
 
@@ -96,6 +97,7 @@ export interface UserMeResponse {
   displayName: string;
   username: string;
   role: string;
+  phoneNumber?: string;
   level: number;
   exp: number;
   rankId: number;
@@ -106,6 +108,10 @@ export interface UserMeResponse {
   currentStreak: number;
   longestStreak: number;
   streakFreezeCount: number;
+  streakStatus?: import("./gamification").StreakStatus;
+  studiedToday?: boolean;
+  frozenToday?: boolean;
+  lastStreakDate?: string | null;
   activeEffects?: {
     effectType: string;
     expiresAt: string;
@@ -199,6 +205,29 @@ export interface CancelLessonResponse {
   status: string;
 }
 
+// ============== PLACEMENT (bài kiểm tra đầu vào) DTOs ==============
+export interface PlacementAnswerRequest {
+  answers: {
+    questionId: number;
+    selectedOptionId: number;
+  }[];
+}
+
+export interface PlacementRoundResponse {
+  attemptId: number;
+  finished: boolean;
+  // Khi finished = false
+  roundNumber?: number;
+  probeTopicId?: number;
+  probeTopicTitle?: string;
+  questions?: StartLessonQuestion[];
+  // Khi finished = true
+  resultTopicId?: number | null;
+  resultTopicTitle?: string | null;
+  expEarned?: number;
+  coinsEarned?: number;
+}
+
 // ============== UPLOADS DTOs ==============
 export interface UploadResponse {
   fileUrl: string;
@@ -224,6 +253,8 @@ export interface CurrentRankInfo {
 export interface LeaderboardUserDto {
   userId: number;
   displayName: string;
+  username?: string | null;
+  level?: number | null;
   avatarUrl: string | null;
   exp: number | null;
   position: number;
@@ -244,16 +275,13 @@ export interface LeaderboardResponse {
 }
 
 // ============== SHOP DTOs ==============
-export type ItemType = "CONSUMABLE" | "POWERUP" | "COSMETIC";
+export type ItemType = "CONSUMABLE" | "POWERUP";
 export type EffectType =
   | "STREAK_FREEZE"
   | "ENERGY_REFILL"
   | "DOUBLE_XP"
   | "DOUBLE_COIN"
-  | "TIMER_BOOST"
-  | "AVATAR_FRAME"
-  | "BADGE"
-  | "THEME";
+  | "TIMER_BOOST";
 
 export interface ShopItemDto {
   id: number;
@@ -280,7 +308,6 @@ export interface InventoryItemDto {
   itemType: ItemType;
   effectType: EffectType;
   quantity: number;
-  equipped: boolean;
   active: boolean;
   expiresAt: string | null;
   acquiredAt: string;

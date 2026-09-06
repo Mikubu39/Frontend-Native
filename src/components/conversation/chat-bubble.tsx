@@ -1,13 +1,12 @@
 /**
  * Một bong bóng chat trong màn luyện hội thoại.
  *
- * Bong bóng của AI KHÔNG còn mã hoá "kết cục lượt" bằng màu như kiến trúc FSM
- * cũ. Với LLM thì mọi lượt đều là một câu đáp hợp lệ trong vai - không còn
- * khái niệm "sai bước" hay "lạc ý định" nữa. Phần đánh giá câu của người học
- * đã chuyển hẳn sang `CorrectionCard`, gắn dưới chính câu họ vừa nói.
+ * Hỗ trợ hiển thị câu tiếng Nhật kèm bản dịch tiếng Việt cho CẢ bot VÀ người học.
+ * Khi bật chế độ ẩn tiếng Việt, người học có thể chạm hoặc giữ bong bóng để
+ * lật mở bản dịch.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,7 +23,7 @@ import type { ChatMessage } from "@/types/conversation";
 
 interface ChatBubbleProps {
   message: ChatMessage;
-  /** Ẩn phần dịch tiếng Việt để người học tự dịch trước. */
+  /** Ẩn phần dịch tiếng Việt để người học tự luyện đọc/dịch trước. */
   hideTranslation?: boolean;
   /** Bỏ trống nếu thiết bị không đọc được tiếng Nhật. */
   onSpeak?: (text: string) => void;
@@ -39,10 +38,17 @@ export function ChatBubble({
   speaking,
 }: ChatBubbleProps) {
   const { colors } = useTheme();
+  const [revealed, setRevealed] = useState(false);
+
   const isUser = message.author === "user";
-  // Chỉ đọc được khi bong bóng thực sự có tiếng Nhật; một số phản hồi hỏng
-  // chỉ có lời giải thích tiếng Việt.
   const canSpeak = !!onSpeak && !!message.ja.trim();
+  const shouldShowTranslation = !hideTranslation || revealed;
+
+  const toggleReveal = () => {
+    if (hideTranslation) {
+      setRevealed((v) => !v);
+    }
+  };
 
   if (isUser) {
     return (
@@ -50,11 +56,22 @@ export function ChatBubble({
         entering={FadeInDown.duration(220)}
         style={styles.userRow}
         accessibilityRole="text"
-        accessibilityLabel={`Bạn nói: ${message.ja}`}
+        accessibilityLabel={`Bạn nói: ${message.ja}${message.vi ? `. Dịch: ${message.vi}` : ""}`}
       >
-        <View style={[styles.userBubble, { backgroundColor: Colors.primary }]}>
+        <AnimatedPressable
+          onPress={toggleReveal}
+          onLongPress={toggleReveal}
+          pressScale={0.98}
+          style={[styles.userBubble, { backgroundColor: Colors.primary }]}
+        >
           <Text style={styles.userText}>{message.ja}</Text>
-        </View>
+
+          {message.vi && shouldShowTranslation ? (
+            <Text style={styles.userVietnamese}>{message.vi}</Text>
+          ) : hideTranslation && message.vi ? (
+            <Text style={styles.tapToRevealLight}>Chạm để xem nghĩa</Text>
+          ) : null}
+        </AnimatedPressable>
       </Animated.View>
     );
   }
@@ -66,7 +83,10 @@ export function ChatBubble({
       accessibilityRole="text"
       accessibilityLabel={`Bạn thoại nói: ${message.ja}. ${message.vi}`}
     >
-      <View
+      <AnimatedPressable
+        onPress={toggleReveal}
+        onLongPress={toggleReveal}
+        pressScale={0.98}
         style={[
           styles.botBubble,
           {
@@ -107,30 +127,36 @@ export function ChatBubble({
           </View>
         ) : null}
 
-        {message.vi && !hideTranslation ? (
+        {message.vi && shouldShowTranslation ? (
           <Text style={[styles.vietnamese, { color: colors.textSecondary }]}>
             {message.vi}
           </Text>
+        ) : hideTranslation && message.vi ? (
+          <Text
+            style={[styles.tapToRevealDark, { color: colors.textSecondary }]}
+          >
+            Chạm để xem nghĩa
+          </Text>
         ) : null}
-      </View>
+      </AnimatedPressable>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   botRow: {
+    width: "100%",
     alignItems: "flex-start",
-    marginBottom: Spacing.three,
+    marginBottom: Spacing.four,
   },
   userRow: {
+    width: "100%",
     alignItems: "flex-end",
-    marginBottom: Spacing.three,
+    marginBottom: Spacing.four,
   },
   botBubble: {
-    maxWidth: "88%",
+    width: "88%",
     borderWidth: 1,
-    // Dải màu trái để phân biệt bong bóng của AI với của người học ngay từ
-    // ngoại vi thị giác, không cần đọc chữ.
     borderLeftWidth: 4,
     borderRadius: BorderRadius.md,
     paddingVertical: Spacing.three,
@@ -138,6 +164,7 @@ const styles = StyleSheet.create({
   },
   userBubble: {
     maxWidth: "85%",
+    minWidth: 120,
     borderRadius: BorderRadius.md,
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.four,
@@ -145,11 +172,11 @@ const styles = StyleSheet.create({
   japaneseRow: {
     flexDirection: "row",
     alignItems: "flex-start",
+    justifyContent: "space-between",
     gap: Spacing.two,
   },
   japanese: {
     flex: 1,
-    // Chữ Nhật cần cỡ lớn hơn chữ Latin mới đọc rõ được kanji.
     fontSize: FontSizes.lg,
     lineHeight: 28,
     fontWeight: FontWeights.medium,
@@ -160,19 +187,39 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
-    // Căn theo dòng chữ đầu tiên thay vì giữa khối, để nút không trôi xuống
-    // khi câu tiếng Nhật dài nhiều dòng.
     marginTop: 1,
+    flexShrink: 0,
   },
   vietnamese: {
     fontSize: FontSizes.sm,
     lineHeight: 20,
-    marginTop: Spacing.one,
+    marginTop: Spacing.two,
   },
   userText: {
     fontSize: FontSizes.lg,
     lineHeight: 28,
     color: "#FFFFFF",
     fontWeight: FontWeights.medium,
+  },
+  userVietnamese: {
+    fontSize: FontSizes.sm,
+    lineHeight: 20,
+    color: "rgba(255, 255, 255, 0.85)",
+    marginTop: Spacing.two,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255, 255, 255, 0.3)",
+    paddingTop: Spacing.one,
+  },
+  tapToRevealLight: {
+    fontSize: FontSizes.xs,
+    fontStyle: "italic",
+    color: "rgba(255, 255, 255, 0.7)",
+    marginTop: Spacing.two,
+  },
+  tapToRevealDark: {
+    fontSize: FontSizes.xs,
+    fontStyle: "italic",
+    marginTop: Spacing.two,
+    opacity: 0.75,
   },
 });

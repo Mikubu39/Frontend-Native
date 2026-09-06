@@ -7,7 +7,7 @@
  *   - cần cấu hình timeout riêng: lời gọi LLM chậm hơn hẳn một API CRUD.
  */
 
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosInstance, create } from "axios";
 import { config } from "@/config";
 import type {
   ConversationRespondRequest,
@@ -31,7 +31,7 @@ const TURN_TIMEOUT_MS = 45000;
  */
 const SUMMARY_TIMEOUT_MS = 90000;
 
-const client: AxiosInstance = axios.create({
+const client: AxiosInstance = create({
   baseURL: config.aiBaseUrl,
   timeout: TURN_TIMEOUT_MS,
   headers: { "Content-Type": "application/json" },

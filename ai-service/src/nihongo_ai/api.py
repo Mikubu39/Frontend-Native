@@ -113,7 +113,7 @@ class StartResponse(BaseModel):
 class RespondRequest(TopicRef):
     text: str = Field(max_length=500)
     history: list[HistoryTurnIn] = Field(default_factory=list, max_length=60)
-    remainingSeconds: int = Field(default=prompts.SESSION_MINUTES * 60, ge=0, le=3600)
+    remainingSeconds: int = Field(default=int(prompts.SESSION_MINUTES * 60), ge=0, le=3600)
 
 
 class RespondResponse(BaseModel):
@@ -121,11 +121,12 @@ class RespondResponse(BaseModel):
     hints: list[UtteranceOut]
     corrections: list[CorrectionOut]
     understood: bool
+    userVi: str = ""
 
 
 class SummaryRequest(TopicRef):
     history: list[HistoryTurnIn] = Field(default_factory=list, max_length=60)
-    durationSeconds: int = Field(default=prompts.SESSION_MINUTES * 60, ge=0, le=3600)
+    durationSeconds: int = Field(default=int(prompts.SESSION_MINUTES * 60), ge=0, le=3600)
 
 
 class MistakeOut(BaseModel):
@@ -237,7 +238,7 @@ def health() -> dict:
         "version": __version__,
         "provider": "gemini",
         "model": llm.model_name(),
-        "sessionSeconds": prompts.SESSION_MINUTES * 60,
+        "sessionSeconds": int(prompts.SESSION_MINUTES * 60),
     }
 
 
@@ -256,7 +257,7 @@ def start(request: StartRequest) -> StartResponse:
         topic=_to_topic_out(topic),
         reply=UtteranceOut(**result["reply"]),
         hints=[UtteranceOut(**hint) for hint in result["hints"]],
-        durationSeconds=prompts.SESSION_MINUTES * 60,
+        durationSeconds=int(prompts.SESSION_MINUTES * 60),
     )
 
 
@@ -281,6 +282,7 @@ def respond(request: RespondRequest) -> RespondResponse:
         hints=[UtteranceOut(**hint) for hint in result["hints"]],
         corrections=[CorrectionOut(**item) for item in result["corrections"]],
         understood=result["understood"],
+        userVi=result.get("userVi", ""),
     )
 
 

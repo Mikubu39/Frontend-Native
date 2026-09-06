@@ -5,7 +5,7 @@
  * Customize base URL, headers, interceptors, and error handling here.
  */
 
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosInstance, create } from "axios";
 import { storage } from "@/services/storage/async-storage";
 
 const API_BASE_URL =
@@ -14,15 +14,17 @@ export const TOKEN_KEY = "auth_token";
 
 class ApiClient {
   private axiosInstance: AxiosInstance;
+  private onUnauthorizedCallbacks: (() => void)[] = [];
 
   constructor(baseUrl: string) {
-    this.axiosInstance = axios.create({
+    this.axiosInstance = create({
       baseURL: baseUrl,
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-cache, no-store, must-revalidate",
         Pragma: "no-cache",
         Expires: "0",
+        "ngrok-skip-browser-warning": "true",
       },
     });
 
@@ -42,9 +44,15 @@ class ApiClient {
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error) => {
-        if (error.response?.status === 401) {
+        const status = error.response?.status;
+        const isAuthEndpoint =
+          error.config?.url?.includes("/auth/login") ||
+          error.config?.url?.includes("/auth/register");
+
+        if ((status === 401 || status === 403) && !isAuthEndpoint) {
           await storage.remove(TOKEN_KEY);
-          // Optional: Trigger event to force user to login screen
+          await storage.remove("user_data");
+          this.notifyUnauthorized();
         }
 
         // Do not use console.error here as it triggers Expo LogBox for expected errors like 401/403
@@ -54,6 +62,25 @@ class ApiClient {
         return Promise.reject(new Error(errorMessage));
       },
     );
+  }
+
+  public onUnauthorized(callback: () => void): () => void {
+    this.onUnauthorizedCallbacks.push(callback);
+    return () => {
+      this.onUnauthorizedCallbacks = this.onUnauthorizedCallbacks.filter(
+        (cb) => cb !== callback,
+      );
+    };
+  }
+
+  private notifyUnauthorized(): void {
+    this.onUnauthorizedCallbacks.forEach((cb) => {
+      try {
+        cb();
+      } catch (e) {
+        console.error("Error in onUnauthorized callback:", e);
+      }
+    });
   }
 
   async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {

@@ -28,7 +28,10 @@ jest.mock("@/services/api/vocabulary", () => ({
 jest.mock("@/contexts/theme-context", () => ({ useTheme: jest.fn() }));
 
 const mockBack = jest.fn();
-jest.mock("expo-router", () => ({ useRouter: () => ({ back: mockBack }) }));
+const mockReplace = jest.fn();
+jest.mock("expo-router", () => ({
+  useRouter: () => ({ back: mockBack, replace: mockReplace }),
+}));
 
 const mockedApi = vocabularyApi as jest.Mocked<typeof vocabularyApi>;
 const mockedUseTheme = useTheme as jest.Mock;
@@ -127,7 +130,18 @@ describe("Ôn tập từ vựng (SM-2)", () => {
       { vocabularyId: 2, correct: false },
     ]);
 
-    expect(await screen.findByText("Đúng 1/2 từ")).toBeTruthy();
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pathname: "/quiz/result",
+          params: expect.objectContaining({
+            correctCount: 1,
+            wrongCount: 1,
+            lessonType: "REVIEW_VOCAB",
+          }),
+        }),
+      ),
+    );
   });
 
   it("không còn từ tới hạn thì khen chứ không báo lỗi", async () => {
@@ -157,9 +171,17 @@ describe("Ôn tập từ vựng (SM-2)", () => {
     await fireEvent.press(screen.getByText("chào buổi sáng (thân mật)"));
     await fireEvent.press(await screen.findByText("HOÀN THÀNH"));
 
-    expect(await screen.findByText("Đúng 1/1 từ")).toBeTruthy();
-    expect(
-      screen.getByText("Đã ôn xong nhưng chưa lưu được lên máy chủ."),
-    ).toBeTruthy();
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pathname: "/quiz/result",
+          params: expect.objectContaining({
+            correctCount: 1,
+            wrongCount: 0,
+            lessonType: "REVIEW_VOCAB",
+          }),
+        }),
+      ),
+    );
   });
 });

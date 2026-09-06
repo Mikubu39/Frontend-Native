@@ -20,17 +20,7 @@ import {
   Spacing,
 } from "@/constants/theme";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import Animated, {
-  Easing,
-  FadeIn,
-  FadeOut,
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
-
-/** Thời lượng chuyển màu/nội dung khi cuộn sang chủ đề khác. */
-const SWAP_DURATION_MS = 260;
+import { DimensionValue, StyleSheet, Text, View } from "react-native";
 
 export interface TopicHeaderBarProps {
   /** Vị trí chủ đề trong lộ trình (0-based) — dùng cho nhãn "PHẦN n". */
@@ -53,49 +43,19 @@ export const TopicHeaderBar = React.memo(function TopicHeaderBar({
   onGuidePress,
 }: TopicHeaderBarProps) {
   const ratio = totalCount > 0 ? completedCount / totalCount : 0;
-
-  // Màu nền đổi mượt thay vì nhảy khựng: Reanimated nội suy được giá trị màu,
-  // nên `withTiming` trên `backgroundColor` là đủ, không cần lớp phủ chồng.
-  const surfaceStyle = useAnimatedStyle(
-    () => ({
-      backgroundColor: withTiming(accentColor, {
-        duration: SWAP_DURATION_MS,
-        easing: Easing.out(Easing.quad),
-      }),
-    }),
-    [accentColor],
-  );
-
-  const progressStyle = useAnimatedStyle(
-    () => ({
-      width: withTiming(`${Math.round(ratio * 100)}%`, {
-        duration: SWAP_DURATION_MS,
-        easing: Easing.out(Easing.quad),
-      }),
-    }),
-    [ratio],
-  );
+  const progressPercent: DimensionValue = `${Math.round(ratio * 100)}%`;
 
   return (
-    <Animated.View style={[styles.bar, surfaceStyle]}>
+    <View style={[styles.bar, { backgroundColor: accentColor }]}>
       <View style={styles.row}>
-        {/*
-         * `key` theo chỉ số chủ đề: đổi chủ đề thì khối chữ được dựng lại và
-         * chạy hiệu ứng mờ dần vào/ra, cho cảm giác "lật sang phần mới".
-         */}
-        <Animated.View
-          key={topicIndex}
-          entering={FadeIn.duration(SWAP_DURATION_MS)}
-          exiting={FadeOut.duration(120)}
-          style={styles.textBlock}
-        >
+        <View style={styles.textBlock}>
           <Text style={styles.eyebrow} numberOfLines={1}>
             PHẦN {topicIndex + 1}
           </Text>
           <Text style={styles.title} numberOfLines={1}>
             {title}
           </Text>
-        </Animated.View>
+        </View>
 
         <AnimatedPressable
           style={styles.guideBtn}
@@ -115,9 +75,9 @@ export const TopicHeaderBar = React.memo(function TopicHeaderBar({
         accessibilityRole="progressbar"
         accessibilityLabel={`Đã hoàn thành ${completedCount} trên ${totalCount} bài học`}
       >
-        <Animated.View style={[styles.progressFill, progressStyle]} />
+        <View style={[styles.progressFill, { width: progressPercent }]} />
       </View>
-    </Animated.View>
+    </View>
   );
 });
 

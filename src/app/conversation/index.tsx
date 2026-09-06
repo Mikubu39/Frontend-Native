@@ -6,10 +6,12 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from "react-native";
@@ -21,10 +23,7 @@ import { StaggeredList } from "@/components/ui/staggered-list";
 import { CustomTopicCard, TopicCard } from "@/components/conversation";
 import { conversationApi } from "@/services/api/conversation";
 import { useTheme } from "@/contexts/theme-context";
-import {
-  CUSTOM_TOPIC_ID,
-  SESSION_DURATION_SECONDS,
-} from "@/constants/conversation";
+import { CUSTOM_TOPIC_ID } from "@/constants/conversation";
 import {
   BorderRadius,
   Colors,
@@ -34,6 +33,8 @@ import {
 } from "@/constants/theme";
 import type { ConversationTopic } from "@/types/conversation";
 
+const TRANSLATION_PREF_KEY = "@nihongo_conversation_show_translation";
+
 export default function ConversationTopicListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -41,12 +42,20 @@ export default function ConversationTopicListScreen() {
   const [topics, setTopics] = useState<ConversationTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showTranslation, setShowTranslation] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      setTopics(await conversationApi.getTopics());
+      const [fetchedTopics, savedPref] = await Promise.all([
+        conversationApi.getTopics(),
+        AsyncStorage.getItem(TRANSLATION_PREF_KEY),
+      ]);
+      setTopics(fetchedTopics);
+      if (savedPref !== null) {
+        setShowTranslation(savedPref === "true");
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Không tải được danh sách.",
@@ -60,8 +69,15 @@ export default function ConversationTopicListScreen() {
     load();
   }, [load]);
 
+  const handleToggleTranslation = async (value: boolean) => {
+    setShowTranslation(value);
+    await AsyncStorage.setItem(TRANSLATION_PREF_KEY, String(value));
+  };
+
   const openTopic = (topic: ConversationTopic) =>
-    router.push(`/conversation/${topic.id}` as never);
+    router.push(
+      `/conversation/${topic.id}?showTranslation=${showTranslation}` as never,
+    );
 
   /**
    * Chủ đề tự nhập đi qua CÙNG một route với chủ đề dựng sẵn, chỉ khác ở tham
@@ -69,10 +85,8 @@ export default function ConversationTopicListScreen() {
    */
   const openCustomTopic = (text: string) =>
     router.push(
-      `/conversation/${CUSTOM_TOPIC_ID}?topic=${encodeURIComponent(text)}` as never,
+      `/conversation/${CUSTOM_TOPIC_ID}?topic=${encodeURIComponent(text)}&showTranslation=${showTranslation}` as never,
     );
-
-  const sessionMinutes = Math.round(SESSION_DURATION_SECONDS / 60);
 
   return (
     <SafeAreaView
@@ -119,10 +133,41 @@ export default function ConversationTopicListScreen() {
               Nói chuyện với người Nhật
             </Text>
             <Text style={[styles.introDesc, { color: colors.textSecondary }]}>
-              Mỗi phiên {sessionMinutes} phút. Hết giờ, AI sẽ chỉ ra lỗi của bạn
+              Mỗi phiên 1:30 phút (90 giây). Hết giờ, AI sẽ chỉ ra lỗi của bạn
               và cách nói tự nhiên hơn.
             </Text>
           </View>
+        </View>
+
+        {/* Tuỳ chọn bật/tắt bản dịch tiếng Việt trước khi vào hội thoại */}
+        <View
+          style={[
+            styles.optionCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <View
+            style={[
+              styles.optionIconBox,
+              { backgroundColor: Colors.primary + "18" },
+            ]}
+          >
+            <Ionicons name="language" size={22} color={Colors.primary} />
+          </View>
+          <View style={styles.optionBody}>
+            <Text style={[styles.optionTitle, { color: colors.text }]}>
+              Hiện bản dịch tiếng Việt
+            </Text>
+            <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>
+              Dịch câu tiếng Nhật (chạm vào câu để xem khi tắt)
+            </Text>
+          </View>
+          <Switch
+            value={showTranslation}
+            onValueChange={handleToggleTranslation}
+            trackColor={{ false: colors.border, true: Colors.primary }}
+            thumbColor="#FFFFFF"
+          />
         </View>
 
         {loading ? (
@@ -161,7 +206,7 @@ export default function ConversationTopicListScreen() {
             <CustomTopicCard onStart={openCustomTopic} />
 
             <StaggeredList staggerDelay={70}>
-              {topics.map((topic) => (
+              {topics.map((topic: ConversationTopic) => (
                 <TopicCard key={topic.id} topic={topic} onPress={openTopic} />
               ))}
             </StaggeredList>
@@ -204,7 +249,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: BorderRadius.lg,
     padding: Spacing.four,
+    marginBottom: Spacing.four,
+  },
+  optionCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.three,
+    borderWidth: 1,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.four,
     marginBottom: Spacing.five,
+  },
+  optionIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  optionBody: { flex: 1 },
+  optionTitle: {
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.bold,
+  },
+  optionDesc: {
+    fontSize: FontSizes.xs,
+    lineHeight: 16,
+    marginTop: 2,
   },
   introIcon: {
     width: 48,

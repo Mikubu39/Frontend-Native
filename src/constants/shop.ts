@@ -71,14 +71,10 @@ export const EFFECT_META: Record<EffectType, EffectMeta> = {
   DOUBLE_XP: { icon: "trending-up", label: "Nhân đôi EXP", unit: "minutes" },
   DOUBLE_COIN: { icon: "cash", label: "Nhân đôi xu", unit: "minutes" },
   TIMER_BOOST: { icon: "timer", label: "Thêm giờ làm bài", unit: "minutes" },
-  AVATAR_FRAME: { icon: "aperture", label: "Khung avatar", unit: "none" },
-  BADGE: { icon: "ribbon", label: "Huy hiệu", unit: "none" },
-  THEME: { icon: "color-palette", label: "Giao diện", unit: "none" },
 };
 
 export const SHELVES: Shelf[] = [
   { key: "CONSUMABLE", label: "Vật phẩm", icon: "cube" },
   { key: "POWERUP", label: "Tăng lực", icon: "flame" },
-  { key: "COSMETIC", label: "Trang trí", icon: "sparkles" },
   { key: "VAULT", label: "Túi đồ", icon: "briefcase" },
 ];

@@ -1,16 +1,15 @@
 /**
  * AnimatedScreen - Wrapper that adds smooth entering animations to screen content.
  * Provides fluid fade-in + slide effects with refined spring physics.
+ *
+ * For tab screens (which persist once mounted and never re-animate), pass
+ * `skipEntering` to avoid the first-frame stutter that Reanimated entering
+ * animations cause on Android.
  */
 
 import React from "react";
-import { StyleSheet, ViewStyle } from "react-native";
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-  SlideInUp,
-} from "react-native-reanimated";
+import { StyleSheet, View, ViewStyle } from "react-native";
+import Animated, { FadeIn, SlideInUp } from "react-native-reanimated";
 import { AnimationPresets } from "@/constants/theme";
 
 interface AnimatedScreenProps {
@@ -20,6 +19,8 @@ interface AnimatedScreenProps {
   variant?: "fade" | "slideUp" | "fadeSlide" | "fadeDown";
   /** Duration in ms (default: 300) */
   duration?: number;
+  /** Skip the entering animation entirely — use for tab screens that persist. */
+  skipEntering?: boolean;
 }
 
 export function AnimatedScreen({
@@ -27,7 +28,12 @@ export function AnimatedScreen({
   style,
   variant = "fade",
   duration = 300,
+  skipEntering = false,
 }: AnimatedScreenProps) {
+  if (skipEntering) {
+    return <View style={[styles.container, style]}>{children}</View>;
+  }
+
   const getEnteringAnimation = () => {
     const { damping, stiffness } = AnimationPresets.spring;
 
@@ -38,9 +44,7 @@ export function AnimatedScreen({
           .damping(damping)
           .stiffness(stiffness);
       case "fadeDown":
-        return FadeIn.duration(duration); // Changed from FadeInDown to FadeIn for snappier load
       case "fadeSlide":
-        return FadeIn.duration(duration); // Changed from FadeInDown to FadeIn for snappier load
       case "fade":
       default:
         return FadeIn.duration(duration);

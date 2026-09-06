@@ -70,7 +70,7 @@ Issues #1 for why it can't currently drive the form itself).
    active** (e.g. the leaderboard tab reads as "Xếp ..." instead of "Xếp
    hạng" once selected, because the active tab's pill expands and the label
    has less room). `tapOn: "Xếp hạng"` only matches while the tab is
-   *inactive*. `flows/leaderboard.yaml` taps "Học" first for this reason —
+   _inactive_. `flows/leaderboard.yaml` taps "Học" first for this reason —
    do the same in any new flow that re-selects an already-active tab.
 
 ## Test account

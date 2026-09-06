@@ -109,11 +109,46 @@ describe("StrokeOrderCanvas", () => {
 
   it("falls back to free drawing when the backend has no stroke data", async () => {
     const onComplete = jest.fn();
-    const { getByText } = await renderCanvas(onComplete, "");
+    const { getByTestId, getByText } = await renderCanvas(onComplete, "");
 
     expect(getByText("Viết tự do")).toBeTruthy();
-    fireEvent.press(getByText("Tôi đã viết xong"));
+    const finishButton = getByText("Tôi đã viết xong");
 
+    // Chưa vẽ nét nào -> bấm không kích hoạt onComplete
+    fireEvent.press(finishButton);
+    expect(onComplete).not.toHaveBeenCalled();
+
+    // Vẽ 1 nét tự do
+    await traceStroke(
+      getByTestId("stroke-order-canvas"),
+      { x: 20, y: 20 },
+      { x: 50, y: 50 },
+    );
+
+    // Đã vẽ nét -> bấm hoàn thành
+    fireEvent.press(finishButton);
     await waitFor(() => expect(onComplete).toHaveBeenCalledWith(true));
+  });
+
+  it("renders compound characters on a single line with scaled down font size", async () => {
+    const onComplete = jest.fn();
+    const { getByText } = await render(
+      <StrokeOrderCanvas
+        symbol="きょ"
+        strokeOrderData=""
+        size={CANVAS_SIZE}
+        onComplete={onComplete}
+      />,
+    );
+
+    const ghostText = getByText("きょ");
+    expect(ghostText).toBeTruthy();
+    expect(ghostText.props.numberOfLines).toBe(1);
+    expect(ghostText.props.adjustsFontSizeToFit).toBe(true);
+    expect(ghostText.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ fontSize: Math.round(CANVAS_SIZE * 0.36) }),
+      ]),
+    );
   });
 });

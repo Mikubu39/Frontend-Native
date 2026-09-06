@@ -13,7 +13,6 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useGamification } from "@/contexts/gamification-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ModalCard } from "@/components/ui/modal-card";
 
 interface QuestsModalProps {
   visible: boolean;
@@ -64,13 +63,18 @@ export function QuestsModal({ visible, onClose }: QuestsModalProps) {
             ) : (
               quests.map((q) => (
                 <View key={q.questId} style={styles.questCard}>
-                  <Text style={styles.questIcon}>
-                    {q.questType === "COMPLETE_LESSONS"
-                      ? "📚"
-                      : q.questType === "CORRECT_ANSWERS"
-                        ? "✅"
-                        : "🌟"}
-                  </Text>
+                  <Ionicons
+                    name={
+                      q.questType === "COMPLETE_LESSONS"
+                        ? "book"
+                        : q.questType === "CORRECT_ANSWERS"
+                          ? "checkmark-done"
+                          : "star"
+                    }
+                    size={28}
+                    color={Colors.primary}
+                    style={styles.questIcon}
+                  />
                   <View style={styles.questInfo}>
                     <Text style={styles.questTitle}>{q.title}</Text>
                     <View style={styles.progressContainer}>
@@ -103,18 +107,23 @@ export function QuestsModal({ visible, onClose }: QuestsModalProps) {
 
               {chestReward ? (
                 <View style={styles.chestRewardBox}>
-                  <Text style={{ fontSize: 40 }}>🎉</Text>
+                  <Ionicons name="sparkles" size={40} color={Colors.accent} />
                   <Text style={styles.rewardText}>Bạn đã nhận được Xu!</Text>
                 </View>
               ) : (
                 <>
-                  <Text style={styles.chestIcon}>
-                    {chestStatus?.alreadyOpenedToday
-                      ? "📦"
-                      : chestStatus?.available
-                        ? "🎁"
-                        : "🔒"}
-                  </Text>
+                  <Ionicons
+                    name={
+                      chestStatus?.alreadyOpenedToday
+                        ? "file-tray-full"
+                        : chestStatus?.available
+                          ? "gift"
+                          : "lock-closed"
+                    }
+                    size={56}
+                    color={Colors.accent}
+                    style={styles.chestIcon}
+                  />
                   <Text style={styles.chestStatusText}>
                     {chestStatus?.alreadyOpenedToday
                       ? "Bạn đã mở rương hôm nay. Trở lại vào ngày mai!"
@@ -184,7 +193,6 @@ const styles = StyleSheet.create({
     ...Shadows.sm,
   },
   questIcon: {
-    fontSize: 32,
     marginRight: Spacing.three,
   },
   questInfo: {
@@ -230,7 +238,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   chestIcon: {
-    fontSize: 64,
     marginBottom: Spacing.three,
   },
   chestStatusText: {

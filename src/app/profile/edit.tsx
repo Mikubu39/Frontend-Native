@@ -1,3 +1,4 @@
+import { BackButton } from "@/components/ui/back-button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { StyledTextInput } from "@/components/ui/text-input";
 import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
@@ -5,21 +6,55 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
 import { userService } from "@/services/api/user";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useRef, useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/use-theme";
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { showSuccess, showError, showWarning } = useToast();
   const colors = useTheme();
 
   const [displayName, setDisplayName] = useState(user?.displayName || "");
-  const [username, setUsername] = useState(user?.email?.split("@")[0] || "");
+  const [username, setUsername] = useState(
+    user?.username || user?.email?.split("@")[0] || "",
+  );
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Snapshot of the loaded values, used to detect unsaved edits when the
+  // user tries to leave via the back button (fix: discard-changes gap).
+  const initialValuesRef = useRef({
+    displayName: user?.displayName || "",
+    username: user?.username || user?.email?.split("@")[0] || "",
+    phoneNumber: "",
+  });
+
+  const isDirty = () => {
+    const initial = initialValuesRef.current;
+    return (
+      displayName !== initial.displayName ||
+      username !== initial.username ||
+      phoneNumber !== initial.phoneNumber
+    );
+  };
+
+  const handleBack = () => {
+    if (isDirty()) {
+      Alert.alert("Huỷ thay đổi?", "Các thay đổi chưa lưu sẽ bị mất.", [
+        { text: "Ở lại", style: "cancel" },
+        {
+          text: "Huỷ thay đổi",
+          style: "destructive",
+          onPress: () => router.back(),
+        },
+      ]);
+      return;
+    }
+    router.back();
+  };
 
   const handleSave = async () => {
     if (!displayName || !username) {
@@ -41,12 +76,17 @@ export default function EditProfileScreen() {
         await userService.updatePhoneNumber({
           phoneNumber: phoneNumber.trim(),
         });
+        await updateUser({ phoneNumber: phoneNumber.trim() });
       }
+
+      await updateUser({ displayName, username });
+
+      initialValuesRef.current = { displayName, username, phoneNumber };
+
       showSuccess("Thành công!", "Cập nhật hồ sơ thành công!");
       setTimeout(() => {
         router.back();
       }, 500);
-      // Note: We'd normally also update the user context here if the backend returns the new token/user.
     } catch (e: any) {
       showError("Lỗi cập nhật", e.message || "Có lỗi xảy ra khi cập nhật.");
     } finally {
@@ -67,12 +107,7 @@ export default function EditProfileScreen() {
           },
         ]}
       >
-        <Text
-          style={[styles.backBtn, { color: colors.text }]}
-          onPress={() => router.back()}
-        >
-          ←
-        </Text>
+        <BackButton onPress={handleBack} />
         <Text style={[styles.headerTitle, { color: colors.text }]}>
           Chỉnh sửa Hồ sơ
         </Text>

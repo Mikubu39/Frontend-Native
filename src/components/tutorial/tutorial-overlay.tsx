@@ -37,7 +37,6 @@ import {
   FontWeights,
   Spacing,
 } from "@/constants/theme";
-import { useTutorial } from "@/contexts/tutorial-context";
 import type { TutorialStep, TutorialTargetRect } from "@/types";
 
 const SCRIM_COLOR = "rgba(12, 8, 28, 0.82)";
@@ -144,19 +143,28 @@ function PulseRing({ hole }: { hole: Hole }) {
   );
 }
 
-// ─── Lớp phủ ─────────────────────────────────────────────────────────────────
-export function TutorialOverlay() {
-  const {
-    isActive,
-    currentStep,
-    spotlight,
-    stepIndex,
-    steps,
-    goNext,
-    goBack,
-    skipTutorial,
-  } = useTutorial();
+export interface TutorialOverlayProps {
+  isActive: boolean;
+  currentStep: TutorialStep | null;
+  spotlight: TutorialTargetRect | null;
+  stepIndex: number;
+  steps: readonly TutorialStep[];
+  goNext: () => void;
+  goBack: () => void;
+  skipTutorial: () => void;
+}
 
+// ─── Lớp phủ ─────────────────────────────────────────────────────────────────
+export function TutorialOverlay({
+  isActive,
+  currentStep,
+  spotlight,
+  stepIndex,
+  steps,
+  goNext,
+  goBack,
+  skipTutorial,
+}: TutorialOverlayProps) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [cardHeight, setCardHeight] = useState(CARD_HEIGHT_FALLBACK);

@@ -1,6 +1,6 @@
 /**
  * Sample/mock data for lessons.
- * Matches the Kotodama Figma designs.
+ * Matches the Nihongo Figma designs.
  */
 
 import type { LessonSection, LessonDetail, LearningPathNode } from "@/types";

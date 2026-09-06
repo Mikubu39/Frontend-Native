@@ -1,5 +1,5 @@
 /**
- * English string resources for the Kotodama app.
+ * English string resources for the Nihongo app.
  */
 
 export const en = {

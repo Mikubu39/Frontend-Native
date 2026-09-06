@@ -7,6 +7,7 @@ import React from "react";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Spacing } from "@/constants/theme";
+import { useTheme } from "@/contexts/theme-context";
 
 interface AudioButtonProps {
   variant?: "speaker" | "mic";
@@ -29,6 +30,7 @@ export function AudioButton({
   label,
   isPlaying = false,
 }: AudioButtonProps) {
+  const { colors } = useTheme();
   const buttonSize = SIZE_MAP[size];
   const isSpeaker = variant === "speaker";
   const bgColor = isPlaying
@@ -37,7 +39,7 @@ export function AudioButton({
       : Colors.secondaryLight
     : isSpeaker
       ? Colors.accent
-      : "#FFB6C1";
+      : Colors.secondaryLight;
   const iconSize = size === "large" ? 48 : size === "medium" ? 32 : 18;
 
   return (
@@ -50,7 +52,9 @@ export function AudioButton({
               width: buttonSize + 40,
               height: buttonSize + 40,
               borderRadius: (buttonSize + 40) / 2,
-              backgroundColor: isSpeaker ? Colors.accentPale : "#FFD1DC",
+              backgroundColor: isSpeaker
+                ? Colors.accentPale
+                : Colors.secondaryLight + "66",
             },
           ]}
         />
@@ -67,6 +71,7 @@ export function AudioButton({
         ]}
         onPress={onPress}
         activeOpacity={0.7}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         accessibilityRole="button"
         accessibilityLabel={
           label ||
@@ -86,7 +91,9 @@ export function AudioButton({
           color="#FFFFFF"
         />
       </TouchableOpacity>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && (
+        <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+      )}
     </View>
   );
 }

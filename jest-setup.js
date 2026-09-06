@@ -42,6 +42,28 @@ jest.mock("expo-av", () => {
   };
 });
 
+// expo-audio (package mới thay thế expo-av cho playback trong use-audio.ts).
+// Cùng lý do như expo-av: native module, không có JS fallback trong jest.
+jest.mock("expo-audio", () => ({
+  AudioPlayer: jest.fn().mockImplementation(() => ({
+    play: jest.fn(),
+    pause: jest.fn(),
+    remove: jest.fn(),
+    currentTime: 0,
+    duration: 0,
+    playing: false,
+  })),
+  createAudioPlayer: jest.fn().mockReturnValue({
+    play: jest.fn(),
+    pause: jest.fn(),
+    remove: jest.fn(),
+    currentTime: 0,
+    duration: 0,
+    playing: false,
+  }),
+  setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock("expo-speech", () => ({
   speak: jest.fn(),
   stop: jest.fn(),
@@ -70,4 +92,19 @@ jest.mock("expo-speech-recognition", () => ({
 jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
 );
+
+// expo-camera là native module: mock CameraView và useCameraPermissions để test chạy độc lập.
+jest.mock("expo-camera", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  return {
+    CameraView: (props) =>
+      React.createElement(View, { testID: "mock-camera-view", ...props }),
+    useCameraPermissions: jest.fn(() => [
+      { granted: true, canAskAgain: true, status: "granted" },
+      jest.fn().mockResolvedValue({ granted: true }),
+    ]),
+  };
+});
+
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;

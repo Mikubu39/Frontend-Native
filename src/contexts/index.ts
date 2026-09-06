@@ -1,4 +1,4 @@
-export { AuthProvider, useAuth } from "./auth-context";
+export { AuthProvider, useAuth, useOptionalAuth } from "./auth-context";
 export { GamificationProvider, useGamification } from "./gamification-context";
 export { ToastProvider, useToast } from "./toast-context";
 export { ThemeProvider, useTheme } from "./theme-context";

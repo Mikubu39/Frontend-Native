@@ -150,6 +150,5 @@ Before ending your turn, ensure:
 - If you learned any reusable patterns, append them to `.state/memory.md`.
 
 # Backend Modification Rule
+
 - DO NOT modify any code inside the backend project (e.g., BE_NihongoApp) unless explicitly requested by the user. Your role is strictly focused on the Frontend-Native project.
-
-

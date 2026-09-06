@@ -1,28 +1,18 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  Colors,
-  FontSizes,
-  FontWeights,
-  BorderRadius,
-  Spacing,
-} from "@/constants/theme";
+import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 import { userService } from "@/services/api/user";
-import { GradientButton } from "@/components/ui/gradient-button";
-import { useTheme } from "@/hooks/use-theme";
-import { resolveMediaUrl } from "@/utils/media";
+import { useTheme } from "@/contexts/theme-context";
+import { resolveAvatarUri } from "@/utils/media";
 import { PublicProfileResponse } from "@/types/api";
+import { BackButton } from "@/components/ui/back-button";
+import { ProfileCard, ProfileCardStat } from "@/components/friends/profile-card";
 
 export default function ViewSearchProfileScreen() {
+  const router = useRouter();
+  const { colors } = useTheme();
   const params = useLocalSearchParams<{
     id: string;
     displayName: string;
@@ -31,18 +21,16 @@ export default function ViewSearchProfileScreen() {
     isFollowing: string;
   }>();
 
-  const router = useRouter();
-  const colors = useTheme();
-
-  const id = parseInt(params.id || "0", 10);
   const [isFollowing, setIsFollowing] = useState(params.isFollowing === "true");
-  const [toggling, setToggling] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [publicProfile, setPublicProfile] =
     useState<PublicProfileResponse | null>(null);
 
   useEffect(() => {
     let isMounted = true;
+    const id = Number(params.id);
     if (!id) return;
+
     userService
       .getPublicProfile(id)
       .then((data) => {
@@ -51,111 +39,93 @@ export default function ViewSearchProfileScreen() {
           setIsFollowing(data.isFollowing);
         }
       })
-      .catch((e) => console.error(e));
+      .catch((error) => {
+        console.error("Failed to fetch public profile:", error);
+      });
+
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [params.id]);
 
   const handleToggleFollow = async () => {
+    const id = Number(params.id);
     if (!id) return;
-    setToggling(true);
+
+    setLoading(true);
     try {
       const newStatus = await userService.toggleFollow(id);
       setIsFollowing(newStatus);
+      if (publicProfile) {
+        setPublicProfile({
+          ...publicProfile,
+          followerCount: newStatus
+            ? publicProfile.followerCount + 1
+            : Math.max(0, publicProfile.followerCount - 1),
+          isFollowing: newStatus,
+        });
+      }
     } catch (e) {
-      console.error(e);
+      console.error("Toggle follow failed:", e);
     } finally {
-      setToggling(false);
+      setLoading(false);
     }
   };
+
+  const stats: ProfileCardStat[] = publicProfile
+    ? [
+        {
+          key: "following",
+          value: publicProfile.followingCount,
+          label: "Đang theo dõi",
+        },
+        {
+          key: "followers",
+          value: publicProfile.followerCount,
+          label: "Người theo dõi",
+        },
+        {
+          key: "streak",
+          value: `🔥 ${publicProfile.currentStreak}`,
+          label: "Streak",
+        },
+      ]
+    : [
+        {
+          key: "level",
+          value: `Lv ${params.level || "1"}`,
+          label: "Cấp độ",
+        },
+      ];
+
+  const avatarUrl =
+    params.avatarUrl && params.avatarUrl !== "null"
+      ? resolveAvatarUri(params.avatarUrl)
+      : null;
 
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={[styles.backText, { color: colors.text }]}>←</Text>
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>Hồ Sơ</Text>
-        <View style={styles.backBtn} />
+        <BackButton onPress={() => router.back()} />
+        <Text style={[styles.title, { color: colors.text }]}>Hồ sơ</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View
-          style={[
-            styles.profileHeader,
-            {
-              backgroundColor: colors.card,
-              shadowColor: "transparent",
-              borderWidth: 1,
-              borderColor: colors.borderSubtle,
-              elevation: 0,
-            },
-          ]}
-        >
-          {params.avatarUrl && params.avatarUrl !== "null" ? (
-            <Image
-              source={{ uri: resolveMediaUrl(params.avatarUrl) }}
-              style={styles.avatar}
-            />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarText}>
-                {params.displayName?.charAt(0).toUpperCase() || "?"}
-              </Text>
-            </View>
-          )}
-          <Text style={[styles.fullName, { color: colors.text }]}>
-            {params.displayName}
-          </Text>
-
-          <View style={styles.stats}>
-            {publicProfile ? (
-              <>
-                <View style={styles.statItem}>
-                  <Text style={[styles.statNumber, { color: colors.text }]}>
-                    {publicProfile.followingCount}
-                  </Text>
-                  <Text style={styles.statLabel}>Đang theo dõi</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={[styles.statNumber, { color: colors.text }]}>
-                    {publicProfile.followerCount}
-                  </Text>
-                  <Text style={styles.statLabel}>Người theo dõi</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={[styles.statNumber, { color: colors.text }]}>
-                    🔥 {publicProfile.currentStreak}
-                  </Text>
-                  <Text style={styles.statLabel}>Streak</Text>
-                </View>
-              </>
-            ) : (
-              <View style={styles.statItem}>
-                <Text style={[styles.statNumber, { color: colors.text }]}>
-                  Lv {params.level || "1"}
-                </Text>
-                <Text style={styles.statLabel}>Level</Text>
-              </View>
-            )}
-          </View>
-          {publicProfile?.rankName && (
-            <Text style={[styles.rankBadge, { color: colors.textSecondary }]}>
-              Hạng {publicProfile.rankName}
-            </Text>
-          )}
-
-          <View style={styles.actionContainer}>
-            <GradientButton
-              title={isFollowing ? "Đang Theo dõi" : "Theo dõi"}
-              onPress={handleToggleFollow}
-              disabled={toggling}
-            />
-          </View>
-        </View>
+        <ProfileCard
+          displayName={params.displayName}
+          avatarUrl={avatarUrl}
+          stats={stats}
+          rankLabel={
+            publicProfile?.rankName ? `Hạng ${publicProfile.rankName}` : undefined
+          }
+          isFollowing={isFollowing}
+          onToggleFollow={handleToggleFollow}
+          followLoading={loading}
+          colors={colors}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -171,14 +141,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: Spacing.four,
   },
-  backBtn: {
+  headerSpacer: {
     width: 40,
     height: 40,
-    justifyContent: "center",
-  },
-  backText: {
-    fontSize: FontSizes.xxl,
-    color: Colors.textPrimary,
   },
   title: {
     flex: 1,
@@ -189,72 +154,5 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.six,
-  },
-  profileHeader: {
-    alignItems: "center",
-    backgroundColor: Colors.surface,
-    padding: Spacing.six,
-    borderRadius: BorderRadius.xl,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: Spacing.four,
-  },
-  avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.primary + "20",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.four,
-  },
-  avatarText: {
-    fontSize: 40,
-    color: Colors.primary,
-    fontWeight: FontWeights.bold,
-  },
-  fullName: {
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.four,
-  },
-  stats: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.six,
-    width: "100%",
-  },
-  statItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  statNumber: {
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-  },
-  statLabel: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    marginTop: Spacing.one,
-  },
-  actionContainer: {
-    width: "100%",
-  },
-  rankBadge: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.semibold,
-    marginBottom: Spacing.four,
-    textAlign: "center",
   },
 });

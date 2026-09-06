@@ -35,7 +35,7 @@ interface QuestStationProps {
   order: number;
 }
 
-export function QuestStation({
+export const QuestStation = React.memo(function QuestStation({
   node,
   topLine,
   bottomLine,
@@ -58,15 +58,7 @@ export function QuestStation({
   /** Tinted rather than neutral grey: at 0% the track is the only colour
    * the plate has, and a dead grey bar makes a fresh board look broken. */
   const track = accent + "26";
-
-  const dormantPlate = state === "pending";
-  /**
-   * The lip under the face is what gives the plate travel. `colors.border`
-   * disappears against the cream background in light mode, taking the bevel
-   * with it, so untouched plates get a muted mauve lip in both themes.
-   */
-  const dormantLip = QuestPalette.dormant + "59";
-  const delay = 120 + order * 90;
+  const delay = order * 60;
 
   return (
     <View style={styles.row}>
@@ -81,7 +73,9 @@ export function QuestStation({
       <View
         style={[
           styles.lip,
-          { backgroundColor: dormantPlate ? dormantLip : lip },
+          {
+            backgroundColor: lip,
+          },
         ]}
       >
         <View
@@ -89,28 +83,20 @@ export function QuestStation({
             styles.face,
             {
               backgroundColor: colors.card,
-              borderColor: dormantPlate ? colors.border : accent + "66",
+              borderColor: accent,
             },
+            done && styles.doneWash,
           ]}
           accessibilityRole="summary"
           accessibilityLabel={`${quest.title}. ${caption}. ${quest.currentProgress} trên ${quest.targetValue}.`}
         >
-          {done ? (
-            <View
-              pointerEvents="none"
-              style={[StyleSheet.absoluteFill, styles.doneWash]}
-            />
-          ) : null}
-
           <View style={styles.head}>
             <View
               style={[
                 styles.glyph,
                 {
-                  backgroundColor: done
-                    ? QuestPalette.goldWash
-                    : QuestPalette.trailWash,
-                  borderColor: dormantPlate ? colors.border : accent + "55",
+                  backgroundColor: accent + "18",
+                  borderColor: accent + "44",
                 },
               ]}
             >
@@ -155,7 +141,7 @@ export function QuestStation({
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   row: {

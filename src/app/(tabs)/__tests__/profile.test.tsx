@@ -61,9 +61,15 @@ jest.mock("@/services/storage/async-storage", () => ({
 }));
 
 const mockPush = jest.fn();
-jest.mock("expo-router", () => ({
-  useRouter: () => ({ push: mockPush }),
-}));
+jest.mock("expo-router", () => {
+  const { useEffect } = require("react");
+  return {
+    useRouter: () => ({ push: mockPush }),
+    useFocusEffect: (callback: () => void) => {
+      useEffect(callback, [callback]);
+    },
+  };
+});
 
 const mockedUseAuth = useAuth as jest.Mock;
 const mockedUseGamification = useGamification as unknown as jest.Mock;

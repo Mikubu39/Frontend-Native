@@ -1,13 +1,6 @@
 /**
  * Ôn tập từ vựng theo lịch ngắt quãng (SM-2).
- *
- * Khác màn "Luyện tập Lỗi Sai" ở đơn vị: bên đó ôn theo CÂU HỎI từng làm sai,
- * còn ở đây ôn theo TỪ đã tới hạn quên. Một từ gặp ở năm bài khác nhau vẫn chỉ
- * là một mục ở đây, nên người học không thể học vẹt đáp án của riêng một câu.
- *
- * Đề bài được dựng ngay trên máy: mặt chữ Nhật + 4 nghĩa để chọn, trong đó 3
- * nghĩa nhiễu lấy từ kho từ đã cache sẵn. Làm vậy để không phải soạn tay câu hỏi
- * cho từng từ — kho có 675 từ và sẽ còn tăng.
+ * Đồng bộ với giao diện Bài học.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -20,30 +13,32 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeIn, FadeInUp } from "react-native-reanimated";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { GradientButton } from "@/components/ui/gradient-button";
-import { QuestionPrompt } from "@/components/quiz/question-prompt";
+import {
+  QuizBottomBar,
+  VocabQuestionCard,
+  QuizHeader,
+} from "@/components/quiz";
 import { vocabularyApi } from "@/services/api/vocabulary";
 import { useTheme } from "@/contexts/theme-context";
 import { useGlossary } from "@/contexts/glossary-context";
+import { useSoundEffect } from "@/hooks/use-sound-effect";
 import type { VocabularyItem } from "@/types";
-import {
-  Colors,
-  Spacing,
-  FontSizes,
-  FontWeights,
-  BorderRadius,
-} from "@/constants/theme";
+import { Colors, Spacing, FontSizes, FontWeights } from "@/constants/theme";
 
-/** Số nghĩa nhiễu đứng cạnh nghĩa đúng. */
+const QUESTION_MASCOTS = [
+  require("@/assets/animations/character1.json"),
+  require("@/assets/animations/character2.json"),
+  require("@/assets/animations/character3.json"),
+];
+
 const DISTRACTOR_COUNT = 3;
 
 interface ReviewCard {
   item: VocabularyItem;
-  /** Bốn lựa chọn đã xáo, đúng một cái khớp `item.meaningVn`. */
   choices: string[];
 }
 
@@ -56,13 +51,6 @@ function shuffle<T>(input: T[]): T[] {
   return out;
 }
 
-/**
- * Dựng lựa chọn cho một từ.
- *
- * Nghĩa nhiễu phải KHÁC hẳn nghĩa đúng, nếu không sẽ có câu hai đáp án cùng
- * đúng ("cảm ơn (thân mật)" vs "cảm ơn (lịch sự)" thì vẫn chấp nhận vì đó là
- * hai từ thật sự khác nhau, nhưng trùng chuỗi y hệt thì không).
- */
 function buildCard(item: VocabularyItem, pool: string[]): ReviewCard {
   const distractors = shuffle(
     pool.filter((m) => m && m !== item.meaningVn),
@@ -74,6 +62,7 @@ export default function VocabularyReviewScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const { glossary } = useGlossary();
+  const { playCorrect, playIncorrect } = useSoundEffect();
 
   const [cards, setCards] = useState<ReviewCard[]>([]);
   const [index, setIndex] = useState(0);
@@ -86,7 +75,6 @@ export default function VocabularyReviewScreen() {
   const [finished, setFinished] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /** Tất cả nghĩa đã biết, dùng làm kho nghĩa nhiễu. */
   const meaningPool = useMemo(
     () =>
       Object.values(glossary)
@@ -118,9 +106,6 @@ export default function VocabularyReviewScreen() {
     return () => {
       cancelled = true;
     };
-    // Chỉ chạy một lần: bộ đề đã dựng xong thì không được xáo lại giữa chừng khi
-    // kho từ tải xong muộn, nếu không người học đang làm dở sẽ thấy đề nhảy.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const current = cards[index];
@@ -128,16 +113,22 @@ export default function VocabularyReviewScreen() {
   const handlePick = useCallback(
     (choice: string) => {
       if (picked || !current) return;
+      const isCorrect = choice === current.item.meaningVn;
       setPicked(choice);
+      if (isCorrect) {
+        playCorrect();
+      } else {
+        playIncorrect();
+      }
       setResults((prev) => [
         ...prev,
         {
           vocabularyId: current.item.id,
-          correct: choice === current.item.meaningVn,
+          correct: isCorrect,
         },
       ]);
     },
-    [picked, current],
+    [picked, current, playCorrect, playIncorrect],
   );
 
   const handleNext = useCallback(async () => {
@@ -150,8 +141,6 @@ export default function VocabularyReviewScreen() {
     try {
       await vocabularyApi.submitReview(results);
     } catch {
-      // Đã ôn xong rồi mới lỗi mạng: vẫn cho xem kết quả thay vì nuốt mất công
-      // sức, chỉ là lịch ôn chưa cập nhật. Lần vào sau các từ này vẫn còn hạn.
       setError("Đã ôn xong nhưng chưa lưu được lên máy chủ.");
     } finally {
       setSubmitting(false);
@@ -159,7 +148,20 @@ export default function VocabularyReviewScreen() {
     }
   }, [index, cards.length, results]);
 
-  const correctCount = results.filter((r) => r.correct).length;
+  useEffect(() => {
+    if (finished) {
+      const correctCount = results.filter((r) => r.correct).length;
+      router.replace({
+        pathname: "/quiz/result",
+        params: {
+          correctCount,
+          wrongCount: results.length - correctCount,
+          lessonType: "REVIEW_VOCAB",
+          status: "COMPLETED",
+        },
+      });
+    }
+  }, [finished, results, router]);
 
   if (loading) {
     return (
@@ -171,7 +173,6 @@ export default function VocabularyReviewScreen() {
     );
   }
 
-  // Không có gì để ôn là TIN VUI, không phải lỗi — nói cho đúng giọng.
   if (!finished && cards.length === 0) {
     return (
       <SafeAreaView
@@ -194,104 +195,75 @@ export default function VocabularyReviewScreen() {
     );
   }
 
-  if (finished) {
-    return (
-      <SafeAreaView
-        style={[styles.center, { backgroundColor: colors.background }]}
-      >
-        <Animated.View entering={FadeInUp.duration(320)} style={styles.center}>
-          <Ionicons name="sparkles-outline" size={72} color={Colors.accent} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            Đúng {correctCount}/{results.length} từ
-          </Text>
-          <Text style={[styles.emptyBody, { color: colors.textSecondary }]}>
-            {error ??
-              "Những từ trả lời sai sẽ quay lại sớm, từ nhớ tốt sẽ giãn ra xa hơn."}
-          </Text>
-          <GradientButton title="Xong" onPress={() => router.back()} />
-        </Animated.View>
-      </SafeAreaView>
-    );
-  }
+  if (finished) return null;
 
-  const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
-  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
+  const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const progress =
+    cards.length > 0 ? Math.min((index + 1) / cards.length, 1) : 0;
+
+  const currentMascot = QUESTION_MASCOTS[index % QUESTION_MASCOTS.length];
 
   return (
-    <SafeAreaView
-      style={[styles.screen, { backgroundColor: colors.background }]}
-    >
+    <SafeAreaView style={[styles.screen, { backgroundColor: bg }]}>
+      <QuizHeader
+        progress={progress}
+        onClose={() => router.back()}
+        lessonType="REVIEW"
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.counter, { color: colors.textSecondary }]}>
           Từ {index + 1}/{cards.length}
         </Text>
-
-        <QuestionPrompt instruction="Từ này nghĩa là gì?" />
-
         <Animated.View
           key={current.item.id}
-          entering={FadeIn.duration(220)}
-          style={[
-            styles.wordCard,
-            { backgroundColor: cardBg, borderColor: cardBorder },
-          ]}
+          entering={FadeInUp.duration(300).springify()}
         >
-          {current.item.romaji ? (
-            <Text style={[styles.romaji, { color: colors.textSecondary }]}>
-              {current.item.romaji}
-            </Text>
-          ) : null}
-          {/* Không dùng JapaneseText ở đây: tra được nghĩa thì còn gì để ôn. */}
-          <Text style={[styles.word, { color: colors.text }]}>
-            {current.item.surface}
-          </Text>
+          <VocabQuestionCard
+            question={
+              {
+                id: current.item.id,
+                type: "vocab",
+                surface: current.item.surface,
+                romaji: current.item.romaji,
+                instruction: "Từ này nghĩa là gì?",
+                prompt: current.item.surface,
+                promptRomaji: current.item.romaji,
+                promptLang: "ja",
+                glossary: {},
+                answers: current.choices.map((c, i) => ({
+                  id: i.toString(),
+                  text: c,
+                  isCorrect: c === current.item.meaningVn,
+                })),
+              } as any
+            }
+            selectedAnswer={
+              picked
+                ? current.choices.findIndex((c) => c === picked).toString()
+                : null
+            }
+            mascotSource={currentMascot}
+            onSelectAnswer={(id) => {
+              if (picked !== null) return;
+              handlePick(current.choices[parseInt(id, 10)]);
+            }}
+          />
         </Animated.View>
-
-        <View style={styles.choices}>
-          {current.choices.map((choice) => {
-            const isPicked = picked === choice;
-            const isCorrect = choice === current.item.meaningVn;
-            // Chỉ tô màu SAU khi đã chọn, nếu không là lộ đáp án.
-            const showState = picked !== null && (isPicked || isCorrect);
-            return (
-              <AnimatedPressable
-                key={choice}
-                style={[
-                  styles.choice,
-                  {
-                    backgroundColor: showState
-                      ? isCorrect
-                        ? Colors.success + "22"
-                        : Colors.error + "22"
-                      : cardBg,
-                    borderColor: showState
-                      ? isCorrect
-                        ? Colors.success
-                        : Colors.error
-                      : cardBorder,
-                  },
-                ]}
-                onPress={() => handlePick(choice)}
-                pressScale={0.97}
-              >
-                <Text style={[styles.choiceText, { color: colors.text }]}>
-                  {choice}
-                </Text>
-              </AnimatedPressable>
-            );
-          })}
-        </View>
       </ScrollView>
 
-      {picked ? (
-        <View style={styles.footer}>
-          <GradientButton
-            title={index + 1 < cards.length ? "TIẾP TỤC" : "HOÀN THÀNH"}
-            onPress={handleNext}
-            disabled={submitting}
-          />
-        </View>
-      ) : null}
+      <View style={styles.footer}>
+        <QuizBottomBar
+          hasInteracted={picked !== null}
+          hasSubmitted={picked !== null}
+          isSubmitting={submitting}
+          isCorrect={picked === current.item.meaningVn}
+          correctAnswerText={current.item.meaningVn}
+          onCheck={() => {}}
+          onNext={handleNext}
+          finishLabel="HOÀN THÀNH"
+          isLastQuestion={index + 1 >= cards.length}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -305,30 +277,23 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
     padding: Spacing.six,
   },
-  content: { padding: Spacing.five, gap: Spacing.four },
+  content: {
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   counter: {
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
-    letterSpacing: 1,
+    textAlign: "center",
+    marginBottom: Spacing.two,
   },
-  wordCard: {
-    borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    paddingVertical: Spacing.eight,
-    alignItems: "center",
-    gap: Spacing.two,
-  },
-  romaji: { fontSize: FontSizes.md, fontWeight: FontWeights.medium },
-  word: { fontSize: 44, fontWeight: FontWeights.extrabold },
-  choices: { gap: Spacing.three, marginTop: Spacing.four },
-  choice: {
-    borderRadius: BorderRadius.lg,
-    borderWidth: 2,
-    paddingVertical: Spacing.four,
+  footer: {
     paddingHorizontal: Spacing.five,
+    paddingBottom: Spacing.five,
+    paddingTop: Spacing.three,
   },
-  choiceText: { fontSize: FontSizes.lg, fontWeight: FontWeights.bold },
-  footer: { padding: Spacing.five },
   emptyTitle: {
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,

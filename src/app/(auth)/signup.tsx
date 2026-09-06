@@ -3,24 +3,20 @@
  */
 
 import { SocialAuthSection } from "@/components/auth/social-auth-section";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { StyledTextInput } from "@/components/ui/text-input";
-import {
-  BorderRadius,
-  Colors,
-  FontSizes,
-  FontWeights,
-  Spacing,
-} from "@/constants/theme";
+import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
 import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 import React, { useState } from "react";
 import {
+  KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -43,6 +39,15 @@ export default function SignupScreen() {
       showWarning("Thiếu thông tin", "Vui lòng điền Email và Mật khẩu.");
       return;
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      showWarning(
+        "Định dạng không hợp lệ",
+        "Vui lòng nhập một địa chỉ email hợp lệ.",
+      );
+      return;
+    }
     setLoading(true);
     try {
       await signUp(email, password, name || "User");
@@ -61,6 +66,13 @@ export default function SignupScreen() {
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
+      {/*
+        `behavior="padding"` cho CẢ Android chứ không chỉ iOS.
+        Từ Android 15 trở lên, chế độ edge-to-edge khiến
+        `android:windowSoftInputMode="adjustResize"` bị BỎ QUA - bàn phím
+        che mất input/nút submit nếu không có KeyboardAvoidingView.
+      */}
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -69,16 +81,19 @@ export default function SignupScreen() {
         <View
           style={[styles.header, { borderBottomColor: colors.borderSubtle }]}
         >
-          <TouchableOpacity
+          <AnimatedPressable
             onPress={() => router.replace("/welcome")}
             style={styles.closeButton}
+            pressScale={0.9}
+            accessibilityRole="button"
+            accessibilityLabel="Đóng"
           >
             <Text
               style={[styles.closeButtonText, { color: colors.textSecondary }]}
             >
               ✕
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.textSecondary }]}>
             Tạo hồ sơ
           </Text>
@@ -132,20 +147,13 @@ export default function SignupScreen() {
             autoCapitalize="none"
           />
 
-          {/* 3D Secondary (Rose/Pink) Signup Button */}
-          <TouchableOpacity
-            style={[styles.submitButton, loading && styles.disabledButton]}
+          <GradientButton
+            title="TẠO HỒ SƠ"
             onPress={handleSignup}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            <View style={styles.submitButtonShadow} />
-            <View style={styles.submitButtonContent}>
-              <Text style={styles.submitButtonText}>
-                {loading ? "ĐANG XỬ LÝ..." : "TẠO HỒ SƠ"}
-              </Text>
-            </View>
-          </TouchableOpacity>
+            loading={loading}
+            variant="secondary"
+            style={styles.submitButton}
+          />
         </View>
 
         {/* Social Auth */}
@@ -161,6 +169,7 @@ export default function SignupScreen() {
           }}
         />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -169,6 +178,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+  },
+  flex: {
+    flex: 1,
   },
   scroll: {
     flexGrow: 1,
@@ -229,37 +241,6 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     width: "100%",
-    height: 52,
     marginTop: Spacing.four,
-    position: "relative",
-  },
-  disabledButton: {
-    opacity: 0.7,
-  },
-  submitButtonShadow: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 4,
-    bottom: -4,
-    backgroundColor: "#C81B75",
-    borderRadius: BorderRadius.md,
-  },
-  submitButtonContent: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: Colors.secondary,
-    borderRadius: BorderRadius.md,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  submitButtonText: {
-    color: "#FFFFFF",
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.bold,
-    letterSpacing: 0.8,
   },
 });

@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { type ViewStyle } from "react-native";
+import { View, type ViewStyle } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AnimationPresets } from "@/constants/theme";
 
@@ -38,7 +38,7 @@ export function StaggeredList({
           )}
           style={style}
         >
-          {child}
+          <View>{child}</View>
         </Animated.View>
       ))}
     </>

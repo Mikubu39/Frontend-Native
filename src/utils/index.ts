@@ -4,3 +4,6 @@ export * from "./stroke-order";
 export * from "./shop";
 export * from "./media";
 export * from "./lesson-intro";
+export * from "./qr";
+export * from "./streak";
+export * from "./achievement-icon";

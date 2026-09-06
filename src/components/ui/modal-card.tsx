@@ -17,7 +17,6 @@ import {
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
 import {
-  Colors,
   FontSizes,
   FontWeights,
   BorderRadius,
@@ -25,6 +24,7 @@ import {
   Shadows,
   AnimationPresets,
 } from "@/constants/theme";
+import { useTheme } from "@/contexts/theme-context";
 
 interface ModalCardProps {
   children: React.ReactNode;
@@ -33,6 +33,8 @@ interface ModalCardProps {
 }
 
 export function ModalCard({ children, onClose, style }: ModalCardProps) {
+  const { colors } = useTheme();
+
   return (
     <Animated.View
       entering={FadeIn.duration(AnimationPresets.duration.fast)}
@@ -41,11 +43,22 @@ export function ModalCard({ children, onClose, style }: ModalCardProps) {
       <BlurView intensity={45} tint="dark" style={styles.overlay} />
       <Animated.View
         entering={FadeInDown.duration(AnimationPresets.duration.normal)}
-        style={[styles.card, style]}
+        style={[styles.card, { backgroundColor: colors.cardElevated }, style]}
       >
         {onClose && (
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeIcon}>✕</Text>
+          <TouchableOpacity
+            style={[
+              styles.closeButton,
+              { backgroundColor: colors.backgroundElement },
+            ]}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Đóng"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.closeIcon, { color: colors.textSecondary }]}>
+              ✕
+            </Text>
           </TouchableOpacity>
         )}
         {children}
@@ -67,7 +80,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
   },
   card: {
-    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xxl,
     padding: Spacing.six,
     width: "100%",
@@ -86,11 +98,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 26,
-    backgroundColor: Colors.lockedBg,
   },
   closeIcon: {
     fontSize: FontSizes.lg,
-    color: Colors.textSecondary,
     fontWeight: FontWeights.bold,
   },
 });

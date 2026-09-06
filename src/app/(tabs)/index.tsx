@@ -27,7 +27,11 @@ import {
   TOPIC_DIVIDER_HEIGHT,
   TopicDivider,
   TopicHeaderBar,
+  GuidebookSheet,
 } from "@/components/lessons";
+import { StreakModal } from "@/components/gamification";
+import { useToast } from "@/contexts/toast-context";
+import * as Haptics from "expo-haptics";
 import { SpotlightTarget } from "@/components/tutorial";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { AnimatedScreen } from "@/components/ui/animated-screen";
@@ -47,16 +51,24 @@ import { useTheme } from "@/contexts/theme-context";
 import { useTutorial } from "@/contexts/tutorial-context";
 import { roadmapApi } from "@/services/api/roadmap";
 import type { RoadmapLessonResponse, RoadmapTopicResponse } from "@/types";
-import { FontAwesome5 } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
+  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -64,7 +76,6 @@ import {
 } from "react-native";
 import Animated, {
   Easing,
-  FadeIn,
   FadeInDown,
   useAnimatedStyle,
   useSharedValue,
@@ -183,6 +194,39 @@ function hexPoints(cx: number, cy: number, r: number): string {
   }).join(" ");
 }
 
+// Pre-computed polygon points — avoided calculating trigonometry on every render
+const HEX_POINTS_OUTER = hexPoints(NODE_SIZE / 2, NODE_SIZE / 2, HEX_RADIUS);
+const HEX_POINTS_INNER = hexPoints(
+  NODE_SIZE / 2,
+  NODE_SIZE / 2,
+  HEX_RADIUS - 5,
+);
+const HEX_POINTS_SHIMMER = hexPoints(
+  NODE_SIZE / 2,
+  NODE_SIZE / 2 - 4,
+  HEX_RADIUS - 10,
+);
+
+// ─── ActiveFloatingWrapper ───────────────────────────────────────────────────
+/** Chỉ bọc duy nhất node đang hoạt động (isActive) để không tạo SharedValue cho 95 node tĩnh. */
+function ActiveFloatingWrapper({ children }: { children: React.ReactNode }) {
+  const floatY = useSharedValue(0);
+
+  useEffect(() => {
+    floatY.value = withRepeat(
+      withTiming(-7, { duration: 1600, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+  }, [floatY]);
+
+  const floatStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatY.value }],
+  }));
+
+  return <Animated.View style={floatStyle}>{children}</Animated.View>;
+}
+
 // ─── ActiveNodeGlow ──────────────────────────────────────────────────────────
 function ActiveNodeGlow({ size }: { size: number }) {
   const scale = useSharedValue(1);
@@ -199,7 +243,7 @@ function ActiveNodeGlow({ size }: { size: number }) {
       -1,
       true,
     );
-  }, []);
+  }, [opacity, scale]);
 
   const glowStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -230,12 +274,13 @@ type NodeStatus = "COMPLETED" | "UNLOCKED" | "IN_PROGRESS" | "LOCKED";
 /**
  * Một node hình lục giác trên bản đồ.
  *
- * `React.memo`: mở/đóng popover chỉ đổi `isPopupVisible` của đúng 2 node, nhưng
- * nếu không memo thì cả chục node trong chủ đề đều dựng lại SVG theo — mỗi lần
- * chạm vào bản đồ là một nhịp giật.
+ * Tối ưu hoá siêu tốc:
+ * - Hình lục giác được vẽ trong SVG tổng của TopicSection, HexNode là lớp phủ tương tác thuần.
+ * - Zero SVG component overhead trong HexNode (giảm 120+ SvgView instances trên Android xuống 0).
+ * - Duy nhất 1 node `isActive` mới gắn `ActiveFloatingWrapper` & `ActiveNodeGlow`.
  */
 const HexNode = React.memo(function HexNode({
-  node,
+  lesson,
   index,
   isActive,
   isPopupVisible,
@@ -243,50 +288,107 @@ const HexNode = React.memo(function HexNode({
   onStart,
   centerX,
 }: {
-  node: {
-    id: number | string;
-    title: string;
-    status: NodeStatus;
-    lessonType?: string;
-    starsEarned?: number;
-    entryCostEnergy?: number;
-  };
+  lesson: RoadmapLessonResponse;
   index: number;
   isActive: boolean;
   isPopupVisible: boolean;
-  onPress: () => void;
-  onStart: () => void;
+  onPress: (lesson: RoadmapLessonResponse) => void;
+  onStart: (lesson: RoadmapLessonResponse) => void;
   centerX: number;
 }) {
   const { isDark } = useTheme();
-  const isLocked = node.status === "LOCKED";
-  const isCompleted = node.status === "COMPLETED";
+  const { showError } = useToast();
+  const isLocked = lesson.status === "LOCKED";
+  const isCompleted = lesson.status === "COMPLETED";
+  const isJumpTest = lesson.lessonType === "JUMP_TEST";
+
+  const node = {
+    id: lesson.lessonId,
+    title: lesson.title,
+    status: lesson.status as NodeStatus,
+    lessonType: lesson.lessonType,
+    starsEarned: lesson.starsEarned,
+    entryCostEnergy: lesson.entryCostEnergy,
+  };
+
+  const handlePress = useCallback(() => {
+    if (isLocked) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+        () => {},
+      );
+      showError(
+        "Bài học đang khóa",
+        "Hãy hoàn thành các bài học trước để mở khóa nhé! 🔒",
+      );
+      return;
+    }
+    onPress(lesson);
+  }, [isLocked, lesson, onPress, showError]);
+
+  const handleStart = useCallback(() => onStart(lesson), [onStart, lesson]);
+
   const x = centerX + getOffset(index);
   const y = START_Y + index * NODE_SPACING;
 
-  const floatY = useSharedValue(0);
+  const lessonIconName: keyof typeof Ionicons.glyphMap =
+    node.lessonType === "TOPIC_REVIEW"
+      ? "bulb"
+      : isJumpTest
+        ? "trophy"
+        : "star";
 
-  useEffect(() => {
-    if (isActive) {
-      floatY.value = withRepeat(
-        withTiming(-7, { duration: 1600, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true,
-      );
-    } else {
-      floatY.value = withTiming(0, { duration: 400 });
-    }
-  }, [isActive]);
-
-  const floatStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: floatY.value }],
-  }));
-
-  const lessonIcon = node.lessonType === "TOPIC_REVIEW" ? "🧠" : "⭐";
+  const buttonContent = (
+    <Pressable
+      onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isActive }}
+      accessibilityLabel={`Bài học: ${node.title}. ${
+        isLocked ? "Đã khóa" : isCompleted ? "Đã hoàn thành" : "Đang mở khóa"
+      }`}
+      accessibilityHint={
+        isLocked
+          ? "Hãy hoàn thành bài học trước để mở khóa"
+          : "Bấm để xem chi tiết bài học"
+      }
+      style={({ pressed }) => [
+        styles.hexButton,
+        pressed && styles.hexButtonPressed,
+      ]}
+    >
+      {/* Center icon/label overlay */}
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {isLocked ? (
+          <FontAwesome5 name="lock" size={18} color="rgba(255,255,255,0.3)" />
+        ) : isCompleted ? (
+          <View style={{ alignItems: "center" }}>
+            <FontAwesome5 name="check" size={16} color="#FFFFFF" solid />
+            <Ionicons
+              name={lessonIconName}
+              size={16}
+              color="#FFFFFF"
+              style={styles.nodeIconEmoji}
+            />
+          </View>
+        ) : (
+          <Ionicons
+            name={lessonIconName}
+            size={isActive ? 26 : 22}
+            color={Colors.accent}
+            style={styles.nodeIconEmoji}
+          />
+        )}
+      </View>
+    </Pressable>
+  );
 
   return (
-    <Animated.View
-      entering={FadeIn.delay(40 + index * 25).duration(300)}
+    <View
       style={[
         styles.nodeAbsoluteWrapper,
         {
@@ -294,168 +396,19 @@ const HexNode = React.memo(function HexNode({
           top: y,
           zIndex: isPopupVisible ? 100 : isActive ? 10 : 2,
         },
-        isActive && floatStyle,
       ]}
     >
       {/* Glow ring for active node */}
       {isActive && <ActiveNodeGlow size={NODE_SIZE} />}
 
-      {/* Node đang mở khoá là mốc của tour hướng dẫn — chỉ nó mới đăng ký đo. */}
-      <SpotlightTarget targetId="lesson-node" enabled={isActive}>
-        <AnimatedPressable
-          onPress={onPress}
-          disabled={isLocked}
-          pressScale={isLocked ? 1 : 0.9}
-          accessibilityRole="button"
-          // `selected` để trình đọc màn hình nói được "bài bạn đang học" — trước đó
-          // trạng thái này chỉ tồn tại dưới dạng hiệu ứng nhấp nháy, người dùng
-          // screen reader không có cách nào biết.
-          accessibilityState={{ selected: isActive }}
-          accessibilityLabel={`Bài học: ${node.title}. ${
-            isLocked
-              ? "Đã khóa"
-              : isCompleted
-                ? "Đã hoàn thành"
-                : "Đang mở khóa"
-          }`}
-          accessibilityHint={
-            isLocked
-              ? "Hãy hoàn thành bài học trước để mở khóa"
-              : "Bấm để xem chi tiết bài học"
-          }
-          style={{
-            width: NODE_SIZE,
-            height: NODE_SIZE,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Svg
-            width={NODE_SIZE}
-            height={NODE_SIZE}
-            viewBox={`0 0 ${NODE_SIZE} ${NODE_SIZE}`}
-          >
-            <Defs>
-              <SvgGradient
-                id={`hexGrad-${node.id}`}
-                x1="0"
-                y1="0"
-                x2="1"
-                y2="1"
-              >
-                <Stop
-                  offset="0"
-                  stopColor={isLocked ? "#8B8FA8" : Colors.primary}
-                />
-                <Stop
-                  offset="1"
-                  stopColor={isLocked ? "#5C6070" : Colors.secondary}
-                />
-              </SvgGradient>
-              {/* Outer shadow ring */}
-              <SvgGradient
-                id={`ringGrad-${node.id}`}
-                x1="0"
-                y1="0"
-                x2="1"
-                y2="1"
-              >
-                <Stop
-                  offset="0"
-                  stopColor={
-                    isActive
-                      ? Colors.primary
-                      : isCompleted
-                        ? Colors.primaryLight
-                        : "#4B4F64"
-                  }
-                  stopOpacity="0.9"
-                />
-                <Stop
-                  offset="1"
-                  stopColor={
-                    isActive
-                      ? Colors.secondary
-                      : isCompleted
-                        ? Colors.secondary
-                        : "#2E3044"
-                  }
-                  stopOpacity="0.9"
-                />
-              </SvgGradient>
-            </Defs>
-
-            {/* Outer ring (border) */}
-            <Polygon
-              points={hexPoints(NODE_SIZE / 2, NODE_SIZE / 2, HEX_RADIUS)}
-              fill={`url(#ringGrad-${node.id})`}
-              opacity={isLocked ? 0.4 : 1}
-            />
-
-            {/* Inner fill */}
-            <Polygon
-              points={hexPoints(NODE_SIZE / 2, NODE_SIZE / 2, HEX_RADIUS - 5)}
-              fill={
-                isCompleted
-                  ? `url(#hexGrad-${node.id})`
-                  : isLocked
-                    ? isDark
-                      ? "#252736"
-                      : "#D1D5DB"
-                    : isDark
-                      ? "#1A1B2E"
-                      : "#F3F4F6"
-              }
-              opacity={isLocked ? 0.6 : 1}
-            />
-
-            {/* Inner highlight shimmer line */}
-            {!isLocked && (
-              <Polygon
-                points={hexPoints(
-                  NODE_SIZE / 2,
-                  NODE_SIZE / 2 - 4,
-                  HEX_RADIUS - 10,
-                )}
-                fill="rgba(255,255,255,0.06)"
-              />
-            )}
-          </Svg>
-
-          {/* Center icon/label overlay */}
-          <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-            <View
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {isLocked ? (
-                <FontAwesome5
-                  name="lock"
-                  size={18}
-                  color="rgba(255,255,255,0.3)"
-                />
-              ) : isCompleted ? (
-                <View style={{ alignItems: "center" }}>
-                  <FontAwesome5 name="check" size={16} color="#FFFFFF" solid />
-                  <Text style={styles.nodeIconEmoji}>{lessonIcon}</Text>
-                </View>
-              ) : (
-                <Text
-                  style={[
-                    styles.nodeIconEmoji,
-                    isActive && styles.nodeIconActive,
-                  ]}
-                >
-                  {lessonIcon}
-                </Text>
-              )}
-            </View>
-          </View>
-        </AnimatedPressable>
-      </SpotlightTarget>
+      {/* Node đang mở khoá là mốc của tour hướng dẫn */}
+      {isActive ? (
+        <SpotlightTarget targetId="lesson-node" enabled={true}>
+          <ActiveFloatingWrapper>{buttonContent}</ActiveFloatingWrapper>
+        </SpotlightTarget>
+      ) : (
+        buttonContent
+      )}
 
       {/* Lesson Popover */}
       {isPopupVisible && (
@@ -472,45 +425,27 @@ const HexNode = React.memo(function HexNode({
                   ? "rgba(20,20,38,0.98)"
                   : "rgba(255,255,255,0.98)",
                 borderColor: isDark
-                  ? "rgba(139,92,246,0.25)"
-                  : "rgba(139,92,246,0.2)",
+                  ? "rgba(59, 76, 130,0.25)"
+                  : "rgba(59, 76, 130,0.2)",
               },
             ]}
           >
             {/* Badge row */}
             <View style={styles.popoverBadgeRow}>
-              <View style={styles.popoverBadge}>
+              <View
+                style={[
+                  styles.popoverBadge,
+                  isJumpTest && { backgroundColor: "#FF9600" },
+                ]}
+              >
                 <Text style={styles.popoverBadgeText}>
-                  {node.lessonType === "TOPIC_REVIEW"
-                    ? "BÀI ÔN TẬP"
-                    : "BÀI HỌC"}
+                  {isJumpTest
+                    ? "KIỂM TRA VƯỢT CẤP"
+                    : node.lessonType === "TOPIC_REVIEW"
+                      ? "BÀI ÔN TẬP"
+                      : "BÀI HỌC"}
                 </Text>
               </View>
-              {/*
-                Sao chỉ có ý nghĩa với bài ôn tập (TOPIC_REVIEW) — `computeStars` phía
-                backend trả 0 cho mọi loại khác. Trước đây chỗ này vẽ cứng 3 sao
-                vàng cho MỌI bài, kể cả bài chưa từng học.
-              */}
-              {node.lessonType === "TOPIC_REVIEW" && (
-                <View style={styles.popoverStars}>
-                  {[1, 2, 3].map((position) => (
-                    <FontAwesome5
-                      key={position}
-                      name="star"
-                      size={11}
-                      color={
-                        position <= (node.starsEarned ?? 0)
-                          ? Colors.accent
-                          : isDark
-                            ? "rgba(255,255,255,0.18)"
-                            : "rgba(0,0,0,0.15)"
-                      }
-                      solid
-                      style={{ marginLeft: 2 }}
-                    />
-                  ))}
-                </View>
-              )}
             </View>
 
             <Text
@@ -532,73 +467,65 @@ const HexNode = React.memo(function HexNode({
                 },
               ]}
             >
-              {node.entryCostEnergy ?? DEFAULT_ENTRY_COST_ENERGY} ⚡ năng lượng
+              {isJumpTest
+                ? "Vượt qua thử thách để mở khóa chủ đề tiếp theo! (3 ❤️)"
+                : `${node.entryCostEnergy ?? DEFAULT_ENTRY_COST_ENERGY} ⚡ năng lượng`}
             </Text>
 
             <GradientButton
-              title="BẮT ĐẦU →"
-              onPress={onStart}
+              title={isJumpTest ? "BẮT ĐẦU VƯỢT CẤP →" : "BẮT ĐẦU →"}
+              onPress={handleStart}
               style={{ width: "100%", paddingVertical: 11, marginTop: 4 }}
             />
           </View>
         </Animated.View>
       )}
-    </Animated.View>
+    </View>
   );
 });
 
-// ─── TimedReviewBadge ────────────────────────────────────────────────────────
-const TIMED_REVIEW_BADGE_SIZE = 56;
+// ─── TimedReviewBadge ────────────────────────────────────────────────────────────────────
+const TIMED_REVIEW_BADGE_SIZE = 72;
 
 /**
  * Mascot cạnh đường đi cho bài "ôn tập tính giờ" (TIMED_REVIEW).
  *
- * Khác `HexNode`: không chiếm 1 vị trí trên path (không tham gia `generatePaths`
- * / đánh index tuần tự) — chỉ đặt cạnh node gần nhất bằng toạ độ (x, y) tuyệt
- * đối do `TopicSection` tính sẵn. Không bắt buộc phải hoàn thành (server luôn
- * trả UNLOCKED, xem `LessonUnlockPolicy`), nên không có trạng thái LOCKED thật
- * sự trong thực tế — vẫn xử lý phòng hờ để không vỡ UI nếu sau này đổi ý.
+ * Khác `HexNode`: không chiếm 1 vị trí trên path — chỉ đặt cạnh node gần nhất.
+ * Tối ưu bằng `Pressable` thuần cho trải nghiệm cuộn mượt mà.
  */
 const TimedReviewBadge = React.memo(function TimedReviewBadge({
-  node,
+  lesson,
   x,
   y,
   isPopupVisible,
   onPress,
   onStart,
 }: {
-  node: {
-    id: number | string;
-    title: string;
-    status: NodeStatus;
-    starsEarned?: number;
-    entryCostEnergy?: number;
-  };
+  lesson: RoadmapLessonResponse;
   x: number;
   y: number;
   isPopupVisible: boolean;
-  onPress: () => void;
-  onStart: () => void;
+  onPress: (lesson: RoadmapLessonResponse) => void;
+  onStart: (lesson: RoadmapLessonResponse) => void;
 }) {
   const { isDark } = useTheme();
-  const isLocked = node.status === "LOCKED";
-  const isCompleted = node.status === "COMPLETED";
+  const isLocked = lesson.status === "LOCKED";
+  const isCompleted = lesson.status === "COMPLETED";
 
-  const bounce = useSharedValue(0);
-  useEffect(() => {
-    bounce.value = withRepeat(
-      withTiming(-6, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
-    );
-  }, []);
-  const bounceStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: bounce.value }],
-  }));
+  const node = {
+    id: lesson.lessonId,
+    title: lesson.title,
+    status: lesson.status as NodeStatus,
+    lessonType: lesson.lessonType,
+    starsEarned: lesson.starsEarned,
+    entryCostEnergy: lesson.entryCostEnergy,
+  };
+
+  const handlePress = useCallback(() => onPress(lesson), [onPress, lesson]);
+  const handleStart = useCallback(() => onStart(lesson), [onStart, lesson]);
 
   return (
-    <Animated.View
-      entering={FadeIn.delay(250).duration(300)}
+    <View
       style={[
         styles.timedReviewWrapper,
         {
@@ -608,14 +535,13 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
         },
       ]}
     >
-      <Animated.View style={bounceStyle}>
-        <AnimatedPressable
-          onPress={onPress}
+      <View>
+        <Pressable
+          onPress={handlePress}
           disabled={isLocked}
-          pressScale={isLocked ? 1 : 0.9}
           accessibilityRole="button"
           accessibilityLabel={`Ôn tập tính giờ: ${node.title}. Không bắt buộc.`}
-          style={[
+          style={({ pressed }) => [
             styles.timedReviewBubble,
             {
               backgroundColor: isCompleted
@@ -625,13 +551,20 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
                   : "rgba(255,255,255,0.92)",
               borderColor: isCompleted
                 ? Colors.accent
-                : "rgba(139,92,246,0.45)",
+                : "rgba(59, 76, 130,0.45)",
               opacity: isLocked ? 0.5 : 1,
+              transform: [{ scale: pressed && !isLocked ? 0.93 : 1 }],
             },
           ]}
         >
-          <Text style={styles.timedReviewEmoji}>🦉</Text>
-        </AnimatedPressable>
+          <Ionicons
+            name="timer-outline"
+            size={26}
+            color={
+              isCompleted ? Colors.accent : isDark ? "#FFFFFF" : Colors.primary
+            }
+          />
+        </Pressable>
         <View style={styles.timedReviewStars}>
           {[1, 2, 3].map((position) => (
             <FontAwesome5
@@ -650,7 +583,7 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
             />
           ))}
         </View>
-      </Animated.View>
+      </View>
 
       {/* Popover — tái dùng đúng style token với HexNode để đồng bộ giao diện */}
       {isPopupVisible && (
@@ -670,8 +603,8 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
                   ? "rgba(20,20,38,0.98)"
                   : "rgba(255,255,255,0.98)",
                 borderColor: isDark
-                  ? "rgba(139,92,246,0.25)"
-                  : "rgba(139,92,246,0.2)",
+                  ? "rgba(59, 76, 130,0.25)"
+                  : "rgba(59, 76, 130,0.2)",
               },
             ]}
           >
@@ -725,13 +658,13 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
 
             <GradientButton
               title="BẮT ĐẦU →"
-              onPress={onStart}
+              onPress={handleStart}
               style={{ width: "100%", paddingVertical: 11, marginTop: 4 }}
             />
           </View>
         </Animated.View>
       )}
-    </Animated.View>
+    </View>
   );
 });
 
@@ -760,23 +693,23 @@ function StatPill({
   );
 }
 
-// Topic color palette — each topic gets a distinct accent
+// Topic color palette — each topic gets a distinct accent, all drawn from the
+// existing Ai-zome palette instead of generic Tailwind-scale hexes.
 const TOPIC_ACCENTS = [
   { from: Colors.primary, to: Colors.secondary },
-  { from: "#0EA5E9", to: "#6366F1" },
-  { from: "#10B981", to: "#059669" },
-  { from: "#F59E0B", to: "#EF4444" },
-  { from: "#8B5CF6", to: "#EC4899" },
+  { from: Colors.secondary, to: Colors.accent },
+  { from: Colors.success, to: Colors.primaryLight },
+  { from: Colors.accent, to: Colors.error },
+  { from: Colors.primaryDark, to: Colors.secondaryDark },
 ];
 
 // ─── TopicSection ────────────────────────────────────────────────────────────
 /**
  * Một chủ đề trên bản đồ: banner + đoạn đường có các bài học.
  *
- * Tách riêng và bọc `React.memo` để FlatList chỉ dựng những chủ đề đang ở gần
- * khung nhìn. Trước đây cả 12 chủ đề (95 bài) nằm chung một ScrollView nên máy
- * phải giữ đồng thời 95 node SVG cùng các animation lặp vô hạn của chúng — đó
- * là nguyên nhân chính khiến màn hình lộ trình giật trên emulator.
+ * Tối ưu hoá tối thượng:
+ * - Dựng duy nhất 1 thẻ SVG chứa toàn bộ đường ray VÀ hình lục giác của các bài học.
+ * - Triệt tiêu 100% chi phí tạo các Svg con riêng lẻ.
  */
 interface TopicSectionProps {
   topic: RoadmapTopicResponse;
@@ -788,239 +721,404 @@ interface TopicSectionProps {
   onStartLesson: (lesson: RoadmapLessonResponse) => void;
 }
 
-const TopicSection = React.memo(function TopicSection({
-  topic,
-  topicIndex,
-  centerX,
-  activeLessonId,
-  selectedLessonId,
-  onNodePress,
-  onStartLesson,
-}: TopicSectionProps) {
-  const { isDark } = useTheme();
-  const lessons = topic.lessons;
+const TopicSection = React.memo(
+  function TopicSection({
+    topic,
+    topicIndex,
+    centerX,
+    activeLessonId,
+    selectedLessonId,
+    onNodePress,
+    onStartLesson,
+  }: TopicSectionProps) {
+    const { isDark } = useTheme();
+    const lessons = topic.lessons;
 
-  // TIMED_REVIEW ("ôn tập tính giờ") không bắt buộc và không chiếm 1 vị trí
-  // trên đường đi chính — nó là mascot đặt CẠNH node gần nhất, đúng kiểu
-  // Duolingo (khác TOPIC_REVIEW/"cái tạ" nằm ngay trên path, xem index.tsx).
-  // `pathLessons` là những gì thực sự vẽ path + hexagon; `sideLessons` là
-  // các bài TIMED_REVIEW được ghim bên cạnh.
-  const pathLessons = React.useMemo(
-    () => lessons.filter((l) => l.lessonType !== "TIMED_REVIEW"),
-    [lessons],
-  );
-  const sideLessons = React.useMemo(
-    () => lessons.filter((l) => l.lessonType === "TIMED_REVIEW"),
-    [lessons],
-  );
-  // Với mỗi bài TIMED_REVIEW, tìm index (trong pathLessons) của bài path gần
-  // nhất đứng TRƯỚC nó theo đúng thứ tự orderIndex gốc — đó là node nó sẽ
-  // ghim cạnh vào. Nếu nó đứng trước mọi bài path (hiếm), neo vào node đầu.
-  const sideAnchorIndexByLessonId = React.useMemo(() => {
-    const map = new Map<number | string, number>();
-    let lastPathIndex = -1;
-    for (const lesson of lessons) {
-      if (lesson.lessonType === "TIMED_REVIEW") {
-        map.set(lesson.lessonId, Math.max(lastPathIndex, 0));
-      } else {
-        lastPathIndex += 1;
+    // TIMED_REVIEW ("ôn tập tính giờ") không bắt buộc và không chiếm 1 vị trí
+    // trên đường đi chính — nó là mascot đặt CẠNH node gần nhất, đúng kiểu
+    // Duolingo (khác TOPIC_REVIEW/"cái tạ" nằm ngay trên path, xem index.tsx).
+    // `pathLessons` là những gì thực sự vẽ path + hexagon; `sideLessons` là
+    // các bài TIMED_REVIEW được ghim bên cạnh.
+    const pathLessons = React.useMemo(
+      () => lessons.filter((l) => l.lessonType !== "TIMED_REVIEW"),
+      [lessons],
+    );
+    const sideLessons = React.useMemo(
+      () => lessons.filter((l) => l.lessonType === "TIMED_REVIEW"),
+      [lessons],
+    );
+    // Với mỗi bài TIMED_REVIEW, tìm index (trong pathLessons) của bài path gần
+    // nhất đứng TRƯỚC nó theo đúng thứ tự orderIndex gốc — đó là node nó sẽ
+    // ghim cạnh vào. Nếu nó đứng trước mọi bài path (hiếm), neo vào node đầu.
+    const sideAnchorIndexByLessonId = React.useMemo(() => {
+      const map = new Map<number | string, number>();
+      let lastPathIndex = -1;
+      for (const lesson of lessons) {
+        if (lesson.lessonType === "TIMED_REVIEW") {
+          map.set(lesson.lessonId, Math.max(lastPathIndex, 0));
+        } else {
+          lastPathIndex += 1;
+        }
       }
-    }
-    return map;
-  }, [lessons]);
+      return map;
+    }, [lessons]);
 
-  const totalMapHeight =
-    START_Y + pathLessons.length * NODE_SPACING + SECTION_TAIL;
-  const paths = React.useMemo(
-    () => generatePaths(pathLessons, centerX),
-    [pathLessons, centerX],
-  );
-  const accent = TOPIC_ACCENTS[topicIndex % TOPIC_ACCENTS.length];
+    const totalMapHeight =
+      START_Y + pathLessons.length * NODE_SPACING + SECTION_TAIL;
+    const paths = React.useMemo(
+      () => generatePaths(pathLessons, centerX),
+      [pathLessons, centerX],
+    );
+    const accent = TOPIC_ACCENTS[topicIndex % TOPIC_ACCENTS.length];
 
-  return (
-    <>
-      {/*
+    return (
+      <>
+        {/*
         Vạch ngăn mang tên chủ đề sắp bắt đầu. Chủ đề đầu tiên không cần vạch:
         thanh dính ở đầu màn hình đã nói nó là phần nào rồi.
       */}
-      {topicIndex > 0 && (
-        <TopicDivider
-          title={topic.topicTitle}
-          topicIndex={topicIndex}
-          accentColor={accent.from}
-          isDark={isDark}
-        />
-      )}
+        {topicIndex > 0 && (
+          <TopicDivider
+            title={topic.topicTitle}
+            topicIndex={topicIndex}
+            accentColor={accent.from}
+            isDark={isDark}
+          />
+        )}
 
-      {/* ── Map Section ── */}
-      <View
-        key={`map-${topic.topicId}`}
-        style={[styles.mapContainer, { height: totalMapHeight }]}
-      >
-        {/* SVG Track */}
-        <Svg style={StyleSheet.absoluteFillObject}>
-          <Defs>
-            <SvgGradient
-              id={`activeGrad-${topicIndex}`}
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="1"
-            >
-              <Stop offset="0" stopColor={accent.from} stopOpacity="1" />
-              <Stop offset="1" stopColor={accent.to} stopOpacity="1" />
-            </SvgGradient>
-          </Defs>
+        {/* ── Map Section ── */}
+        <View
+          key={`map-${topic.topicId}`}
+          style={[styles.mapContainer, { height: totalMapHeight }]}
+        >
+          {/* SVG Track + Hexagon Backgrounds (Unified into single hardware draw pass) */}
+          <Svg style={StyleSheet.absoluteFillObject}>
+            <Defs>
+              <SvgGradient
+                id={`activeGrad-${topicIndex}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <Stop offset="0" stopColor={accent.from} stopOpacity="1" />
+                <Stop offset="1" stopColor={accent.to} stopOpacity="1" />
+              </SvgGradient>
+              <SvgGradient id="hexGrad-active" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0" stopColor={Colors.primary} />
+                <Stop offset="1" stopColor={Colors.secondary} />
+              </SvgGradient>
+              <SvgGradient id="ringGrad-active" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0" stopColor={Colors.primary} stopOpacity="0.9" />
+                <Stop
+                  offset="1"
+                  stopColor={Colors.secondary}
+                  stopOpacity="0.9"
+                />
+              </SvgGradient>
+              <SvgGradient id="ringGrad-completed" x1="0" y1="0" x2="1" y2="1">
+                <Stop
+                  offset="0"
+                  stopColor={Colors.primaryLight}
+                  stopOpacity="0.9"
+                />
+                <Stop
+                  offset="1"
+                  stopColor={Colors.secondary}
+                  stopOpacity="0.9"
+                />
+              </SvgGradient>
+            </Defs>
 
-          {/* Outer rail shadow */}
-          <G y={5} opacity={0.3}>
+            {/* Outer rail shadow */}
+            <G y={5} opacity={0.3}>
+              <Path
+                d={paths.fullPath}
+                fill="none"
+                stroke="#000000"
+                strokeWidth={20}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </G>
+
+            {/* Inactive track outer */}
             <Path
               d={paths.fullPath}
               fill="none"
-              stroke="#000000"
+              stroke={isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)"}
               strokeWidth={20}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-          </G>
-
-          {/* Inactive track outer */}
-          <Path
-            d={paths.fullPath}
-            fill="none"
-            stroke={isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)"}
-            strokeWidth={20}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* Inactive track inner line (dash-like) */}
-          <Path
-            d={paths.fullPath}
-            fill="none"
-            stroke={isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)"}
-            strokeWidth={6}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeDasharray="8 12"
-          />
-
-          {/* Active track glow halo */}
-          {paths.activePath !== "" && (
+            {/* Inactive track inner line (clean subtle line, avoiding expensive Bezier dash computation) */}
             <Path
-              d={paths.activePath}
+              d={paths.fullPath}
               fill="none"
-              stroke={accent.from}
-              strokeOpacity={0.25}
-              strokeWidth={34}
+              stroke={isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)"}
+              strokeWidth={6}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-          )}
 
-          {/* Active track outer */}
-          {paths.activePath !== "" && (
-            <Path
-              d={paths.activePath}
-              fill="none"
-              stroke={`url(#activeGrad-${topicIndex})`}
-              strokeWidth={20}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
+            {/* Active track glow halo */}
+            {paths.activePath !== "" && (
+              <Path
+                d={paths.activePath}
+                fill="none"
+                stroke={accent.from}
+                strokeOpacity={0.25}
+                strokeWidth={34}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
 
-          {/* Active track center highlight */}
-          {paths.activePath !== "" && (
-            <Path
-              d={paths.activePath}
-              fill="none"
-              stroke="rgba(255,255,255,0.25)"
-              strokeWidth={5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-        </Svg>
+            {/* Active track outer */}
+            {paths.activePath !== "" && (
+              <Path
+                d={paths.activePath}
+                fill="none"
+                stroke={`url(#activeGrad-${topicIndex})`}
+                strokeWidth={20}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
 
-        {/* Floating orbs as decorative ambience */}
-        {pathLessons.map((_, index) => {
-          if (index % 3 !== 0) return null;
-          const nodeOffset = getOffset(index);
-          const side = nodeOffset >= 0 ? -1 : 1;
-          const orbX = centerX + nodeOffset + side * (60 + (index % 3) * 18);
-          const orbY = START_Y + index * NODE_SPACING + 28;
-          const size = 18 + (index % 4) * 8;
-          return (
-            <Animated.View
-              key={`orb-${topicIndex}-${index}`}
-              entering={FadeIn.delay(index * 80).duration(600)}
-              style={{
-                position: "absolute",
-                left: orbX - size / 2,
-                top: orbY,
-                width: size,
-                height: size,
-                borderRadius: size / 2,
-                backgroundColor: accent.from,
-                opacity: 0.07 + (index % 3) * 0.03,
-              }}
-            />
-          );
-        })}
+            {/* Active track center highlight */}
+            {paths.activePath !== "" && (
+              <Path
+                d={paths.activePath}
+                fill="none"
+                stroke="rgba(255,255,255,0.25)"
+                strokeWidth={5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
 
-        {/* Render HexNodes */}
-        {pathLessons.map((lesson, index) => (
-          <HexNode
-            key={lesson.lessonId}
-            node={{
-              id: lesson.lessonId,
-              title: lesson.title,
-              status: lesson.status as NodeStatus,
-              lessonType: lesson.lessonType,
-              starsEarned: lesson.starsEarned,
-              entryCostEnergy: lesson.entryCostEnergy,
-            }}
-            index={index}
-            centerX={centerX}
-            isActive={lesson.lessonId === activeLessonId}
-            isPopupVisible={selectedLessonId === lesson.lessonId}
-            onPress={() => onNodePress(lesson)}
-            onStart={() => onStartLesson(lesson)}
-          />
-        ))}
+            {/* Hexagon nodes static vector backgrounds */}
+            {pathLessons.map((lesson, index) => {
+              const isLocked = lesson.status === "LOCKED";
+              const isCompleted = lesson.status === "COMPLETED";
+              const isActive = lesson.lessonId === activeLessonId;
+              const nodeX = centerX + getOffset(index);
+              const nodeY = START_Y + index * NODE_SPACING;
+              const ringGradId = isActive
+                ? "ringGrad-active"
+                : "ringGrad-completed";
 
-        {/* Render TIMED_REVIEW mascots — ghim cạnh node path gần nhất, không
-            chiếm chỗ trên đường đi chính. */}
-        {sideLessons.map((lesson) => {
-          const anchorIndex =
-            sideAnchorIndexByLessonId.get(lesson.lessonId) ?? 0;
-          const anchorOffset = getOffset(anchorIndex);
-          const anchorX = centerX + anchorOffset;
-          const anchorY = START_Y + anchorIndex * NODE_SPACING;
-          // Ghim về phía "trống" của node neo (đối diện hướng lượn của path)
-          // để mascot không đè lên track SVG.
-          const side = anchorOffset >= 0 ? -1 : 1;
-          const badgeX = anchorX + side * (NODE_SIZE / 2 + 44);
-          const badgeY = anchorY + 6;
-          return (
-            <TimedReviewBadge
+              return (
+                <G
+                  key={`hex-bg-${lesson.lessonId}`}
+                  x={nodeX - NODE_SIZE / 2}
+                  y={nodeY}
+                >
+                  {/* Outer ring (border) */}
+                  <Polygon
+                    points={HEX_POINTS_OUTER}
+                    fill={
+                      isLocked
+                        ? isDark
+                          ? Colors.lockedDark
+                          : Colors.locked
+                        : `url(#${ringGradId})`
+                    }
+                    opacity={isLocked ? 0.4 : 1}
+                  />
+
+                  {/* Inner fill */}
+                  <Polygon
+                    points={HEX_POINTS_INNER}
+                    fill={
+                      isCompleted
+                        ? "url(#hexGrad-active)"
+                        : isLocked
+                          ? isDark
+                            ? Colors.lockedBgDark
+                            : Colors.locked
+                          : isDark
+                            ? "#1A1B2E"
+                            : Colors.lockedBg
+                    }
+                    opacity={isLocked ? 0.6 : 1}
+                  />
+
+                  {/* Inner highlight shimmer line */}
+                  {!isLocked && (
+                    <Polygon
+                      points={HEX_POINTS_SHIMMER}
+                      fill="rgba(255,255,255,0.06)"
+                    />
+                  )}
+                </G>
+              );
+            })}
+          </Svg>
+
+          {/* Floating orbs as decorative ambience (static View for zero animation/bridge overhead) */}
+          {pathLessons.map((_, index) => {
+            if (index % 3 !== 0) return null;
+            const nodeOffset = getOffset(index);
+            const side = nodeOffset >= 0 ? -1 : 1;
+            const orbX = centerX + nodeOffset + side * (60 + (index % 3) * 18);
+            const orbY = START_Y + index * NODE_SPACING + 28;
+            const size = 18 + (index % 4) * 8;
+            return (
+              <View
+                key={`orb-${topicIndex}-${index}`}
+                style={{
+                  position: "absolute",
+                  left: orbX - size / 2,
+                  top: orbY,
+                  width: size,
+                  height: size,
+                  borderRadius: size / 2,
+                  backgroundColor: accent.from,
+                  opacity: 0.07 + (index % 3) * 0.03,
+                }}
+              />
+            );
+          })}
+
+          {/* Render HexNodes */}
+          {pathLessons.map((lesson, index) => (
+            <HexNode
               key={lesson.lessonId}
-              node={{
-                id: lesson.lessonId,
-                title: lesson.title,
-                status: lesson.status as NodeStatus,
-                starsEarned: lesson.starsEarned,
-                entryCostEnergy: lesson.entryCostEnergy,
-              }}
-              x={badgeX}
-              y={badgeY}
+              lesson={lesson}
+              index={index}
+              centerX={centerX}
+              isActive={lesson.lessonId === activeLessonId}
               isPopupVisible={selectedLessonId === lesson.lessonId}
-              onPress={() => onNodePress(lesson)}
-              onStart={() => onStartLesson(lesson)}
+              onPress={onNodePress}
+              onStart={onStartLesson}
             />
-          );
-        })}
-      </View>
+          ))}
+
+          {/* Render TIMED_REVIEW mascots — ghim cạnh node path gần nhất, không
+            chiếm chỗ trên đường đi chính. */}
+          {sideLessons.map((lesson) => {
+            const anchorIndex =
+              sideAnchorIndexByLessonId.get(lesson.lessonId) ?? 0;
+            const anchorOffset = getOffset(anchorIndex);
+            const anchorX = centerX + anchorOffset;
+            const anchorY = START_Y + anchorIndex * NODE_SPACING;
+            // Ghim về phía "trống" của node neo (đối diện hướng lượn của path)
+            // để mascot không đè lên track SVG. Offset 64 px (tăng từ 44) để
+            // mascot to hơn (72 px) không chạm vào cạnh hex node.
+            const side = anchorOffset >= 0 ? -1 : 1;
+            const badgeX = anchorX + side * (NODE_SIZE / 2 + 64);
+            const badgeY = anchorY + 6;
+            return (
+              <TimedReviewBadge
+                key={lesson.lessonId}
+                lesson={lesson}
+                x={badgeX}
+                y={badgeY}
+                isPopupVisible={selectedLessonId === lesson.lessonId}
+                onPress={onNodePress}
+                onStart={onStartLesson}
+              />
+            );
+          })}
+        </View>
+      </>
+    );
+  },
+  (prevProps, nextProps) => {
+    if (
+      prevProps.topicIndex !== nextProps.topicIndex ||
+      prevProps.centerX !== nextProps.centerX ||
+      prevProps.activeLessonId !== nextProps.activeLessonId ||
+      prevProps.topic.topicId !== nextProps.topic.topicId
+    ) {
+      return false;
+    }
+
+    // Only re-render if the selectedLessonId change actually affects this topic section.
+    const hasSelectedPrev =
+      prevProps.selectedLessonId !== null &&
+      prevProps.topic.lessons.some(
+        (l) => l.lessonId === prevProps.selectedLessonId,
+      );
+    const hasSelectedNext =
+      nextProps.selectedLessonId !== null &&
+      nextProps.topic.lessons.some(
+        (l) => l.lessonId === nextProps.selectedLessonId,
+      );
+
+    if (!hasSelectedPrev && !hasSelectedNext) {
+      return true; // No change relevant to this section
+    }
+
+    return prevProps.selectedLessonId === nextProps.selectedLessonId;
+  },
+);
+
+// ─── StickyTopicHeader ──────────────────────────────────────────────────────
+interface StickyTopicHeaderProps {
+  topics: RoadmapTopicResponse[];
+  sectionLayout: { heights: number[]; offsets: number[] };
+  scrollListenerRef: React.MutableRefObject<((y: number) => void) | null>;
+}
+
+const StickyTopicHeader = React.memo(function StickyTopicHeader({
+  topics,
+  sectionLayout,
+  scrollListenerRef,
+}: StickyTopicHeaderProps) {
+  const [activeTopicIndex, setActiveTopicIndex] = useState(0);
+  const [isGuideVisible, setIsGuideVisible] = useState(false);
+  const offsetsRef = useRef<number[]>(sectionLayout.offsets);
+  offsetsRef.current = sectionLayout.offsets;
+
+  useEffect(() => {
+    scrollListenerRef.current = (y: number) => {
+      const offsets = offsetsRef.current;
+      if (offsets.length === 0) return;
+
+      const probe = y + TOPIC_SWITCH_LEAD;
+      let index = 0;
+      for (let i = 0; i < offsets.length; i++) {
+        if (probe >= offsets[i]) index = i;
+        else break;
+      }
+      setActiveTopicIndex((prev) => (prev === index ? prev : index));
+    };
+    return () => {
+      scrollListenerRef.current = null;
+    };
+  }, [scrollListenerRef]);
+
+  if (topics.length === 0) return null;
+  const activeTopic = topics[Math.min(activeTopicIndex, topics.length - 1)];
+  if (!activeTopic) return null;
+
+  const activeAccent =
+    TOPIC_ACCENTS[
+      Math.min(activeTopicIndex, topics.length - 1) % TOPIC_ACCENTS.length
+    ];
+
+  return (
+    <>
+      <TopicHeaderBar
+        topicIndex={activeTopicIndex}
+        title={activeTopic.topicTitle}
+        completedCount={
+          activeTopic.lessons.filter((l) => l.status === "COMPLETED").length
+        }
+        totalCount={activeTopic.lessons.length}
+        accentColor={activeAccent.from}
+        onGuidePress={() => setIsGuideVisible(true)}
+      />
+      <GuidebookSheet
+        visible={isGuideVisible}
+        topicIndex={activeTopicIndex}
+        topicTitle={activeTopic.topicTitle}
+        accentColor={activeAccent.from}
+        onClose={() => setIsGuideVisible(false)}
+      />
     </>
   );
 });
@@ -1031,18 +1129,47 @@ export default function LearnScreen() {
   const { colors, isDark } = useTheme();
   const { width } = useWindowDimensions();
   const CENTER_X = width / 2;
-  const { energy, streak, coins, maxEnergy, refillEnergy, watchAdToRefill } =
-    useGamification();
-  const { maybeAutoStart } = useTutorial();
+  const {
+    energy,
+    streak,
+    streakStatus,
+    exp,
+    coins,
+    maxEnergy,
+    refillEnergy,
+    watchAdToRefill,
+  } = useGamification();
+  const { maybeAutoStart, markAsSeen } = useTutorial();
+
+  const streakPillConfig = useMemo(() => {
+    switch (streakStatus) {
+      case "ACTIVE":
+        return {
+          color: Colors.streakActive,
+          icon: "fire",
+        };
+      case "FROZEN":
+        return {
+          color: Colors.streakFrozen,
+          icon: "fire",
+        };
+      case "UNLIT":
+      default:
+        return {
+          color: isDark ? "#9CA3AF" : "#64748B",
+          icon: "fire",
+        };
+    }
+  }, [streakStatus, isDark]);
 
   const [topics, setTopics] = useState<RoadmapTopicResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showEnergyPopup, setShowEnergyPopup] = useState(false);
+  const [isStreakModalVisible, setIsStreakModalVisible] = useState(false);
   const [adError, setAdError] = useState<string | null>(null);
   const [selectedLesson, setSelectedLesson] =
     useState<RoadmapLessonResponse | null>(null);
-  /** Chủ đề đang chiếm khung nhìn — nguồn dữ liệu duy nhất cho thanh dính. */
-  const [activeTopicIndex, setActiveTopicIndex] = useState(0);
+  const scrollListenerRef = useRef<((y: number) => void) | null>(null);
   const insets = useSafeAreaInsets();
 
   // `energy` đọc qua ref để hai handler dưới đây giữ được identity ổn định —
@@ -1077,17 +1204,35 @@ export default function LearnScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let isMounted = true;
       const fetchRoadmap = async () => {
         try {
           const data = await roadmapApi.getRoadmap();
-          setTopics(data);
+          if (!isMounted) return;
+          setTopics((prev) => {
+            if (prev.length !== data.length) return data;
+            // Lightweight check: compare topic IDs + lesson counts first
+            const prevKey = prev
+              .map((t) => `${t.topicId}:${t.lessons.length}`)
+              .join(",");
+            const nextKey = data
+              .map((t) => `${t.topicId}:${t.lessons.length}`)
+              .join(",");
+            if (prevKey !== nextKey) return data;
+            // Deep check only when structure matches (rare after learning a lesson)
+            if (JSON.stringify(prev) === JSON.stringify(data)) return prev;
+            return data;
+          });
         } catch (error) {
           console.error("Failed to fetch roadmap:", error);
         } finally {
-          setIsLoading(false);
+          if (isMounted) setIsLoading(false);
         }
       };
       fetchRoadmap();
+      return () => {
+        isMounted = false;
+      };
     }, []),
   );
 
@@ -1096,41 +1241,38 @@ export default function LearnScreen() {
    *
    * Chỉ chạy sau khi lộ trình đã tải xong: các mốc được chiếu sáng (node bài học,
    * viên chỉ số) phải có mặt trên cây view thì `measureInWindow` mới ra toạ độ
-   * thật. `maybeAutoStart` tự bỏ qua nếu người dùng đã xem tour rồi.
+   * thật.
+   * - Nếu tài khoản đã có tiến độ học tập (có bài COMPLETED, EXP > 0 hoặc Streak > 0),
+   *   tự động đánh dấu đã xem trong ngầm và bỏ qua tour.
+   * - Ngược lại (người mới tinh), gọi `maybeAutoStart` sau 450ms.
    */
+  const hasLearningProgress = React.useMemo(() => {
+    const hasCompleted = topics.some((t) =>
+      t.lessons.some((l) => l.status === "COMPLETED"),
+    );
+    return hasCompleted || (exp ?? 0) > 0 || (streak ?? 0) > 0;
+  }, [topics, exp, streak]);
+
+  const hasAutoStartedRef = useRef(false);
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || hasAutoStartedRef.current) return;
+    hasAutoStartedRef.current = true;
+    if (hasLearningProgress) {
+      markAsSeen();
+      return;
+    }
     const timer = setTimeout(maybeAutoStart, 450);
     return () => clearTimeout(timer);
-  }, [isLoading, maybeAutoStart]);
-
-  /*
-   * KHÔNG suy diễn lại trạng thái bài học ở client.
-   *
-   * Trước đây chỗ này ép mọi bài nằm trước bài COMPLETED xa nhất thành
-   * COMPLETED. Nhưng backend cho phép `JUMP_TEST` UNLOCKED ở BẤT KỲ đâu trong
-   * lộ trình, nên chỉ cần user nhảy cóc một bài ở phần 10 là cả trăm bài LOCKED
-   * phía trước hiện dấu tích xanh — bấm vào thì server ném `LessonLockedException`.
-   * `LessonUnlockPolicy` phía backend đã carry cờ mở khoá xuyên suốt các chủ đề,
-   * nên `status` trả về là nguồn đúng duy nhất.
-   */
+  }, [isLoading, hasLearningProgress, markAsSeen, maybeAutoStart]);
 
   /**
    * Vị trí bắt đầu và chiều cao của từng đoạn chủ đề trên trục cuộn.
-   *
-   * Tính một lần cho cả lộ trình: dùng cho `getItemLayout` (FlatList khỏi phải
-   * đo) và để `handleScroll` tra ra chủ đề đang xem mà không cần đo layout hay
-   * dùng `onViewableItemsChanged` — API đó không đáng tin khi item cao hơn cả
-   * khung nhìn, vì không item nào đạt được ngưỡng phần trăm hiển thị.
    */
   const sectionLayout = React.useMemo(() => {
     const heights: number[] = [];
     const offsets: number[] = [];
     let cursor = 0;
     topics.forEach((topic, index) => {
-      // Đúng số node THẬT SỰ chiếm chỗ trên path — TIMED_REVIEW ghim cạnh
-      // đường đi, không tính vào chiều cao đoạn bản đồ (khớp `pathLessons`
-      // trong TopicSection).
       const pathLessonCount = topic.lessons.filter(
         (l) => l.lessonType !== "TIMED_REVIEW",
       ).length;
@@ -1142,23 +1284,10 @@ export default function LearnScreen() {
     return { heights, offsets };
   }, [topics]);
 
-  // Đọc qua ref để `handleScroll` giữ nguyên identity — một handler đổi mỗi lần
-  // render sẽ khiến FlatList gắn lại listener liên tục trong lúc đang cuộn.
-  const offsetsRef = useRef<number[]>(sectionLayout.offsets);
-  offsetsRef.current = sectionLayout.offsets;
-
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const offsets = offsetsRef.current;
-      if (offsets.length === 0) return;
-
-      const probe = event.nativeEvent.contentOffset.y + TOPIC_SWITCH_LEAD;
-      let index = 0;
-      for (let i = 0; i < offsets.length; i++) {
-        if (probe >= offsets[i]) index = i;
-        else break;
-      }
-      setActiveTopicIndex((prev) => (prev === index ? prev : index));
+      const y = event.nativeEvent.contentOffset.y;
+      scrollListenerRef.current?.(y);
     },
     [],
   );
@@ -1172,135 +1301,172 @@ export default function LearnScreen() {
     [sectionLayout],
   );
 
-  const activeTopic = topics[Math.min(activeTopicIndex, topics.length - 1)];
-  const activeAccent =
-    TOPIC_ACCENTS[
-      Math.min(activeTopicIndex, topics.length - 1) % TOPIC_ACCENTS.length
-    ];
-
-  // Memo hoá: `globalActiveLessonId` phụ thuộc mảng này, mà một mảng dựng mới
-  // mỗi lần render thì useMemo bên dưới không bao giờ trúng cache.
   const allLessons = React.useMemo(
     () => topics.flatMap((t) => t.lessons),
     [topics],
   );
 
-  /**
-   * Bài học đang nhấp nháy trên bản đồ — "bạn đang ở đây".
-   *
-   * Luôn quét XUÔI từ đầu lộ trình. Quét ngược (mã cũ) lấy phải bài UNLOCKED
-   * CUỐI cùng, mà `JUMP_TEST` thì luôn UNLOCKED ở bất kỳ đâu, nên chỉ cần có
-   * một bài kiểm tra nhảy cóc ở cuối map là node "đang học" nhảy tuốt xuống đó.
-   */
   const globalActiveLessonId = React.useMemo(() => {
     const inProgress = allLessons.find((l) => l.status === "IN_PROGRESS");
     if (inProgress) return inProgress.lessonId;
 
-    let lastCompletedIndex = -1;
-    for (let i = allLessons.length - 1; i >= 0; i--) {
+    let lastSequentialCompletedIndex = -1;
+    for (let i = 0; i < allLessons.length; i++) {
       if (allLessons[i].status === "COMPLETED") {
-        lastCompletedIndex = i;
+        lastSequentialCompletedIndex = i;
+      } else {
         break;
       }
     }
 
-    // `lastCompletedIndex + 1` cũng đúng cho trường hợp chưa xong bài nào (-1 → 0).
-    const next = allLessons[lastCompletedIndex + 1];
+    const next = allLessons[lastSequentialCompletedIndex + 1];
     if (next && (next.status === "UNLOCKED" || next.status === "IN_PROGRESS")) {
       return next.lessonId;
     }
     return allLessons.find((l) => l.status === "UNLOCKED")?.lessonId;
   }, [allLessons]);
 
+  const renderItem = useCallback(
+    ({ item, index }: { item: RoadmapTopicResponse; index: number }) => (
+      <TopicSection
+        topic={item}
+        topicIndex={index}
+        centerX={CENTER_X}
+        activeLessonId={globalActiveLessonId}
+        selectedLessonId={selectedLesson?.lessonId ?? null}
+        onNodePress={handleNodePress}
+        onStartLesson={handleStartLesson}
+      />
+    ),
+    [
+      CENTER_X,
+      globalActiveLessonId,
+      selectedLesson,
+      handleNodePress,
+      handleStartLesson,
+    ],
+  );
+  const contentContainerStyle = React.useMemo(
+    () => [styles.scrollContent, { paddingBottom: insets.bottom + 100 }],
+    [insets.bottom],
+  );
+
   return (
-    <AnimatedScreen>
+    <AnimatedScreen skipEntering>
       <View
         style={[
           styles.container,
           { backgroundColor: isDark ? colors.background : colors.background },
         ]}
       >
-        {/* ── Dot-texture background ── */}
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-          {Array.from({ length: 32 }, (_, i) => (
-            <View
-              key={i}
-              style={{
-                position: "absolute",
-                width: 3,
-                height: 3,
-                borderRadius: 1.5,
-                backgroundColor: "rgba(139,92,246,0.18)",
-                left: ((i * 113) % (width - 20)) + 10,
-                top: ((i * 177) % 900) + 40,
-              }}
-            />
-          ))}
-        </View>
-
         {/* ── Sticky Header ── */}
-        <BlurView
-          intensity={isDark ? 60 : 80}
-          tint={isDark ? "dark" : "light"}
-          style={[
-            styles.header,
-            {
-              paddingTop: insets.top + Spacing.two,
-              borderBottomColor: "rgba(139,92,246,0.2)",
-            },
-          ]}
-        >
-          {/* Language selector */}
-          <View style={styles.headerRow}>
-            <AnimatedPressable
-              style={styles.langPill}
-              onPress={() => {}}
-              pressScale={0.92}
-              accessibilityRole="button"
-              accessibilityLabel="Ngôn ngữ: Tiếng Nhật"
-            >
-              <Text style={{ fontSize: 18 }}>🇯🇵</Text>
-              <Text
-                style={[
-                  styles.langPillText,
-                  { color: isDark ? "#FFFFFF" : colors.text },
-                ]}
+        {Platform.OS === "android" ? (
+          <View
+            style={[
+              styles.header,
+              {
+                paddingTop: insets.top + Spacing.two,
+                borderBottomColor: "rgba(59, 76, 130,0.2)",
+                backgroundColor: isDark
+                  ? "rgba(18,18,30,0.98)"
+                  : "rgba(255,255,255,0.98)",
+              },
+            ]}
+          >
+            {/* Language selector */}
+            <View style={styles.headerRow}>
+              <View
+                style={styles.langPill}
+                accessibilityRole="text"
+                accessibilityLabel="Ngôn ngữ: Tiếng Nhật"
               >
-                日本語
-              </Text>
-              <FontAwesome5
-                name="chevron-down"
-                size={9}
-                color={isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.4)"}
-              />
-            </AnimatedPressable>
+                <Text style={{ fontSize: 18 }}>🇯🇵</Text>
+                <Text
+                  style={[
+                    styles.langPillText,
+                    { color: isDark ? "#FFFFFF" : colors.text },
+                  ]}
+                >
+                  日本語
+                </Text>
+              </View>
 
-            <View style={styles.statsRow}>
-              <StatPill icon="fire" value={streak} color="#FF9600" />
-              <StatPill icon="coins" value={coins} color={Colors.accent} />
-              <StatPill
-                icon="bolt"
-                value={`${energy}/${maxEnergy}`}
-                color="#4ADE80"
-                onPress={() => {
-                  if (energy < 1) setShowEnergyPopup(true);
-                }}
-              />
+              <View style={styles.statsRow}>
+                <StatPill
+                  icon={streakPillConfig.icon}
+                  value={streak}
+                  color={streakPillConfig.color}
+                  onPress={() => setIsStreakModalVisible(true)}
+                />
+                <StatPill icon="coins" value={coins} color={Colors.accent} />
+                <StatPill
+                  icon="bolt"
+                  value={`${energy}/${maxEnergy}`}
+                  color="#4ADE80"
+                  onPress={() => {
+                    if (energy < 1) setShowEnergyPopup(true);
+                  }}
+                />
+              </View>
             </View>
           </View>
-        </BlurView>
+        ) : (
+          <BlurView
+            intensity={isDark ? 60 : 80}
+            tint={isDark ? "dark" : "light"}
+            style={[
+              styles.header,
+              {
+                paddingTop: insets.top + Spacing.two,
+                borderBottomColor: "rgba(59, 76, 130,0.2)",
+              },
+            ]}
+          >
+            {/* Language selector */}
+            <View style={styles.headerRow}>
+              <View
+                style={styles.langPill}
+                accessibilityRole="text"
+                accessibilityLabel="Ngôn ngữ: Tiếng Nhật"
+              >
+                <Text style={{ fontSize: 18 }}>🇯🇵</Text>
+                <Text
+                  style={[
+                    styles.langPillText,
+                    { color: isDark ? "#FFFFFF" : colors.text },
+                  ]}
+                >
+                  日本語
+                </Text>
+              </View>
 
-        {/* ── Thanh chủ đề dính (một thanh duy nhất cho cả bản đồ) ── */}
-        {!isLoading && activeTopic && (
-          <TopicHeaderBar
-            topicIndex={activeTopicIndex}
-            title={activeTopic.topicTitle}
-            completedCount={
-              activeTopic.lessons.filter((l) => l.status === "COMPLETED").length
-            }
-            totalCount={activeTopic.lessons.length}
-            accentColor={activeAccent.from}
-            onGuidePress={() => {}}
+              <View style={styles.statsRow}>
+                <StatPill
+                  icon={streakPillConfig.icon}
+                  value={streak}
+                  color={streakPillConfig.color}
+                  onPress={() => setIsStreakModalVisible(true)}
+                />
+                <StatPill icon="coins" value={coins} color={Colors.accent} />
+                <StatPill
+                  icon="bolt"
+                  value={`${energy}/${maxEnergy}`}
+                  color="#4ADE80"
+                  onPress={() => {
+                    if (energy < 1) setShowEnergyPopup(true);
+                  }}
+                />
+              </View>
+            </View>
+          </BlurView>
+        )}
+
+        {/* ── Thanh chủ đề dính (một thanh duy nhất, cập nhật độc lập khi cuộn) ── */}
+        {!isLoading && (
+          <StickyTopicHeader
+            topics={topics}
+            sectionLayout={sectionLayout}
+            scrollListenerRef={scrollListenerRef}
           />
         )}
 
@@ -1319,7 +1485,7 @@ export default function LearnScreen() {
                 style={{
                   fontSize: FontSizes.xl,
                   fontWeight: FontWeights.extrabold,
-                  color: Colors.textPrimary,
+                  color: colors.text,
                   textAlign: "center",
                 }}
               >
@@ -1328,7 +1494,7 @@ export default function LearnScreen() {
               <Text
                 style={{
                   fontSize: FontSizes.md,
-                  color: Colors.textSecondary,
+                  color: colors.textSecondary,
                   textAlign: "center",
                   lineHeight: 22,
                 }}
@@ -1411,32 +1577,23 @@ export default function LearnScreen() {
             testID="roadmap-list"
             data={topics}
             keyExtractor={(topic) => String(topic.topicId)}
-            contentContainerStyle={[
-              styles.scrollContent,
-              { paddingBottom: insets.bottom + 100 },
-            ]}
+            contentContainerStyle={contentContainerStyle}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={32}
             getItemLayout={getItemLayout}
-            // Mỗi chủ đề là một đoạn bản đồ rất cao, nên chỉ giữ vài chủ đề
-            // quanh khung nhìn. Đây là thứ giữ cho số node SVG sống cùng lúc ở
-            // mức một tá thay vì gần một trăm.
-            initialNumToRender={1}
-            maxToRenderPerBatch={1}
-            windowSize={3}
-            removeClippedSubviews
-            renderItem={({ item, index }) => (
-              <TopicSection
-                topic={item}
-                topicIndex={index}
-                centerX={CENTER_X}
-                activeLessonId={globalActiveLessonId}
-                selectedLessonId={selectedLesson?.lessonId ?? null}
-                onNodePress={handleNodePress}
-                onStartLesson={handleStartLesson}
-              />
-            )}
+            initialNumToRender={5}
+            maxToRenderPerBatch={3}
+            windowSize={7}
+            removeClippedSubviews={false}
+            renderItem={renderItem}
+          />
+        )}
+
+        {isStreakModalVisible && (
+          <StreakModal
+            visible={isStreakModalVisible}
+            onClose={() => setIsStreakModalVisible(false)}
           />
         )}
       </View>
@@ -1466,12 +1623,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(139,92,246,0.15)",
+    backgroundColor: "rgba(59, 76, 130,0.15)",
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
-    borderColor: "rgba(139,92,246,0.3)",
+    borderColor: "rgba(59, 76, 130,0.3)",
   },
   langPillText: {
     fontSize: FontSizes.sm,
@@ -1529,11 +1686,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 2,
   },
+  hexButton: {
+    width: NODE_SIZE,
+    height: NODE_SIZE,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  hexButtonPressed: {
+    transform: [{ scale: 0.94 }],
+    opacity: 0.88,
+  },
   nodeIconEmoji: {
     fontSize: 22,
-  },
-  nodeIconActive: {
-    fontSize: 26,
   },
 
   // ── Popover ──
@@ -1562,7 +1726,7 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     width: "100%",
     borderWidth: 1,
-    borderColor: "rgba(139,92,246,0.25)",
+    borderColor: "rgba(59, 76, 130,0.25)",
     ...Shadows.lg,
   },
   popoverBadgeRow: {
@@ -1572,12 +1736,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   popoverBadge: {
-    backgroundColor: "rgba(139,92,246,0.2)",
+    backgroundColor: "rgba(59, 76, 130,0.2)",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
-    borderColor: "rgba(139,92,246,0.4)",
+    borderColor: "rgba(59, 76, 130,0.4)",
   },
   popoverBadgeText: {
     fontSize: 10,
@@ -1618,9 +1782,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     ...Shadows.md,
-  },
-  timedReviewEmoji: {
-    fontSize: 26,
   },
   timedReviewStars: {
     flexDirection: "row",

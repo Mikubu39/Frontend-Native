@@ -31,16 +31,16 @@ interface CorrectionCardProps {
 
 export function CorrectionCard({ corrections }: CorrectionCardProps) {
   const { colors } = useTheme();
-  if (!corrections.length) return null;
+  // Ẩn các mục lời khen (praise) theo yêu cầu, chỉ hiển thị lỗi (error) hoặc gợi ý (suggestion)
+  const items = corrections.filter((c) => c.severity !== "praise");
+  if (!items.length) return null;
 
   return (
     <Animated.View entering={FadeIn.duration(260)} style={styles.wrapper}>
-      {corrections.map((correction, index) => {
+      {items.map((correction, index) => {
         const style = CORRECTION_STYLES[correction.severity];
         const categoryLabel = CORRECTION_CATEGORY_LABELS[correction.category];
-        // Lời khen không có bản sửa, và cũng không nên có: không có gì để sửa.
-        const showFix =
-          correction.severity !== "praise" && !!correction.suggestion;
+        const showFix = !!correction.suggestion;
 
         return (
           <View
@@ -109,6 +109,7 @@ const styles = StyleSheet.create({
     // Căn phải để nằm thẳng hàng dưới bong bóng của người học.
     alignSelf: "flex-end",
     maxWidth: "88%",
+    minWidth: 220,
     gap: Spacing.two,
     marginBottom: Spacing.three,
   },
@@ -117,6 +118,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: BorderRadius.sm,
     padding: Spacing.three,
+    width: "100%",
   },
   icon: {
     marginRight: Spacing.two,
@@ -124,6 +126,7 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+    flexShrink: 1,
   },
   titleRow: {
     flexDirection: "row",

@@ -9,6 +9,7 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { QuizQuestion, QuizResult } from "@/types";
@@ -29,10 +30,14 @@ interface QuizContextType {
 const QuizContext = createContext<QuizContextType | undefined>(undefined);
 
 export function QuizProvider({ children }: { children: ReactNode }) {
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [questions, setQuestionsState] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<QuizResult | null>(null);
+
+  const setQuestions = useCallback((q: QuizQuestion[]) => {
+    setQuestionsState(q);
+  }, []);
 
   const submitAnswer = useCallback((questionId: string, answerId: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answerId }));
@@ -74,30 +79,40 @@ export function QuizProvider({ children }: { children: ReactNode }) {
   }, [questions, answers]);
 
   const reset = useCallback(() => {
-    setQuestions([]);
+    setQuestionsState([]);
     setCurrentIndex(0);
     setAnswers({});
     setResult(null);
   }, []);
 
-  return (
-    <QuizContext.Provider
-      value={{
-        questions,
-        currentIndex,
-        answers,
-        result,
-        setQuestions,
-        submitAnswer,
-        nextQuestion,
-        prevQuestion,
-        finishQuiz,
-        reset,
-      }}
-    >
-      {children}
-    </QuizContext.Provider>
+  const value = useMemo<QuizContextType>(
+    () => ({
+      questions,
+      currentIndex,
+      answers,
+      result,
+      setQuestions,
+      submitAnswer,
+      nextQuestion,
+      prevQuestion,
+      finishQuiz,
+      reset,
+    }),
+    [
+      questions,
+      currentIndex,
+      answers,
+      result,
+      setQuestions,
+      submitAnswer,
+      nextQuestion,
+      prevQuestion,
+      finishQuiz,
+      reset,
+    ],
   );
+
+  return <QuizContext.Provider value={value}>{children}</QuizContext.Provider>;
 }
 
 export function useQuiz(): QuizContextType {

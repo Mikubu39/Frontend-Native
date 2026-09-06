@@ -2,12 +2,13 @@
  * PracticeDrawing - Câu tập viết: đề bài + bảng tô nét.
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInRight } from "react-native-reanimated";
 import { useTheme } from "@/contexts/theme-context";
 import { FontSizes, FontWeights, Spacing } from "@/constants/theme";
 import { AlphabetPracticeQuestion } from "@/types/alphabet";
+import { parseStrokeOrderData } from "@/utils/stroke-order";
 import { StrokeOrderCanvas } from "./stroke-order-canvas";
 
 interface PracticeDrawingProps {
@@ -23,6 +24,10 @@ export function PracticeDrawing({
 }: PracticeDrawingProps) {
   const { colors } = useTheme();
 
+  const hasGuide = useMemo(() => {
+    return parseStrokeOrderData(question.strokeOrderData).length > 0;
+  }, [question.strokeOrderData]);
+
   return (
     <Animated.View
       entering={FadeInRight.duration(250)}
@@ -32,7 +37,9 @@ export function PracticeDrawing({
         {question.prompt}
       </Text>
       <Text style={[styles.hint, { color: colors.textSecondary }]}>
-        Tô theo nét mờ, đúng thứ tự và đúng chiều.
+        {hasGuide
+          ? "Tô theo nét mờ, đúng thứ tự và đúng chiều."
+          : "Viết tự do theo chữ mẫu mờ bên dưới."}
       </Text>
 
       <View style={styles.canvasWrapper}>

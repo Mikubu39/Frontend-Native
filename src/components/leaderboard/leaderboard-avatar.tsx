@@ -6,7 +6,7 @@
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { FontWeights } from "@/constants/theme";
-import { resolveMediaUrl } from "@/utils/media";
+import { resolveAvatarUri } from "@/utils/media";
 import { useImageFallback } from "@/hooks/use-image-fallback";
 
 interface LeaderboardAvatarProps {
@@ -19,8 +19,8 @@ interface LeaderboardAvatarProps {
 }
 
 const INITIAL_PALETTE = [
-  "#8B5CF6",
-  "#E91E8E",
+  "#3B4C82",
+  "#BE4A34",
   "#0EA5E9",
   "#F59E0B",
   "#10B981",
@@ -46,11 +46,10 @@ export function LeaderboardAvatar({
   ringColor,
   ringWidth = 0,
 }: LeaderboardAvatarProps) {
-  // Avatar backend lưu tương đối (`/uploads/images/avatars/...`) nên cần ghép base URL.
-  // Tải hỏng thì quay về chữ cái đầu của tên — nhánh dự phòng vốn đã có sẵn.
-  const { uri: resolvedUri, onError } = useImageFallback(
-    resolveMediaUrl(avatarUrl),
-  );
+  // Chuẩn hoá avatar nhân vật (bỏ qua Google photo, fallback avatar hoạt hình DiceBear)
+  const finalUri = resolveAvatarUri(avatarUrl);
+
+  const { uri: resolvedUri, onError } = useImageFallback(finalUri);
   const hasValidUri = !!resolvedUri;
   const bg = getPaletteColor(userId);
 

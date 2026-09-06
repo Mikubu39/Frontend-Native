@@ -1,8 +1,10 @@
 /**
- * Kotodama Design System
+ * Nihongo Design System — "Ai-zome" (Xưởng nhuộm chàm)
  *
- * Color palette, typography, spacing, and layout constants
- * derived from the Figma designs.
+ * Palette drawn from real Japanese craft materials instead of a generic
+ * SaaS gradient: ai-zome indigo dye, shu-iro hanko-seal vermillion, aged
+ * gold leaf, and washi paper — kept saturated enough for game UI, but
+ * grounded, not neon.
  */
 
 import "@/global.css";
@@ -11,87 +13,112 @@ import { Platform } from "react-native";
 
 export const Colors = {
   /** Core brand palette */
-  primary: "#8B5CF6",
-  primaryLight: "#A78BFA",
-  primaryDark: "#7C3AED",
+  primary: "#3B4C82", // ai — indigo dye
+  primaryLight: "#5E6FA8",
+  primaryDark: "#2A3760",
 
-  secondary: "#E91E8E",
-  secondaryLight: "#FF6EC7",
+  secondary: "#BE4A34", // shu — hanko-seal vermillion
+  secondaryLight: "#D97456",
+  secondaryDark: "#8C3626",
 
-  accent: "#FFB800",
-  accentLight: "#FFCA28",
-  accentPale: "#FFE082",
+  accent: "#C4922E", // kogane — aged gold leaf
+  accentLight: "#D9AC5C",
+  accentPale: "#EAD6A8",
 
-  /** Gradients (used with LinearGradient) */
+  /** Gradients (used with LinearGradient) — tone-on-tone by default; the
+   *  richer multi-stop combinations are reserved for genuine celebration
+   *  moments (splash, quiz result) rather than repeated on every surface. */
   gradients: {
-    splash: ["#FF00FF", "#8B5CF6", "#E88D67", "#FFB800"],
-    primary: ["#8B5CF6", "#E91E8E"],
-    home: ["#8B5CF6", "#E91E8E", "#FF69B4"],
-    result: ["#8B5CF6", "#E91E8E", "#FFB800"],
-    reward: ["#8B5CF6", "#E91E8E"],
-    profile: ["#8B5CF6", "#E91E8E"],
+    splash: ["#3B4C82", "#8A4A5E", "#C4922E"],
+    primary: ["#3B4C82", "#5E6FA8"],
+    home: ["#3B4C82", "#5E6FA8", "#BE4A34"],
+    result: ["#3B4C82", "#BE4A34", "#C4922E"],
+    reward: ["#BE4A34", "#C4922E"],
+    profile: ["#3B4C82", "#5E6FA8"],
   },
 
   /** Backgrounds */
-  cream: "#FFF8E7",
-  creamDark: "#FFF3D0",
-  surface: "#FFFFFF",
+  cream: "#F7EFDE", // washi paper
+  creamDark: "#EFE2C4",
+  surface: "#FFFCF5",
   surfaceElevated: "#FFFFFF",
 
   /** Text */
-  textPrimary: "#1A1A2E",
-  textSecondary: "#6B7280",
+  textPrimary: "#2B2420", // sumi ink
+  textSecondary: "#6F6559",
   textOnDark: "#FFFFFF",
-  textOnCream: "#1A1A2E",
-  textLink: "#E91E8E",
+  textOnCream: "#2B2420",
+  textLink: "#BE4A34",
 
   /** Input / borders */
-  inputBorder: "#FFD54F",
-  inputBorderFocus: "#FFB800",
+  inputBorder: "#E3C688",
+  inputBorderFocus: "#C4922E",
   inputBackground: "#FFFFFF",
 
   /** Status */
-  success: "#4CAF50",
-  error: "#EF4444",
-  errorLight: "#FEE2E2",
-  warning: "#FFB800",
+  success: "#4C8C63", // moss
+  error: "#E4483A",
+  errorLight: "#FBE4DF",
+  warning: "#C4922E",
 
   /** Tab bar */
-  tabActive: "#E91E8E",
-  tabInactive: "#9CA3AF",
+  tabActive: "#BE4A34",
+  tabInactive: "#9C948A",
 
   /** Misc */
-  locked: "#D1D5DB",
-  lockedBg: "#E5E7EB",
-  checkmark: "#E91E8E",
-  overlay: "rgba(0, 0, 0, 0.5)",
+  locked: "#C9C0B2",
+  lockedBg: "#EDE6D8",
+  /** Dark-mode counterparts — the roadmap map's hex nodes render on a dark
+   *  indigo-night backdrop in dark mode, so the light-mode locked tones read
+   *  wrong there. Same visual weight, tuned for the dark palette. */
+  lockedDark: "#3D4054",
+  lockedBgDark: "#252736",
+  checkmark: "#4C8C63",
+
+  /** Streak state — kept in the "ai"/"kogane" family instead of the raw
+   *  Duolingo orange/cyan (#FF9600 / #00C8FF) so the streak UI reads as part
+   *  of this app's own palette rather than an unmodified brand color. */
+  streakActive: "#D9762E", // warm ember-gold (kogane/shu lineage)
+  streakFrozen: "#7C93C4", // indigo-frost (ai lineage)
 
   /** Theme mode palettes */
   light: {
-    text: "#1A1A2E",
-    textSecondary: "#6B7280",
-    background: "#FFF8E7",
-    backgroundElement: "#FFF3D0",
-    backgroundSelected: "#FFE082",
-    card: "#FFFFFF",
+    text: "#2B2420",
+    textSecondary: "#6F6559",
+    background: "#F7EFDE",
+    backgroundElement: "#EFE2C4",
+    backgroundSelected: "#EAD6A8",
+    card: "#FFFCF5",
     cardElevated: "#FFFFFF",
-    border: "#E5E7EB",
-    borderSubtle: "#F3F4F6",
-    tabBarBg: "#FFFFFF",
+    border: "#E6DCC8",
+    borderSubtle: "#F0E8D8",
+    tabBarBg: "#FFFCF5",
     tabBarBorder: "rgba(255, 255, 255, 0.8)",
+    overlay: "rgba(0, 0, 0, 0.5)",
+    overlaySubtle: "rgba(0, 0, 0, 0.3)",
+    overlayLight: "rgba(255, 255, 255, 0.4)",
+    borderTransparent: "rgba(0, 0, 0, 0.1)",
+    cardQuiz: "#FFFCF5",
+    cardQuizBorder: "#E6DCC8",
   },
   dark: {
-    text: "#F9FAFB",
-    textSecondary: "#9CA3AF",
-    background: "#1C1C24", // Lighter slate/grey
-    backgroundElement: "#2A2A35",
-    backgroundSelected: "#3E3E4F",
-    card: "#262631", // Lighter card
-    cardElevated: "#30303D",
-    border: "#3F3F4E",
-    borderSubtle: "#2A2A35",
-    tabBarBg: "#262631",
+    text: "#F5EFE3",
+    textSecondary: "#B0A594",
+    background: "#1B1D2B", // indigo night
+    backgroundElement: "#262A3D",
+    backgroundSelected: "#333A56",
+    card: "#232739",
+    cardElevated: "#2B3049",
+    border: "#363C56",
+    borderSubtle: "#262A3D",
+    tabBarBg: "#232739",
     tabBarBorder: "rgba(255, 255, 255, 0.12)",
+    overlay: "rgba(0, 0, 0, 0.7)",
+    overlaySubtle: "rgba(0, 0, 0, 0.4)",
+    overlayLight: "rgba(255, 255, 255, 0.1)",
+    borderTransparent: "rgba(255, 255, 255, 0.12)",
+    cardQuiz: "rgba(255, 255, 255, 0.06)",
+    cardQuizBorder: "rgba(255, 255, 255, 0.1)",
   },
 } as const;
 
@@ -100,7 +127,12 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 export const Fonts = {
   sans: "Nunito_600SemiBold",
   serif: "serif",
-  rounded: "Nunito_700Bold",
+  /** Headlines, labels, buttons — Zen Maru Gothic, a rounded Japanese
+   *  gothic, in place of the generic Nunito-everywhere look most
+   *  gamified-app clones share. */
+  rounded: "ZenMaruGothic_700Bold",
+  /** Hero numbers and celebration moments only (streak count, XP total). */
+  display: "ZenMaruGothic_900Black",
   mono: Platform.OS === "ios" ? "ui-monospace" : "monospace",
 };
 
@@ -152,19 +184,24 @@ export const BorderRadius = {
 /**
  * Cross-platform shadow presets for consistent depth layering.
  * Use `sm` for cards, `md` for elevated elements, `lg` for modals/FABs.
+ *
+ * Tinted with ink (`#2B2420`) rather than the brand color — a grounded
+ * paper-shadow instead of a colored neon glow under every card.
+ * `glowPrimary` and `glow()` stay colored on purpose, reserved for the
+ * handful of spots that should genuinely glow (primary CTA, active state).
  */
 export const Shadows = {
   soft: {
-    shadowColor: "#8B5CF6",
+    shadowColor: "#2B2420",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.1,
     shadowRadius: 16,
     elevation: 4,
   },
   medium: {
-    shadowColor: "#8B5CF6",
+    shadowColor: "#2B2420",
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.16,
     shadowRadius: 24,
     elevation: 8,
   },
@@ -176,37 +213,37 @@ export const Shadows = {
     elevation: 16,
   },
   glowPrimary: {
-    shadowColor: "#8B5CF6",
+    shadowColor: "#3B4C82",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
+    shadowOpacity: 0.4,
     shadowRadius: 20,
     elevation: 10,
   },
   sm: {
-    shadowColor: "#8B5CF6",
+    shadowColor: "#2B2420",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.07,
     shadowRadius: 12,
     elevation: 3,
   },
   md: {
-    shadowColor: "#8B5CF6",
+    shadowColor: "#2B2420",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 5,
   },
   lg: {
-    shadowColor: "#8B5CF6",
+    shadowColor: "#2B2420",
     shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.13,
     shadowRadius: 32,
     elevation: 8,
   },
   xl: {
-    shadowColor: "#8B5CF6",
+    shadowColor: "#2B2420",
     shadowOffset: { width: 0, height: 24 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.17,
     shadowRadius: 48,
     elevation: 12,
   },

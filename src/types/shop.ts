@@ -52,6 +52,5 @@ export interface ShelfEntry {
   item: ShopItemDto;
   rarity: ItemRarity;
   owned: number;
-  equipped: boolean;
   inventoryId: number | null;
 }

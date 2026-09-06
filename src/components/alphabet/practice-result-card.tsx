@@ -5,15 +5,15 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInUp, ZoomIn } from "react-native-reanimated";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { HankoStamp } from "@/components/ui/hanko-stamp";
 import { useTheme } from "@/contexts/theme-context";
 import {
   BorderRadius,
   Colors,
   FontSizes,
   FontWeights,
-  Shadows,
   Spacing,
 } from "@/constants/theme";
 import {
@@ -36,8 +36,8 @@ export function PracticeResultCard({
 
   return (
     <Animated.View entering={FadeInUp.duration(320)} style={styles.container}>
-      <Animated.View entering={ZoomIn.delay(120)} style={styles.badge}>
-        <Ionicons name="trophy" size={56} color="#FFFFFF" />
+      <Animated.View entering={FadeInUp.delay(80)} style={styles.badge}>
+        <HankoStamp size={104} delay={120} />
       </Animated.View>
 
       <Text style={[styles.title, { color: colors.text }]}>
@@ -85,11 +85,8 @@ const styles = StyleSheet.create({
   badge: {
     width: 110,
     height: 110,
-    borderRadius: 55,
-    backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    ...Shadows.glow(Colors.primary),
   },
   title: {
     fontSize: FontSizes.xxl,
@@ -118,7 +115,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.two,
-    backgroundColor: "rgba(233, 30, 142, 0.12)",
+    backgroundColor: "rgba(190, 74, 52, 0.12)",
     borderRadius: BorderRadius.lg,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.four,

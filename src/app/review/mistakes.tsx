@@ -1,59 +1,54 @@
 /**
  * Mistake Review Screen
- * Follows Mistake Bank API: Loads questions without answers, user answers them all, then we submit and show results.
+ * Đồng bộ với giao diện Bài học (Quiz Layout).
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, {
-  FadeInRight,
-  FadeOutLeft,
-  FadeInUp,
-} from "react-native-reanimated";
+import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 import { mistakesApi } from "@/services/api/mistakes";
 import { mapApiQuestionsToQuizQuestions } from "@/utils/quiz-mapper";
 import { QuizQuestion } from "@/types/quiz";
-import { MistakeResultItem } from "@/types/api";
-import {
-  Colors,
-  Spacing,
-  FontSizes,
-  FontWeights,
-  BorderRadius,
-  Shadows,
-} from "@/constants/theme";
+import { Colors, Spacing, FontSizes, FontWeights } from "@/constants/theme";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useGamification } from "@/contexts/gamification-context";
 import { useToast } from "@/contexts/toast-context";
 import { useTheme } from "@/contexts/theme-context";
+import { useSoundEffect } from "@/hooks/use-sound-effect";
 
-// Import all question cards
 import {
   VocabQuestionCard,
   KanaQuestionCard,
   PictureQuestionCard,
   KanjiFillQuestionCard,
   MatchingQuestionCard,
-  FlashcardQuestionCard,
-  FillBlankQuestionCard,
   ListeningQuestionCard,
   SpeakingQuestionCard,
+  QuizBottomBar,
+  QuizHeader,
+  QuestionMascot,
 } from "@/components/quiz";
+
+const QUESTION_MASCOTS = [
+  require("@/assets/animations/character1.json"),
+  require("@/assets/animations/character2.json"),
+  require("@/assets/animations/character3.json"),
+];
 
 export default function MistakeReviewScreen() {
   const router = useRouter();
   const { setEnergy } = useGamification();
   const { showError } = useToast();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const { playCorrect, playIncorrect } = useSoundEffect();
 
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -67,12 +62,11 @@ export default function MistakeReviewScreen() {
   // Current question state
   const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [currentIsCorrect, setCurrentIsCorrect] = useState(false);
 
   // Results phase
   const [submitting, setSubmitting] = useState(false);
-  const [results, setResults] = useState<MistakeResultItem[]>([]);
-  const [resolvedCount, setResolvedCount] = useState(0);
-  const [energyRewarded, setEnergyRewarded] = useState(0);
   const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
@@ -87,7 +81,7 @@ export default function MistakeReviewScreen() {
       } else {
         setMessage(res.message || "Không có lỗi sai nào cần ôn tập.");
       }
-    } catch (e: any) {
+    } catch {
       showError("Lỗi tải bài", "Không thể tải bài tập ôn lỗi sai lúc này.");
       router.back();
     } finally {
@@ -95,10 +89,42 @@ export default function MistakeReviewScreen() {
     }
   };
 
+  const getCorrectAnswerText = (q: QuizQuestion): string | null => {
+    switch (q.type) {
+      case "vocab":
+      case "listening":
+        return q.answers.find((a: any) => a.isCorrect)?.text || null;
+      case "picture": {
+        const correct = q.images.find((a: any) => a.isCorrect);
+        return correct?.text || (correct as any)?.metadataJson?.label || null;
+      }
+      case "kana":
+        return q.correctOrder.join("");
+      case "fill-blank":
+        return q.correctAnswer;
+      case "kanji-fill":
+        return Object.values(q.correctFills).join(", ");
+      case "speaking":
+        return q.textToSpeak;
+      case "flashcard":
+        return q.backText;
+      default:
+        return null;
+    }
+  };
+
+  const checkAnswer = () => {
+    setHasSubmitted(true);
+    if (currentIsCorrect) {
+      playCorrect();
+    } else {
+      playIncorrect();
+    }
+  };
+
   const handleNext = () => {
     const currentQ = questions[currentIndex] as any;
 
-    // Attempt to extract optionId
     let optionId = selectedAnswerId ? Number(selectedAnswerId) : null;
     if (
       !optionId &&
@@ -124,6 +150,8 @@ export default function MistakeReviewScreen() {
       setCurrentIndex((curr) => curr + 1);
       setSelectedAnswerId(null);
       setHasInteracted(false);
+      setHasSubmitted(false);
+      setCurrentIsCorrect(false);
     } else {
       submitReview(newAnswers);
     }
@@ -135,17 +163,31 @@ export default function MistakeReviewScreen() {
     setSubmitting(true);
     try {
       const res = await mistakesApi.submitReview({ answers: finalAnswers });
-      setResults(res.results);
-      setResolvedCount(res.resolvedCount);
-      setEnergyRewarded(res.energyRewarded);
+
+      const correctCount = res.results.filter((r) => r.correct).length;
       setEnergy(res.currentEnergy);
-      setShowResults(true);
-    } catch (e) {
+
+      router.replace({
+        pathname: "/quiz/result",
+        params: {
+          correctCount,
+          wrongCount: res.results.length - correctCount,
+          coinsEarned: res.energyRewarded, // Passing energy as coins Earned for UI if we want
+          lessonType: "REVIEW_MISTAKES",
+          status: "COMPLETED",
+        },
+      });
+    } catch {
       showError("Lỗi nộp bài", "Có lỗi xảy ra khi nộp bài tập ôn tập.");
       router.back();
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleAnswerSelection = (isCorrect: boolean) => {
+    setCurrentIsCorrect(isCorrect);
+    setHasInteracted(true);
   };
 
   if (loading) {
@@ -183,85 +225,17 @@ export default function MistakeReviewScreen() {
     );
   }
 
-  if (showResults) {
-    return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: colors.background }]}
-      >
-        <View
-          style={[
-            styles.header,
-            { backgroundColor: colors.card, borderBottomColor: colors.border },
-          ]}
-        >
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            Kết Quả Ôn Tập
-          </Text>
-        </View>
-        <ScrollView contentContainerStyle={styles.resultList}>
-          <View style={[styles.summaryBox, { backgroundColor: colors.card }]}>
-            <Text style={[styles.summaryText, { color: colors.text }]}>
-              Đã xóa nợ (Resolved): {resolvedCount} câu
-            </Text>
-            {energyRewarded > 0 ? (
-              <Text style={styles.energyText}>
-                + {energyRewarded} ⚡ Năng lượng
-              </Text>
-            ) : (
-              <Text
-                style={[
-                  styles.energyTextDesc,
-                  { color: colors.textSecondary },
-                ]}
-              >
-                Đã hết lượt thưởng năng lượng hôm nay.
-              </Text>
-            )}
-          </View>
-
-          {results.map((res, idx) => (
-            <Animated.View
-              key={idx}
-              entering={FadeInUp.delay(idx * 100)}
-              style={[styles.resultCard, { backgroundColor: colors.card }]}
-            >
-              <View style={styles.resultHeader}>
-                <Text style={[styles.qNum, { color: colors.text }]}>
-                  Câu {idx + 1}
-                </Text>
-                <View
-                  style={[
-                    styles.badge,
-                    res.correct ? styles.badgeCorrect : styles.badgeWrong,
-                  ]}
-                >
-                  <Text style={styles.badgeText}>
-                    {res.correct ? "ĐÚNG" : "SAI"}
-                  </Text>
-                </View>
-                {res.resolved && (
-                  <View style={[styles.badge, styles.badgeResolved]}>
-                    <Text style={styles.badgeText}>🎉 ĐÃ XÓA NỢ</Text>
-                  </View>
-                )}
-              </View>
-              {/* Optional: We could display question content here if we map it back */}
-              {!res.correct && (
-                <Text style={styles.correctAnswerInfo}>
-                  Đáp án đúng ID: {res.correctOptionId}
-                </Text>
-              )}
-            </Animated.View>
-          ))}
-        </ScrollView>
-        <View style={[styles.bottomBar, { backgroundColor: colors.background }]}>
-          <GradientButton title="Hoàn Thành" onPress={() => router.back()} />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  if (showResults) return null; // handled by useEffect redirect
 
   const currentQuestion = questions[currentIndex];
+  const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const progress =
+    questions.length > 0
+      ? Math.min((currentIndex + 1) / questions.length, 1)
+      : 0;
+
+  const currentMascot =
+    QUESTION_MASCOTS[currentIndex % QUESTION_MASCOTS.length];
 
   const renderQuestionCard = () => {
     switch (currentQuestion.type) {
@@ -270,9 +244,13 @@ export default function MistakeReviewScreen() {
           <VocabQuestionCard
             question={currentQuestion}
             selectedAnswer={selectedAnswerId}
+            mascotSource={currentMascot}
             onSelectAnswer={(answerId) => {
               setSelectedAnswerId(answerId);
-              setHasInteracted(true);
+              const answer = currentQuestion.answers.find(
+                (a) => a.id === answerId,
+              );
+              handleAnswerSelection(answer?.isCorrect ?? false);
             }}
           />
         );
@@ -281,6 +259,7 @@ export default function MistakeReviewScreen() {
           <KanaQuestionCard
             question={currentQuestion}
             onAnswerChange={(isCorrect, arrangedString) => {
+              setCurrentIsCorrect(isCorrect);
               setHasInteracted(arrangedString.length > 0);
             }}
           />
@@ -290,10 +269,10 @@ export default function MistakeReviewScreen() {
           <PictureQuestionCard
             question={currentQuestion as any}
             selectedAnswerId={selectedAnswerId}
-            hasSubmitted={false}
-            onSelectAnswer={(answerId) => {
+            hasSubmitted={hasSubmitted}
+            onSelectAnswer={(answerId, isCorrect) => {
               setSelectedAnswerId(answerId);
-              setHasInteracted(true);
+              handleAnswerSelection(isCorrect);
             }}
           />
         );
@@ -302,6 +281,7 @@ export default function MistakeReviewScreen() {
           <KanjiFillQuestionCard
             question={currentQuestion}
             onAnswerChange={(isCorrect, fills) => {
+              setCurrentIsCorrect(isCorrect);
               setHasInteracted(Object.keys(fills).length > 0);
             }}
           />
@@ -311,7 +291,7 @@ export default function MistakeReviewScreen() {
           <MatchingQuestionCard
             question={currentQuestion}
             onAnswerChange={(isCorrect) => {
-              setHasInteracted(true);
+              handleAnswerSelection(isCorrect);
             }}
           />
         );
@@ -322,7 +302,10 @@ export default function MistakeReviewScreen() {
             selectedAnswer={selectedAnswerId}
             onSelectAnswer={(answerId) => {
               setSelectedAnswerId(answerId);
-              setHasInteracted(true);
+              const answer = currentQuestion.answers.find(
+                (a) => a.id === answerId,
+              );
+              handleAnswerSelection(answer?.isCorrect ?? false);
             }}
           />
         );
@@ -331,29 +314,39 @@ export default function MistakeReviewScreen() {
           <SpeakingQuestionCard
             question={currentQuestion}
             onAnswerChange={(isCorrect) => {
-              setHasInteracted(true);
+              handleAnswerSelection(isCorrect);
+            }}
+            onSkipSpeaking={() => {
+              const futureNonSpeaking = questions
+                .slice(currentIndex + 1)
+                .filter((q) => q.type !== "speaking");
+
+              if (futureNonSpeaking.length === 0) {
+                handleAnswerSelection(true);
+              } else {
+                setQuestions((prev) => {
+                  const past = prev.slice(0, currentIndex);
+                  return [...past, ...futureNonSpeaking];
+                });
+                setSelectedAnswerId(null);
+                setHasInteracted(false);
+                setHasSubmitted(false);
+              }
             }}
           />
         );
       default:
-        return <Text>Unsupported question type</Text>;
+        return <Text>Loại câu hỏi không được hỗ trợ</Text>;
     }
   };
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
-    >
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: colors.card, borderBottomColor: colors.border },
-        ]}
-      >
-        <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-          Câu {currentIndex + 1} / {questions.length}
-        </Text>
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+      <QuizHeader
+        progress={progress}
+        onClose={() => router.back()}
+        lessonType="REVIEW"
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Animated.View
@@ -362,21 +355,25 @@ export default function MistakeReviewScreen() {
           exiting={FadeOutLeft.duration(200)}
           style={{ width: "100%", maxWidth: 480, alignSelf: "center" }}
         >
-          {renderQuestionCard()}
+          <View pointerEvents={hasSubmitted ? "none" : "auto"}>
+            {currentQuestion.type !== "vocab" && (
+              <QuestionMascot seed={currentIndex} />
+            )}
+            {renderQuestionCard()}
+          </View>
         </Animated.View>
       </ScrollView>
 
-      <View style={[styles.bottomBar, { backgroundColor: colors.background }]}>
-        <GradientButton
-          title={
-            submitting
-              ? "ĐANG CHẤM ĐIỂM..."
-              : currentIndex === questions.length - 1
-                ? "NỘP BÀI"
-                : "CÂU TIẾP THEO"
-          }
-          onPress={handleNext}
-          disabled={!hasInteracted || submitting}
+      <View style={[styles.bottomBar, { backgroundColor: bg }]}>
+        <QuizBottomBar
+          hasInteracted={hasInteracted}
+          hasSubmitted={hasSubmitted}
+          isSubmitting={submitting}
+          isCorrect={currentIsCorrect}
+          correctAnswerText={getCorrectAnswerText(currentQuestion)}
+          onCheck={checkAnswer}
+          onNext={handleNext}
+          isLastQuestion={currentIndex === questions.length - 1}
         />
       </View>
     </SafeAreaView>
@@ -391,19 +388,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
   },
-  header: {
-    padding: Spacing.four,
-    alignItems: "center",
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: FontSizes.xl,
-    fontWeight: FontWeights.extrabold,
-  },
-  progressText: {
-    fontSize: FontSizes.md,
-    fontWeight: "bold",
-  },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
@@ -413,50 +397,5 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingHorizontal: Spacing.six,
     paddingBottom: Spacing.six,
-  },
-  resultList: { padding: Spacing.four },
-  summaryBox: {
-    padding: Spacing.five,
-    borderRadius: BorderRadius.xl,
-    marginBottom: Spacing.four,
-    alignItems: "center",
-    ...Shadows.sm,
-  },
-  summaryText: {
-    fontSize: FontSizes.lg,
-    fontWeight: "bold",
-  },
-  energyText: {
-    fontSize: FontSizes.md,
-    fontWeight: "bold",
-    color: "#F59E0B",
-    marginTop: Spacing.two,
-  },
-  energyTextDesc: {
-    fontSize: FontSizes.sm,
-    marginTop: Spacing.two,
-  },
-  resultCard: {
-    padding: Spacing.four,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.three,
-    ...Shadows.sm,
-  },
-  resultHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.three,
-  },
-  qNum: { fontWeight: "bold", fontSize: FontSizes.md, flex: 1 },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  badgeCorrect: { backgroundColor: Colors.success },
-  badgeWrong: { backgroundColor: Colors.error },
-  badgeResolved: { backgroundColor: "#8B5CF6" },
-  badgeText: { color: "#FFF", fontSize: 10, fontWeight: "bold" },
-  correctAnswerInfo: {
-    marginTop: Spacing.two,
-    fontSize: FontSizes.sm,
-    color: Colors.error,
-    fontWeight: "bold",
   },
 });

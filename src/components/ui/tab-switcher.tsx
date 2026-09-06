@@ -51,7 +51,7 @@ export function TabSwitcher({
         AnimationPresets.springSnappy,
       );
     }
-  }, [activeIndex]);
+  }, [activeIndex, indicatorX, tabWidth]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.value }],

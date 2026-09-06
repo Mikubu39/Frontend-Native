@@ -49,7 +49,8 @@ from typing import Any, Literal
 #: Cái giá phải trả khi ghim: Google khai tử model theo lịch riêng (đã gặp thật
 #: với `gemini-2.0-flash`). Khi đó dịch vụ trả 404 kèm thông điệp chỉ rõ phải
 #: đổi sang model nào - xem `_http_message`.
-DEFAULT_MODEL = "gemini-3.5-flash"
+DEFAULT_MODEL = "gemini-2.5-flash"
+FALLBACK_MODEL = "gemini-3.5-flash-lite"
 
 _GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
@@ -163,18 +164,38 @@ def generate_json(
         # và nới lỏng thì phải tự chịu trách nhiệm kiểm duyệt.
     }
 
-    request = urllib.request.Request(
-        _GEMINI_URL.format(model=model_name()) + f"?key={key}",
-        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-        headers={"Content-Type": "application/json; charset=utf-8"},
-        method="POST",
-    )
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    headers = {"Content-Type": "application/json; charset=utf-8"}
 
+    def _execute(target_model: str) -> dict[str, Any]:
+        req = urllib.request.Request(
+            _GEMINI_URL.format(model=target_model) + f"?key={key}",
+            data=data,
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    primary_model = model_name()
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            raw = json.loads(response.read().decode("utf-8"))
+        raw = _execute(primary_model)
     except urllib.error.HTTPError as exc:
-        raise LlmError(_http_message(exc)) from exc
+        if exc.code in (429, 503) and primary_model != FALLBACK_MODEL:
+            try:
+                raw = _execute(FALLBACK_MODEL)
+            except urllib.error.HTTPError as fb_exc:
+                raise LlmError(_http_message(fb_exc)) from fb_exc
+            except urllib.error.URLError as fb_exc:
+                raise LlmError(
+                    "Máy chủ AI không kết nối được tới Gemini. Kiểm tra mạng của server."
+                ) from fb_exc
+            except TimeoutError as fb_exc:
+                raise LlmError(
+                    "Gemini phản hồi quá lâu. Bạn thử gửi lại sau một chút nhé."
+                ) from fb_exc
+        else:
+            raise LlmError(_http_message(exc)) from exc
     except urllib.error.URLError as exc:
         raise LlmError(
             "Máy chủ AI không kết nối được tới Gemini. Kiểm tra mạng của server."

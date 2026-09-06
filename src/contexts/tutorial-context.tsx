@@ -19,14 +19,16 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
 import { Dimensions, type View } from "react-native";
 
-import { TutorialOverlay } from "@/components/tutorial/tutorial-overlay";
+import { useOptionalAuth } from "@/contexts/auth-context";
 import { HOME_TUTORIAL_STEPS } from "@/data/tutorial-steps";
+import { TutorialOverlay } from "@/components/tutorial/tutorial-overlay";
 import { storage } from "@/services/storage";
 import type {
   TutorialContextValue,
@@ -64,19 +66,22 @@ const INERT: TutorialContextValue = {
   currentStep: null,
   spotlight: null,
   hasSeenTutorial: true,
-  registerTarget: () => { },
-  registerScroller: () => { },
-  startTutorial: () => { },
-  maybeAutoStart: () => { },
-  goNext: () => { },
-  goBack: () => { },
-  skipTutorial: () => { },
+  registerTarget: () => {},
+  registerScroller: () => {},
+  startTutorial: () => {},
+  maybeAutoStart: () => {},
+  markAsSeen: () => {},
+  goNext: () => {},
+  goBack: () => {},
+  skipTutorial: () => {},
 };
 
 const TutorialContext = createContext<TutorialContextValue | null>(null);
 
 export function TutorialProvider({ children }: { children: ReactNode }) {
   const steps = HOME_TUTORIAL_STEPS;
+  const auth = useOptionalAuth();
+  const userId = auth?.user?.id ?? null;
 
   const [isActive, setIsActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
@@ -86,23 +91,45 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
   const targetsRef = useRef(new Map<TutorialTargetId, MeasurableNode>());
   const scrollerRef = useRef<TutorialScrollIntoView | null>(null);
 
-  // ── Đọc cờ đã-xem một lần khi khởi động ───────────────────────────────────
+  // ── Đọc cờ đã-xem theo tài khoản (kèm fallback cờ cũ) ───────────────────────
   useEffect(() => {
     let cancelled = false;
-    storage
-      .get(TUTORIAL_STORAGE_KEY)
-      .then((value) => {
-        if (!cancelled) setHasSeenTutorial(value === "true");
-      })
-      .catch(() => {
+
+    const checkSeenStatus = async () => {
+      try {
+        if (userId) {
+          const userKey = `${TUTORIAL_STORAGE_KEY}_${userId}`;
+          const userVal = await storage.get(userKey);
+          if (userVal === "true") {
+            if (!cancelled) setHasSeenTutorial(true);
+            return;
+          }
+        }
+        // Fallback kiểm tra key toàn cục cũ để tương thích ngược
+        const legacyVal = await storage.get(TUTORIAL_STORAGE_KEY);
+        if (!cancelled) {
+          const hasSeen = legacyVal === "true";
+          setHasSeenTutorial(hasSeen);
+          // Nếu cờ cũ đã xem mà tài khoản chưa có cờ riêng, đồng bộ sang key của user
+          if (hasSeen && userId) {
+            storage
+              .set(`${TUTORIAL_STORAGE_KEY}_${userId}`, "true")
+              .catch(() => {});
+          }
+        }
+      } catch {
         // Không đọc được storage thì coi như đã xem — thà bỏ sót tour còn hơn
         // dội hướng dẫn vào mặt người dùng cũ mỗi lần mở app.
         if (!cancelled) setHasSeenTutorial(true);
-      });
+      }
+    };
+
+    checkSeenStatus();
+
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [userId]);
 
   const registerTarget = useCallback(
     (id: TutorialTargetId, node: unknown | null) => {
@@ -208,8 +235,11 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
   // ── Điều khiển ────────────────────────────────────────────────────────────
   const markSeen = useCallback(() => {
     setHasSeenTutorial(true);
-    storage.set(TUTORIAL_STORAGE_KEY, "true").catch(() => { });
-  }, []);
+    if (userId) {
+      storage.set(`${TUTORIAL_STORAGE_KEY}_${userId}`, "true").catch(() => {});
+    }
+    storage.set(TUTORIAL_STORAGE_KEY, "true").catch(() => {});
+  }, [userId]);
 
   const startTutorial = useCallback(() => {
     setStepIndex(0);
@@ -245,26 +275,54 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
     endTour();
   }, [endTour]);
 
-  const value: TutorialContextValue = {
-    isActive,
-    steps,
-    stepIndex,
-    currentStep,
-    spotlight,
-    hasSeenTutorial,
-    registerTarget,
-    registerScroller,
-    startTutorial,
-    maybeAutoStart,
-    goNext,
-    goBack,
-    skipTutorial,
-  };
+  const value = useMemo<TutorialContextValue>(
+    () => ({
+      isActive,
+      steps,
+      stepIndex,
+      currentStep,
+      spotlight,
+      hasSeenTutorial,
+      registerTarget,
+      registerScroller,
+      startTutorial,
+      maybeAutoStart,
+      markAsSeen: markSeen,
+      goNext,
+      goBack,
+      skipTutorial,
+    }),
+    [
+      isActive,
+      steps,
+      stepIndex,
+      currentStep,
+      spotlight,
+      hasSeenTutorial,
+      registerTarget,
+      registerScroller,
+      startTutorial,
+      maybeAutoStart,
+      markSeen,
+      goNext,
+      goBack,
+      skipTutorial,
+    ],
+  );
 
   return (
     <TutorialContext.Provider value={value}>
       {children}
-      <TutorialOverlay />
+      <TutorialOverlay
+        isActive={isActive}
+        currentStep={currentStep}
+        spotlight={spotlight}
+        stepIndex={stepIndex}
+        steps={steps}
+        goNext={goNext}
+        goBack={goBack}
+        skipTutorial={skipTutorial}
+      />
     </TutorialContext.Provider>
   );
 }

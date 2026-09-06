@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { InAppToast } from "@/components/ui/in-app-toast";
 import type { ToastOptions, ToastContextValue } from "@/types";
 
@@ -43,27 +49,36 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToast(null);
   }, []);
 
+  const value = useMemo<ToastContextValue>(
+    () => ({
+      showToast,
+      showSuccess,
+      showError,
+      showInfo,
+      showWarning,
+      hideToast,
+    }),
+    [showToast, showSuccess, showError, showInfo, showWarning, hideToast],
+  );
+
   return (
-    <ToastContext.Provider
-      value={{
-        showToast,
-        showSuccess,
-        showError,
-        showInfo,
-        showWarning,
-        hideToast,
-      }}
-    >
+    <ToastContext.Provider value={value}>
       {children}
       <InAppToast toast={toast} onDismiss={hideToast} />
     </ToastContext.Provider>
   );
 }
 
+const NOOP_TOAST: ToastContextValue = {
+  showToast: () => {},
+  showSuccess: () => {},
+  showError: () => {},
+  showInfo: () => {},
+  showWarning: () => {},
+  hideToast: () => {},
+};
+
 export function useToast(): ToastContextValue {
   const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error("useToast must be used within a ToastProvider");
-  }
-  return context;
+  return context ?? NOOP_TOAST;
 }

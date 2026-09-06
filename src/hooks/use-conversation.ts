@@ -52,7 +52,7 @@ export interface UseConversationValue {
   error: string | null;
   /** Lỗi riêng khi dựng bản tổng kết - có nút thử lại riêng. */
   summaryError: string | null;
-  send: (text: string) => Promise<void>;
+  send: (text: string, vietnamese?: string) => Promise<void>;
   /** Kết thúc sớm theo ý người học. */
   finishNow: () => Promise<void>;
   retrySummary: () => Promise<void>;
@@ -225,7 +225,7 @@ export function useConversation(
 
   // --- Một lượt nói -------------------------------------------------------
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, vietnamese?: string) => {
       const trimmed = text.trim();
       if (!trimmed || status !== "ready") return;
 
@@ -234,7 +234,12 @@ export function useConversation(
       const userMessageId = nextId();
       setMessages((prev) => [
         ...prev,
-        { id: userMessageId, author: "user", ja: trimmed, vi: "" },
+        {
+          id: userMessageId,
+          author: "user",
+          ja: trimmed,
+          vi: vietnamese || "",
+        },
       ]);
       setStatus("sending");
       setError(null);
@@ -258,11 +263,14 @@ export function useConversation(
         ];
 
         setMessages((prev) => [
-          // Góp ý gắn vào chính câu NGƯỜI HỌC vừa nói, không phải câu đáp của
-          // AI - người học cần thấy lỗi ngay cạnh chỗ mình viết sai.
+          // Góp ý và bản dịch tiếng Việt gắn vào chính câu NGƯỜI HỌC vừa nói.
           ...prev.map((message) =>
             message.id === userMessageId
-              ? { ...message, corrections: response.corrections }
+              ? {
+                  ...message,
+                  vi: response.userVi || message.vi,
+                  corrections: response.corrections,
+                }
               : message,
           ),
           {

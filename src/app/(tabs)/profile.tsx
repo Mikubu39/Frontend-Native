@@ -1,6 +1,7 @@
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { AnimatedScreen } from "@/components/ui/animated-screen";
 import { AchievementMedal } from "@/components/profile/achievement-medal";
+import { getAchievementIconStyle } from "@/utils/achievement-icon";
 import { IncompleteProfileAlert } from "@/components/profile/incomplete-profile-alert";
 import { ProfileHeroCard } from "@/components/profile/profile-hero-card";
 import { ProfileStatCapsule } from "@/components/profile/profile-stat-capsule";
@@ -27,6 +28,8 @@ import { achievementsApi, rankApi } from "@/services/api";
 import { avatarApi } from "@/services/api/avatar";
 import { streakApi } from "@/services/api/streak";
 import { userService } from "@/services/api/user";
+import { mistakesApi } from "@/services/api/mistakes";
+import { vocabularyApi } from "@/services/api/vocabulary";
 import { storage } from "@/services/storage/async-storage";
 import {
   AchievementResponse,
@@ -35,9 +38,9 @@ import {
 } from "@/types/api";
 import { getRankTierStyle } from "@/utils/rank-tier";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -56,13 +59,6 @@ function getJoinYear(createdAt?: string | null): number {
     ? new Date().getFullYear()
     : parsed.getFullYear();
 }
-
-const MONTHLY_BADGES: { emoji: string; label: string; locked?: boolean }[] = [
-  { emoji: "🐻", label: "Gấu chăm chỉ" },
-  { emoji: "🐸", label: "Ếch nhanh nhẹn" },
-  { emoji: "🐙", label: "Bạch tuộc đa năng" },
-  { emoji: "👻", label: "Ma tháng 10", locked: true },
-];
 
 export default function ProfileTabScreen() {
   const router = useRouter();
@@ -89,93 +85,59 @@ export default function ProfileTabScreen() {
   const [publicProfile, setPublicProfile] =
     useState<PublicProfileResponse | null>(null);
   const [studyDates, setStudyDates] = useState<string[]>([]);
+  const [learnedWordsCount, setLearnedWordsCount] = useState<number | null>(
+    null,
+  );
+  const [mistakesToReview, setMistakesToReview] = useState<number | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+      const id = Number(user?.id);
 
-    const loadAvatar = async () => {
-      try {
-        const url = await avatarApi.getAvatarUrl();
-        if (isMounted) {
-          setAvatarUrl(url);
-        }
-      } catch {
-        if (isMounted) {
-          setAvatarUrl(buildAvatarUrl(DEFAULT_AVATAR_CONFIG));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingAvatar(false);
-        }
-      }
-    };
+      (async () => {
+        const [
+          avatarRes,
+          bannerRes,
+          ranksRes,
+          achievementsRes,
+          studyDatesRes,
+          vocabRes,
+          mistakesRes,
+          publicProfileRes,
+        ] = await Promise.all([
+          avatarApi.getAvatarUrl().catch(() => null),
+          storage.get("profile_banner_dismissed").catch(() => null),
+          rankApi.getRanks().catch(() => [] as RankResponse[]),
+          achievementsApi
+            .getMyAchievements()
+            .catch(() => [] as AchievementResponse[]),
+          streakApi.getStreakCalendar(30).catch(() => [] as string[]),
+          vocabularyApi.getLearned(1).catch(() => null),
+          mistakesApi.getSummary().catch(() => null),
+          id
+            ? userService.getPublicProfile(id).catch(() => null)
+            : Promise.resolve(null),
+        ]);
 
-    const loadBannerState = async () => {
-      try {
-        const dismissed = await storage.get("profile_banner_dismissed");
-        if (isMounted && dismissed === "true") {
-          setIsBannerDismissed(true);
-        }
-      } catch (e) {
-        // ignore
-      }
-    };
+        if (!isMounted) return;
 
-    const loadRanks = async () => {
-      try {
-        const data = await rankApi.getRanks();
-        if (isMounted) setRanks(data);
-      } catch (error) {
-        console.error("Failed to fetch ranks:", error);
-      }
-    };
+        if (avatarRes) setAvatarUrl(avatarRes);
+        setIsLoadingAvatar(false);
+        if (bannerRes === "true") setIsBannerDismissed(true);
+        setRanks(ranksRes);
+        setAchievements(achievementsRes);
+        setStudyDates(studyDatesRes);
+        if (vocabRes) setLearnedWordsCount(vocabRes.learnedCount);
+        if (mistakesRes) setMistakesToReview(mistakesRes.activeCount);
+        if (publicProfileRes) setPublicProfile(publicProfileRes);
+      })();
 
-    const loadAchievements = async () => {
-      try {
-        const data = await achievementsApi.getMyAchievements();
-        if (isMounted) setAchievements(data);
-      } catch (error) {
-        console.error("Failed to fetch achievements:", error);
-      }
-    };
-
-    const loadStudyDates = async () => {
-      try {
-        const data = await streakApi.getStreakCalendar(30);
-        if (isMounted) setStudyDates(data);
-      } catch (error) {
-        console.error("Failed to fetch streak calendar:", error);
-      }
-    };
-
-    loadAvatar();
-    loadBannerState();
-    loadRanks();
-    loadAchievements();
-    loadStudyDates();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    const id = Number(user?.id);
-    if (!id) return;
-
-    userService
-      .getPublicProfile(id)
-      .then((data) => {
-        if (isMounted) setPublicProfile(data);
-      })
-      .catch((error) => {
-        console.error("Failed to fetch public profile:", error);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user?.id]);
+      return () => {
+        isMounted = false;
+      };
+    }, [user?.id]),
+  );
 
   const handleSaveAvatar = async (config: AvatarConfig) => {
     const nextUrl = buildAvatarUrl(config);
@@ -188,10 +150,9 @@ export default function ProfileTabScreen() {
   const isProfileIncomplete =
     (!user?.displayName ||
       user?.displayName === user?.email ||
-      user?.displayName === "Dương Gia Đắc" ||
       user?.displayName === "Google User" ||
       user?.displayName.includes("Mock User") ||
-      !(user as any)?.phoneNumber) &&
+      !user?.phoneNumber) &&
     !isBannerDismissed;
 
   const handleDismissBanner = async () => {
@@ -223,7 +184,7 @@ export default function ProfileTabScreen() {
     : null;
 
   return (
-    <AnimatedScreen>
+    <AnimatedScreen skipEntering>
       <SafeAreaView
         edges={["top"]}
         style={[styles.container, { backgroundColor: colors.background }]}
@@ -242,7 +203,7 @@ export default function ProfileTabScreen() {
           bounces={true}
         >
           <ProfileHeroCard
-            displayName={user?.displayName || "Người học Kotodama"}
+            displayName={user?.displayName || "Người học Nihongo"}
             handle={user?.email?.split("@")[0].toUpperCase() || "USER"}
             joinYear={joinYear}
             rankName={rankName}
@@ -294,20 +255,70 @@ export default function ProfileTabScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             LỊCH SỬ HỌC
           </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalScroll}
+          <View
+            style={[
+              styles.communityCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                marginBottom: Spacing.six,
+              },
+            ]}
           >
             <StreakCalendarStrip
               studyDates={studyDates}
               days={30}
-              activeColor="#FF9600"
-              inactiveColor={colors.border}
+              activeColor={Colors.streakActive}
+              inactiveColor={
+                isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"
+              }
               textColor={colors.text}
               textSecondaryColor={colors.textSecondary}
+              borderColor={colors.border}
+              isDark={isDark}
             />
-          </ScrollView>
+          </View>
+
+          {/* THỐNG KÊ HỌC TẬP */}
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            THỐNG KÊ HỌC TẬP
+          </Text>
+          <View
+            style={[
+              styles.communityCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                marginBottom: Spacing.six,
+              },
+            ]}
+          >
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={[styles.statNumber, { color: colors.text }]}>
+                  {learnedWordsCount ?? "-"}
+                </Text>
+                <Text
+                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                >
+                  Từ đã học
+                </Text>
+              </View>
+              <View
+                style={[styles.statDivider, { backgroundColor: colors.border }]}
+              />
+              <View style={styles.statItem}>
+                <Text style={[styles.statNumber, { color: colors.text }]}>
+                  {mistakesToReview ?? "-"}
+                </Text>
+                <Text
+                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                >
+                  Lỗi cần ôn
+                </Text>
+              </View>
+            </View>
+          </View>
 
           {/* Community card */}
           <View
@@ -362,7 +373,7 @@ export default function ProfileTabScreen() {
 
             <AnimatedPressable
               style={styles.addFriendBtn}
-              onPress={() => router.push("/friends/search")}
+              onPress={() => router.push("/friends")}
               pressScale={0.97}
             >
               <Ionicons name="person-add" size={18} color="#FFFFFF" />
@@ -370,60 +381,11 @@ export default function ProfileTabScreen() {
             </AnimatedPressable>
           </View>
 
-          {/* FRIENDS STREAK SECTION */}
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            STREAK BẠN BÈ
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalScroll}
-          >
-            {[1, 2, 3, 4, 5].map((_, i) => (
-              <View
-                key={i}
-                style={[styles.dashedCircle, { borderColor: colors.border }]}
-              >
-                <Ionicons name="add" size={30} color={colors.textSecondary} />
-              </View>
-            ))}
-          </ScrollView>
-
-          {/* MONTHLY CHALLENGE BADGES */}
-          <View style={styles.sectionHeaderRow}>
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: colors.text, marginBottom: 0 },
-              ]}
-            >
-              HUY HIỆU THỬ THÁCH THÁNG
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalScroll}
-          >
-            {MONTHLY_BADGES.map((badge, i) => (
-              <AchievementMedal
-                key={i}
-                emoji={badge.emoji}
-                ringGradient={Colors.gradients.reward as [string, string]}
-                locked={badge.locked}
-                surfaceColor={colors.card}
-                lockedRing={colors.border}
-              />
-            ))}
-          </ScrollView>
-
           {/* ACHIEVEMENTS */}
-          <View style={styles.sectionHeaderRow}>
+          <AnimatedPressable
+            style={styles.sectionHeaderRow}
+            onPress={() => router.push("/profile/achievements")}
+          >
             <Text
               style={[
                 styles.sectionTitle,
@@ -437,7 +399,7 @@ export default function ProfileTabScreen() {
               size={20}
               color={colors.textSecondary}
             />
-          </View>
+          </AnimatedPressable>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -446,28 +408,32 @@ export default function ProfileTabScreen() {
               { paddingBottom: 4 },
             ]}
           >
-            {achievements.map((a) => (
-              <View key={a.achievementId} style={styles.achievementCell}>
-                <AchievementMedal
-                  emoji={a.icon}
-                  ringGradient={["#FFD966", "#F5A623"]}
-                  locked={!a.unlocked}
-                  caption={
-                    a.unlocked ? undefined : `${a.progress}/${a.threshold}`
-                  }
-                  surfaceColor={colors.card}
-                  lockedRing={colors.border}
-                />
-                <Text
-                  style={[
-                    styles.achievementLabel,
-                    { color: colors.textSecondary },
-                  ]}
-                >
-                  {a.name}
-                </Text>
-              </View>
-            ))}
+            {achievements.map((a) => {
+              const iconStyle = getAchievementIconStyle(a.code);
+              return (
+                <View key={a.achievementId} style={styles.achievementCell}>
+                  <AchievementMedal
+                    icon={iconStyle.icon}
+                    iconColor={iconStyle.color}
+                    ringGradient={["#D9AC5C", "#C4922E"]}
+                    locked={!a.unlocked}
+                    caption={
+                      a.unlocked ? undefined : `${a.progress}/${a.threshold}`
+                    }
+                    surfaceColor={colors.card}
+                    lockedRing={colors.border}
+                  />
+                  <Text
+                    style={[
+                      styles.achievementLabel,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    {a.name}
+                  </Text>
+                </View>
+              );
+            })}
           </ScrollView>
         </ScrollView>
       </SafeAreaView>
@@ -548,15 +514,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.six,
     paddingRight: Spacing.five,
     paddingTop: Spacing.two,
-  },
-  dashedCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    borderWidth: 2,
-    borderStyle: "dashed",
-    justifyContent: "center",
-    alignItems: "center",
   },
   achievementCell: {
     alignItems: "center",

@@ -15,6 +15,7 @@ import React, { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { SpotlightTarget } from "@/components/tutorial";
+import { AuthContext } from "@/contexts/auth-context";
 import { TutorialProvider, useTutorial } from "@/contexts/tutorial-context";
 import { HOME_TUTORIAL_STEPS } from "@/data/tutorial-steps";
 import { storage } from "@/services/storage";
@@ -271,5 +272,68 @@ describe("Tour hướng dẫn lần đầu", () => {
       </SpotlightTarget>,
     );
     expect(screen.toJSON()).toBeTruthy();
+  });
+
+  it("markAsSeen đánh dấu đã xem và lưu cả cờ user id lẫn cờ toàn cục", async () => {
+    mockedGet.mockResolvedValue(null);
+    const mockAuth: any = {
+      user: { id: "user-789", email: "user@example.com", displayName: "User" },
+      isAuthenticated: true,
+      isLoading: false,
+    };
+
+    function MarkSeenHarness() {
+      const { markAsSeen } = useTutorial();
+      useEffect(() => {
+        markAsSeen();
+      }, [markAsSeen]);
+      return null;
+    }
+
+    await render(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <AuthContext.Provider value={mockAuth}>
+          <TutorialProvider>
+            <MarkSeenHarness />
+          </TutorialProvider>
+        </AuthContext.Provider>
+      </SafeAreaProvider>,
+    );
+
+    await waitFor(() => {
+      expect(mockedSet).toHaveBeenCalledWith(
+        "tutorial_home_done_user-789",
+        "true",
+      );
+      expect(mockedSet).toHaveBeenCalledWith("tutorial_home_done", "true");
+    });
+  });
+
+  it("nhận diện cờ đã xem riêng theo user id", async () => {
+    mockedGet.mockImplementation((key: string) => {
+      if (key === "tutorial_home_done_user-123") return Promise.resolve("true");
+      return Promise.resolve(null);
+    });
+
+    const mockAuth: any = {
+      user: { id: "user-123", email: "user@example.com", displayName: "User" },
+      isAuthenticated: true,
+      isLoading: false,
+    };
+
+    const screen = await render(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <AuthContext.Provider value={mockAuth}>
+          <TutorialProvider>
+            <Harness />
+          </TutorialProvider>
+        </AuthContext.Provider>
+      </SafeAreaProvider>,
+    );
+
+    await waitFor(() => {
+      expect(mockedGet).toHaveBeenCalledWith("tutorial_home_done_user-123");
+    });
+    expect(screen.queryByTestId("tutorial-overlay")).toBeNull();
   });
 });

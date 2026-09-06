@@ -48,7 +48,7 @@ export function AnimatedTabIcon({
       translateY.value = withTiming(0, { duration: 150 });
       dotOpacity.value = withTiming(0, { duration: 150 });
     }
-  }, [focused]);
+  }, [focused, dotOpacity, scale, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {

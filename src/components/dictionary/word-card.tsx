@@ -5,6 +5,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { AudioButton } from "@/components/ui/audio-button";
+import { useTheme } from "@/contexts/theme-context";
 import type { DictionaryEntry } from "@/types";
 import {
   Colors,
@@ -18,27 +19,40 @@ interface WordCardProps {
   entry: DictionaryEntry;
 }
 
-export function WordCard({ entry }: WordCardProps) {
+export const WordCard = React.memo(function WordCard({ entry }: WordCardProps) {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.card}>
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
+    >
       <View style={styles.topRow}>
-        <Text style={styles.kanji}>{entry.kanji}</Text>
-        <Text style={styles.romaji}>{entry.romaji}</Text>
+        <View style={styles.textStack}>
+          <Text style={[styles.kanji, { color: colors.text }]}>
+            {entry.kanji}
+          </Text>
+          <Text style={[styles.romaji, { color: colors.textSecondary }]}>
+            {entry.romaji}
+          </Text>
+        </View>
         <AudioButton variant="speaker" size="small" onPress={() => {}} />
       </View>
-      <View style={styles.divider} />
-      <Text style={styles.meaning}>{entry.meaning}</Text>
+      <View style={[styles.divider, { backgroundColor: colors.border }]} />
+      <Text style={[styles.meaning, { color: colors.textSecondary }]}>
+        {entry.meaning}
+      </Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.five,
     borderWidth: 1.5,
-    borderColor: Colors.inputBorder,
     gap: Spacing.three,
   },
   topRow: {
@@ -46,25 +60,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  textStack: {
+    flex: 1,
+    gap: 4,
+    marginRight: Spacing.three,
+  },
   kanji: {
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
   },
   romaji: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.medium,
-    color: Colors.textSecondary,
-    flex: 1,
-    textAlign: "right",
-    marginRight: Spacing.three,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.inputBorder,
   },
   meaning: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
   },
 });

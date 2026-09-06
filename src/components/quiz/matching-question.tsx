@@ -11,6 +11,7 @@ import {
   Fonts,
 } from "@/constants/theme";
 import { QuestionPrompt } from "@/components/quiz/question-prompt";
+import { useTheme } from "@/contexts/theme-context";
 
 interface MatchingQuestionProps {
   question: MatchingQuestion;
@@ -21,6 +22,7 @@ export function MatchingQuestionCard({
   question,
   onAnswerChange,
 }: MatchingQuestionProps) {
+  const { colors, isDark } = useTheme();
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
   const [selectedRight, setSelectedRight] = useState<string | null>(null);
   const [matchedPairs, setMatchedPairs] = useState<string[]>([]);
@@ -59,6 +61,7 @@ export function MatchingQuestionCard({
         setSelectedRight(null);
       }, 500);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLeft, selectedRight]);
 
   return (
@@ -78,7 +81,19 @@ export function MatchingQuestionCard({
                 key={`left-${item.id}`}
                 style={[
                   styles.itemCard,
-                  isSelected && styles.itemSelected,
+                  {
+                    backgroundColor: colors.cardQuiz,
+                    borderColor: colors.cardQuizBorder,
+                  },
+                  isSelected && [
+                    styles.itemSelected,
+                    {
+                      backgroundColor: isDark
+                        ? Colors.primary + "33"
+                        : Colors.accentPale,
+                      borderColor: Colors.accent,
+                    },
+                  ],
                   isMatched && styles.itemMatched,
                 ]}
                 disabled={isMatched || isSelected}
@@ -88,6 +103,7 @@ export function MatchingQuestionCard({
                 <Text
                   style={[
                     styles.itemText,
+                    { color: colors.text },
                     (isSelected || isMatched) && styles.itemTextSelected,
                   ]}
                 >
@@ -107,7 +123,19 @@ export function MatchingQuestionCard({
                 key={`right-${item.id}`}
                 style={[
                   styles.itemCard,
-                  isSelected && styles.itemSelected,
+                  {
+                    backgroundColor: colors.cardQuiz,
+                    borderColor: colors.cardQuizBorder,
+                  },
+                  isSelected && [
+                    styles.itemSelected,
+                    {
+                      backgroundColor: isDark
+                        ? Colors.primary + "33"
+                        : Colors.accentPale,
+                      borderColor: Colors.accent,
+                    },
+                  ],
                   isMatched && styles.itemMatched,
                 ]}
                 disabled={isMatched || isSelected}
@@ -117,6 +145,7 @@ export function MatchingQuestionCard({
                 <Text
                   style={[
                     styles.itemText,
+                    { color: colors.text },
                     (isSelected || isMatched) && styles.itemTextSelected,
                   ]}
                 >

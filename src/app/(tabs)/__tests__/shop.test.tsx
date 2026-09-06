@@ -1,7 +1,7 @@
 import React from "react";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import ShopScreen from "../search";
+import ShopScreen from "../shop";
 import { shopApi } from "@/services/api/shop";
 import { useGamification } from "@/contexts/gamification-context";
 import { useTheme } from "@/contexts/theme-context";
@@ -14,7 +14,6 @@ jest.mock("@/services/api/shop", () => ({
     getInventory: jest.fn(),
     buyItem: jest.fn(),
     consumeItem: jest.fn(),
-    equipItem: jest.fn(),
   },
 }));
 
@@ -90,16 +89,6 @@ const DOUBLE_XP = item({
   priceCoins: 150,
 });
 
-const NEON_FRAME = item({
-  id: 4,
-  name: "Khung avatar: Neon Tokyo",
-  description: "Khung avatar đèn neon Tokyo",
-  itemType: "COSMETIC",
-  effectType: "AVATAR_FRAME",
-  effectValue: 0,
-  priceCoins: 800,
-});
-
 const OWNED_FREEZE: InventoryItemDto = {
   inventoryId: 11,
   itemId: 1,
@@ -107,7 +96,6 @@ const OWNED_FREEZE: InventoryItemDto = {
   itemType: "CONSUMABLE",
   effectType: "STREAK_FREEZE",
   quantity: 2,
-  equipped: false,
   active: true,
   expiresAt: null,
   acquiredAt: "2026-08-01T00:00:00",
@@ -156,26 +144,24 @@ beforeEach(() => {
   mockedApi.getShopItems.mockResolvedValue({
     CONSUMABLE: [STREAK_FREEZE, ENERGY_REFILL],
     POWERUP: [DOUBLE_XP],
-    COSMETIC: [NEON_FRAME],
   });
   mockedApi.getInventory.mockResolvedValue([OWNED_FREEZE]);
 });
 
 describe("ShopScreen", () => {
   it("stocks the shelves and spotlights the rarest item on the counter", async () => {
-    const { getByText } = await renderShop();
+    const { getByText, getAllByText } = await renderShop();
 
     await waitFor(() => expect(getByText("Streak Freeze")).toBeTruthy());
 
     // Purse and the default shelf.
     expect(getByText("300")).toBeTruthy();
-    expect(getByText("Energy Refill")).toBeTruthy();
-    // The 800-xu cosmetic is the featured item even though its shelf is closed.
-    expect(getByText("Khung avatar: Neon Tokyo")).toBeTruthy();
+    expect(getAllByText("Energy Refill").length).toBeGreaterThan(0);
+    // Energy refill (400 xu) is the featured item as it is the most expensive.
     expect(getByText("Hàng nổi bật")).toBeTruthy();
-    // Rarity is derived from price: 200 xu is "Hiếm", 800 xu is "Huyền thoại".
+    // Rarity is derived from price: 200 xu is "Hiếm", 400 xu is "Sử thi".
     expect(getByText("Hiếm")).toBeTruthy();
-    expect(getByText("Huyền thoại")).toBeTruthy();
+    expect(getByText("Sử thi")).toBeTruthy();
   });
 
   it("buys an affordable item from the purchase sheet", async () => {
@@ -205,10 +191,14 @@ describe("ShopScreen", () => {
   });
 
   it("points at how to earn the gap when the purse is short", async () => {
-    const { getByText, queryByText } = await renderShop();
-    await waitFor(() => expect(getByText("Energy Refill")).toBeTruthy());
+    const { getByText, queryByText, getAllByText } = await renderShop();
+    await waitFor(() =>
+      expect(getAllByText("Energy Refill").length).toBeGreaterThan(0),
+    );
 
-    fireEvent.press(getByText("Energy Refill"));
+    fireEvent.press(
+      getAllByText("Energy Refill")[1] || getAllByText("Energy Refill")[0],
+    );
 
     // 400 xu wanted, 300 held.
     await waitFor(() => expect(getByText("Kiếm thêm 100 xu")).toBeTruthy());
@@ -233,13 +223,13 @@ describe("ShopScreen", () => {
       message: "Sử dụng thành công: Streak Freeze",
     });
 
-    const { getByText, queryByText } = await renderShop();
+    const { getByText, queryByText, getAllByText } = await renderShop();
     await waitFor(() => expect(getByText("Streak Freeze")).toBeTruthy());
 
     fireEvent.press(getByText("Túi đồ"));
 
-    // Only the owned item is on this shelf.
-    await waitFor(() => expect(queryByText("Energy Refill")).toBeNull());
+    // The owned item is on this shelf, but Energy Refill is still on the counter.
+    await waitFor(() => expect(getAllByText("Energy Refill").length).toBe(1)); // only 1 on counter
     expect(getByText("×2")).toBeTruthy();
 
     fireEvent.press(getByText("Streak Freeze"));

@@ -6,17 +6,18 @@
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
 } from "@/constants/theme";
 import { useTheme } from "@/contexts/theme-context";
+import { HankoStamp } from "@/components/ui/hanko-stamp";
 import type { QuizResult } from "@/types";
 import LottieView from "lottie-react-native";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, { BounceIn, FadeInUp } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
 interface QuizResultCardProps {
@@ -25,39 +26,68 @@ interface QuizResultCardProps {
 }
 
 export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
-  const { colors, isDark } = useTheme();
-  const scorePercentage = result.correctCount / result.totalQuestions;
-  const isPerfect = scorePercentage === 1;
-  const isGood = scorePercentage >= 0.7;
-  const isAverage = scorePercentage >= 0.4;
+  const { isDark } = useTheme();
+  const total = result.totalQuestions || 1;
+  const correct = result.correctCount;
+  const wrong = result.wrongCount;
+  const scorePercentage = correct / total;
 
-  const animationSource = isFailed
-    ? require("../../../assets/animations/confuse_mascot.json")
-    : isPerfect
-      ? require("../../../assets/animations/winner_mascot.json")
-      : isGood
-        ? require("../../../assets/animations/happy_mascot.json")
-        : isAverage
-          ? require("../../../assets/animations/hi_mascot.json")
-          : require("../../../assets/animations/confuse_mascot.json");
+  // Tiers logic:
+  // 1. Hoàn hảo: 100% đúng, 0 câu sai
+  const isPerfect = scorePercentage === 1 && wrong === 0;
+  // 2. Xuất sắc: Tỉ lệ >= 80% VÀ chỉ sai tối đa 1 câu (như 4/5 hoặc 9/10).
+  // Làm sai từ 2 câu trở lên tuyệt đối không được xếp vào nhóm này.
+  const isMastery = !isPerfect && scorePercentage >= 0.8 && wrong <= 1;
+  // 3. Đạt chuẩn: Tỉ lệ >= 70% (như 5/7 hoặc 7/10)
+  const isPassed = !isPerfect && !isMastery && scorePercentage >= 0.7;
+  // 4. Cần cố gắng: Tỉ lệ 50% - 69% (như sai 2/5 câu, đạt 60%)
+  const isNeedPractice =
+    !isPerfect && !isMastery && !isPassed && scorePercentage >= 0.5;
 
   const titleText = isFailed
     ? "Hết mạng!"
     : isPerfect
-      ? "Hoàn hảo!"
-      : isGood
-        ? "Xuất sắc!"
-        : isAverage
-          ? "Cố lên nhé!"
-          : "Thử thêm lần nữa!";
+      ? "Xuất sắc hoàn hảo!"
+      : isMastery
+        ? "Làm rất tốt!"
+        : isPassed
+          ? "Hoàn thành bài học!"
+          : isNeedPractice
+            ? "Cần luyện tập thêm!"
+            : "Đừng nản lòng nhé!";
 
   const titleColor = isFailed
     ? Colors.error
     : isPerfect
-      ? Colors.accent
-      : isGood
+      ? Colors.secondary
+      : isMastery
         ? Colors.success
-        : Colors.primary;
+        : isPassed
+          ? isDark
+            ? "#F9FAFB"
+            : Colors.textPrimary
+          : isNeedPractice
+            ? Colors.warning
+            : Colors.error;
+
+  const sealText = isPerfect
+    ? "HOÀN HẢO • 大吉"
+    : isMastery
+      ? "XUẤT SẮC • 皆伝"
+      : isPassed
+        ? "ĐẠT CHUẨN • 合格"
+        : isNeedPractice
+          ? "CỐ GẮNG • 努力"
+          : "THỬ LẠI • 再挑戦";
+
+  const sealColor =
+    isFailed || (!isPerfect && !isMastery && !isPassed && !isNeedPractice)
+      ? Colors.error
+      : isNeedPractice
+        ? Colors.warning
+        : isPassed
+          ? Colors.primary
+          : Colors.secondary;
 
   const cardBg = isDark ? "rgba(255,255,255,0.06)" : Colors.light.card;
   const cardBorder = isDark ? "rgba(255,255,255,0.1)" : Colors.light.border;
@@ -73,15 +103,45 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
         },
       ]}
     >
-      {/* Lottie mascot */}
-      <View style={styles.animationContainer}>
-        <LottieView
-          source={animationSource}
-          autoPlay
-          loop
-          style={styles.lottie}
-        />
-      </View>
+      {/* Central Hero: HankoStamp for completed lessons, Confused Mascot for failed attempts */}
+      {isFailed ? (
+        <View style={styles.animationContainer}>
+          <LottieView
+            source={require("../../../assets/animations/confuse_mascot.json")}
+            autoPlay
+            loop
+            style={styles.lottie}
+          />
+        </View>
+      ) : (
+        <Animated.View
+          entering={FadeInUp.duration(400)}
+          style={styles.stampHeroContainer}
+        >
+          <HankoStamp
+            size={108}
+            delay={150}
+            color={sealColor}
+          />
+          <View
+            style={[
+              styles.sealBadge,
+              {
+                backgroundColor: isDark
+                  ? `${sealColor}26`
+                  : `${sealColor}12`,
+                borderColor: isDark
+                  ? `${sealColor}55`
+                  : `${sealColor}33`,
+              },
+            ]}
+          >
+            <Text style={[styles.sealBadgeText, { color: sealColor }]}>
+              {sealText}
+            </Text>
+          </View>
+        </Animated.View>
+      )}
 
       {/* Title */}
       <Animated.Text
@@ -159,10 +219,10 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
               styles.categoryRow,
               {
                 backgroundColor: isDark
-                  ? "rgba(255,215,0,0.07)"
+                  ? "rgba(196,146,46,0.12)"
                   : Colors.accent + "11",
                 borderColor: isDark
-                  ? "rgba(255,215,0,0.15)"
+                  ? "rgba(196,146,46,0.25)"
                   : Colors.accent + "33",
               },
             ]}
@@ -177,13 +237,15 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
             >
               {cat.name}
             </Text>
-            <View style={styles.starsRow}>
-              {Array.from({ length: cat.stars }).map((_, i) => (
-                <Text key={i} style={styles.star}>
-                  ⭐
-                </Text>
-              ))}
-            </View>
+            {cat.stars > 0 && (
+              <View style={styles.starsRow} testID="stars-row">
+                {Array.from({ length: cat.stars }).map((_, i) => (
+                  <Text key={i} style={styles.star}>
+                    ⭐
+                  </Text>
+                ))}
+              </View>
+            )}
           </Animated.View>
         ))}
       </View>
@@ -228,6 +290,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: Spacing.five,
   },
+  stampHeroContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.two,
+    gap: Spacing.one,
+  },
+  sealBadge: {
+    paddingHorizontal: Spacing.four,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    marginTop: Spacing.two,
+  },
+  sealBadgeText: {
+    fontSize: FontSizes.xs,
+    fontWeight: FontWeights.extrabold,
+    fontFamily: Fonts.rounded,
+    letterSpacing: 1.2,
+    color: Colors.secondary,
+  },
   animationContainer: {
     height: 150,
     alignItems: "center",
@@ -241,6 +323,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
+    fontFamily: Fonts.rounded,
     textAlign: "center",
   },
   scoreRow: {
@@ -259,10 +342,12 @@ const styles = StyleSheet.create({
   scoreLabel: {
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.medium,
+    fontFamily: Fonts.rounded,
   },
   scoreValue: {
     fontSize: FontSizes.title,
     fontWeight: FontWeights.extrabold,
+    fontFamily: Fonts.rounded,
   },
   correctValue: {
     color: "#4ADE80",
@@ -289,6 +374,7 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.rounded,
   },
   starsRow: {
     flexDirection: "row",
@@ -306,9 +392,11 @@ const styles = StyleSheet.create({
   wrongTitle: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
     color: Colors.error,
   },
   wrongCategory: {
     fontSize: FontSizes.md,
+    fontFamily: Fonts.rounded,
   },
 });

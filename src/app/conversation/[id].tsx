@@ -9,12 +9,14 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -41,15 +43,37 @@ import {
 } from "@/constants/theme";
 import type { ConversationUtterance } from "@/types/conversation";
 
+const TRANSLATION_PREF_KEY = "@nihongo_conversation_show_translation";
+
 export default function ConversationChatScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   // `topic` chỉ có mặt khi người học tự nhập chủ đề (route `/conversation/custom`).
-  const { id, topic: customTopic } = useLocalSearchParams<{
+  const {
+    id,
+    topic: customTopic,
+    showTranslation: paramShowTranslation,
+  } = useLocalSearchParams<{
     id: string;
     topic?: string;
+    showTranslation?: string;
   }>();
   const topicId = id ?? "";
+
+  const [showTranslation, setShowTranslation] = useState<boolean>(() => {
+    if (paramShowTranslation !== undefined) {
+      return paramShowTranslation === "true";
+    }
+    return true;
+  });
+
+  const toggleTranslation = useCallback(async () => {
+    setShowTranslation((prev) => {
+      const next = !prev;
+      AsyncStorage.setItem(TRANSLATION_PREF_KEY, String(next));
+      return next;
+    });
+  }, []);
 
   const {
     status,
@@ -121,6 +145,28 @@ export default function ConversationChatScreen() {
   const summarizing = status === "summarizing";
   const sessionOver = finished || summarizing;
 
+  // Thoát khi phiên còn đang diễn ra (chưa `finished`/`summarizing`) sẽ huỷ
+  // cuộc hội thoại - cần xác nhận trước, giống flow đăng xuất. Thoát khi
+  // phiên đã kết thúc thì vô hại, không cần hỏi lại.
+  const handleExit = useCallback(() => {
+    if (sessionOver) {
+      router.back();
+      return;
+    }
+    Alert.alert(
+      "Thoát hội thoại?",
+      "Cuộc hội thoại đang diễn ra sẽ bị huỷ.",
+      [
+        { text: "Huỷ", style: "cancel" },
+        {
+          text: "Thoát",
+          style: "destructive",
+          onPress: () => router.back(),
+        },
+      ],
+    );
+  }, [sessionOver, router]);
+
   // Phiên kết thúc thì im ngay - để bot đọc nốt câu dở trong khi bản tổng kết
   // hiện ra là thừa và gây nhiễu.
   useEffect(() => {
@@ -140,24 +186,29 @@ export default function ConversationChatScreen() {
     return () => clearTimeout(timer);
   }, [messages.length, hints, summary]);
 
-  const handleSend = useCallback(async () => {
-    const text = draft;
-    setDraft("");
-    await send(text);
-  }, [draft, send]);
+  const pickedHintTranslation = useRef<string>("");
 
   const handlePickHint = useCallback((hint: ConversationUtterance) => {
     // Điền vào ô nhập chứ KHÔNG gửi luôn: người học còn kịp đọc và sửa, tức là
     // vẫn học được gì đó chứ không chỉ bấm cho xong.
     setDraft(hint.ja);
+    pickedHintTranslation.current = hint.vi;
   }, []);
+
+  const handleSend = useCallback(async () => {
+    const text = draft;
+    const vi = pickedHintTranslation.current;
+    setDraft("");
+    pickedHintTranslation.current = "";
+    await send(text, vi);
+  }, [draft, send]);
 
   const spokenTurns = messages.filter((m) => m.author === "user").length;
 
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
-      edges={["top"]}
+      edges={["top", "bottom"]}
     >
       <View
         style={[
@@ -166,10 +217,11 @@ export default function ConversationChatScreen() {
         ]}
       >
         <AnimatedPressable
-          onPress={() => router.back()}
+          onPress={handleExit}
           pressScale={0.9}
           accessibilityRole="button"
           accessibilityLabel="Thoát hội thoại"
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           style={styles.headerButton}
         >
           <Ionicons name="close" size={24} color={colors.text} />
@@ -197,6 +249,25 @@ export default function ConversationChatScreen() {
           paused={status === "loading" || status === "error"}
         />
 
+        {/* Nút bật/tắt nhanh hiển thị bản dịch tiếng Việt */}
+        <AnimatedPressable
+          onPress={toggleTranslation}
+          pressScale={0.9}
+          accessibilityRole="button"
+          accessibilityLabel={
+            showTranslation ? "Tắt hiện tiếng Việt" : "Bật hiện tiếng Việt"
+          }
+          accessibilityState={{ selected: showTranslation }}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+          style={styles.headerButton}
+        >
+          <Ionicons
+            name={showTranslation ? "language" : "language-outline"}
+            size={20}
+            color={showTranslation ? Colors.primary : colors.textSecondary}
+          />
+        </AnimatedPressable>
+
         <AnimatedPressable
           onPress={() => {
             // Tắt tự đọc thì im ngay, đừng bắt nghe hết câu đang dở.
@@ -207,6 +278,7 @@ export default function ConversationChatScreen() {
           accessibilityRole="button"
           accessibilityLabel={autoSpeak ? "Tắt tự động đọc" : "Bật tự động đọc"}
           accessibilityState={{ selected: autoSpeak }}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           style={styles.headerButton}
         >
           <Ionicons
@@ -266,6 +338,7 @@ export default function ConversationChatScreen() {
                 <React.Fragment key={message.id}>
                   <ChatBubble
                     message={message}
+                    hideTranslation={!showTranslation}
                     onSpeak={handleSpeak}
                     speaking={speakingText === message.ja}
                   />
@@ -389,12 +462,11 @@ export default function ConversationChatScreen() {
               <>
                 <HintChips
                   hints={hints}
-                  // Nổi bật ở lượt đầu (chưa biết mở lời thế nào) và lúc sắp
-                  // hết giờ (mỗi giây do dự đều đắt).
                   prominent={
                     spokenTurns === 0 ||
                     remainingSeconds <= WRAP_UP_WARNING_SECONDS
                   }
+                  showTranslation={showTranslation}
                   onPick={handlePickHint}
                 />
                 <ChatComposer
@@ -467,7 +539,7 @@ const styles = StyleSheet.create({
   },
   messages: {
     padding: Spacing.four,
-    paddingBottom: Spacing.six,
+    paddingBottom: Spacing.eight,
   },
   centerBox: {
     flex: 1,

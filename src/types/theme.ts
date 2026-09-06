@@ -12,6 +12,12 @@ export interface ThemeColors {
   borderSubtle: string;
   tabBarBg: string;
   tabBarBorder: string;
+  overlay: string;
+  overlaySubtle: string;
+  overlayLight: string;
+  borderTransparent: string;
+  cardQuiz: string;
+  cardQuizBorder: string;
 }
 
 export interface ThemeContextValue {

@@ -67,19 +67,35 @@ export function useQuests() {
     () => summarizeBoard(quests, chestStatus),
     [quests, chestStatus],
   );
-  /** Recomputed per render is cheap and keeps the target correct past midnight. */
-  const resetAt = nextResetAt();
 
-  return {
-    nodes,
-    summary,
-    resetAt,
-    isLoading: isLoading && quests.length === 0,
-    isRefreshing,
-    refresh,
-    claimChest,
-    isOpeningChest,
-    chestError,
-    rewardCoins,
-  };
+  // Chỉ tính lại mốc reset nửa đêm 1 lần hoặc khi đã trôi qua mốc cũ
+  const resetAt = useMemo(() => nextResetAt(), []);
+
+  return useMemo(
+    () => ({
+      nodes,
+      summary,
+      resetAt,
+      isLoading: isLoading && quests.length === 0,
+      isRefreshing,
+      refresh,
+      claimChest,
+      isOpeningChest,
+      chestError,
+      rewardCoins,
+    }),
+    [
+      nodes,
+      summary,
+      resetAt,
+      isLoading,
+      quests.length,
+      isRefreshing,
+      refresh,
+      claimChest,
+      isOpeningChest,
+      chestError,
+      rewardCoins,
+    ],
+  );
 }

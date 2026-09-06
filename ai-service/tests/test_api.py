@@ -52,7 +52,7 @@ def test_health_ok_khi_co_khoa():
     body = client.get("/health").json()
     assert body["status"] == "ok"
     assert body["provider"] == "gemini"
-    assert body["sessionSeconds"] == 300
+    assert body["sessionSeconds"] == 90
 
 
 def test_health_bao_unconfigured_khi_thieu_khoa(monkeypatch):
@@ -188,12 +188,12 @@ def test_respond_nhac_ket_thuc_khi_sap_het_gio(monkeypatch):
 
     client.post(
         "/api/v1/conversation/respond",
-        json={"topicId": "restaurant", "text": "はい。", "remainingSeconds": 30},
+        json={"topicId": "restaurant", "text": "はい。", "remainingSeconds": 15},
     )
 
     # Chỉ thị sân khấu chỉ được chèn khi thời gian sắp hết - đây là cơ chế duy
     # nhất khiến hội thoại tự kết thúc gọn gàng thay vì bị cắt ngang.
-    assert "còn khoảng 30 giây" in captured["contents"][-1]["parts"][0]["text"]
+    assert "còn khoảng 15 giây" in captured["contents"][-1]["parts"][0]["text"]
 
 
 def test_respond_khong_nhac_ket_thuc_khi_con_nhieu_gio(monkeypatch):
@@ -426,6 +426,7 @@ def test_loi_luoc_do_van_giu_nguyen_chi_tiet_de_con_sua_duoc():
 # ---------------------------------------------------------------------------
 def test_doc_duoc_khoa_tu_file_env(tmp_path, monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
     env_file = tmp_path / ".env"
     env_file.write_text(
         "# ghi chú\n"

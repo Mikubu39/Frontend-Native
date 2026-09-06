@@ -127,6 +127,7 @@ describe("QuizScreen — dạy trước khi hỏi", () => {
     await waitFor(() => expect(play).toHaveBeenCalled());
     expect(mockedUseAudio).toHaveBeenCalledWith(
       `${API_BASE}/uploads/audios/kana/kana-a.mp3`,
+      "あ",
     );
 
     fireEvent.press(getByText("TIẾP TỤC"));
@@ -177,5 +178,30 @@ describe("QuizScreen — dạy trước khi hỏi", () => {
 
     await waitFor(() => expect(mockedApi.submitLesson).toHaveBeenCalled());
     expect(await findByText("Chưa nộp được bài")).toBeTruthy();
+  });
+
+  it("hỏi xác nhận trước khi thoát bài học qua modal tuỳ biến dù chưa làm câu nào", async () => {
+    const { findByText, getByText, getByLabelText } = await renderScreen();
+
+    expect(await findByText("CHỮ MỚI 1/2")).toBeTruthy();
+    fireEvent.press(getByText("TÔI ĐÃ BIẾT — BỎ QUA"));
+
+    expect(await findByText("Từ này nghĩa là gì?")).toBeTruthy();
+    const closeBtn = getByLabelText("Đóng bài học");
+    fireEvent.press(closeBtn);
+
+    // Modal tuỳ biến theme-aware xuất hiện thay thế Alert.alert thô của OS
+    expect(await findByText("Dừng buổi học?")).toBeTruthy();
+    expect(
+      getByText(
+        "Tiến trình làm bài hiện tại sẽ không được lưu và bạn sẽ mất lượt này.",
+      ),
+    ).toBeTruthy();
+    expect(getByText("TIẾP TỤC HỌC")).toBeTruthy();
+    expect(getByText("RỜI KHỎI BÀI")).toBeTruthy();
+
+    // Bấm "RỜI KHỎI BÀI" gọi router.back()
+    fireEvent.press(getByText("RỜI KHỎI BÀI"));
+    expect(mockBack).toHaveBeenCalled();
   });
 });

@@ -31,15 +31,18 @@ export function ListeningQuestionCard({
   selectedAnswer,
   onSelectAnswer,
 }: ListeningQuestionProps) {
-  const { isPlaying, play } = useAudio(question.audioUrl);
+  // Đáp án đúng CHÍNH LÀ câu tiếng Nhật đang được hỏi (xem comment ở dưới) —
+  // dùng nó làm nội dung đọc TTS khi backend chưa có file audio thật.
+  const fallbackSentence = question.answers.find((a) => a.isCorrect)?.text;
+  const { isPlaying, play } = useAudio(question.audioUrl, fallbackSentence);
   const { colors, isDark } = useTheme();
 
   useEffect(() => {
     play();
   }, [question, play]);
 
-  const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
-  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
+  const cardBg = colors.cardQuiz;
+  const cardBorder = colors.cardQuizBorder;
   const selectedBg = isDark ? Colors.primary + "33" : Colors.primary + "18";
 
   return (
@@ -55,26 +58,19 @@ export function ListeningQuestionCard({
           styles.audioCard,
           {
             backgroundColor: isDark
-              ? "rgba(139,92,246,0.12)"
+              ? Colors.primary + "1F"
               : Colors.primary + "0F",
-            borderColor: isDark
-              ? "rgba(139,92,246,0.3)"
-              : Colors.primary + "33",
+            borderColor: isDark ? Colors.primary + "4D" : Colors.primary + "33",
           },
         ]}
       >
         <AudioButton
           variant="speaker"
-          size="large"
+          size="medium"
           isPlaying={isPlaying}
           onPress={() => play()}
         />
-        <Text
-          style={[
-            styles.audioHint,
-            { color: isDark ? "rgba(255,255,255,0.35)" : Colors.textSecondary },
-          ]}
-        >
+        <Text style={[styles.audioHint, { color: colors.textSecondary }]}>
           {isPlaying ? "Đang phát..." : "Chạm để nghe"}
         </Text>
       </View>
@@ -105,9 +101,7 @@ export function ListeningQuestionCard({
                         ? isDark
                           ? Colors.primaryLight
                           : Colors.primaryDark
-                        : isDark
-                          ? "#F9FAFB"
-                          : Colors.textPrimary,
+                        : colors.text,
                     },
                   ]}
                 >
@@ -120,9 +114,7 @@ export function ListeningQuestionCard({
                     style={[
                       styles.answerRomaji,
                       {
-                        color: isDark
-                          ? "rgba(255,255,255,0.45)"
-                          : Colors.textSecondary,
+                        color: colors.textSecondary,
                       },
                     ]}
                   >

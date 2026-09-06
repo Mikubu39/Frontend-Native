@@ -25,6 +25,7 @@ import {
   rgbToHex,
 } from "@/data/avatar-options";
 import { AvatarDisplay } from "@/components/user/avatar-display";
+import { useTheme } from "@/contexts/theme-context";
 
 interface AvatarPickerModalProps {
   visible: boolean;
@@ -39,6 +40,7 @@ export function AvatarPickerModal({
   onClose,
   onSave,
 }: AvatarPickerModalProps) {
+  const { colors, isDark } = useTheme();
   const [config, setConfig] = useState<AvatarConfig>(
     initialConfig ?? DEFAULT_AVATAR_CONFIG,
   );
@@ -68,19 +70,34 @@ export function AvatarPickerModal({
     formatter?: (value: string) => string,
   ) => (
     <View style={styles.group} key={keyName}>
-      <Text style={styles.groupTitle}>{title}</Text>
+      <Text style={[styles.groupTitle, { color: colors.text }]}>{title}</Text>
       <View style={styles.optionRow}>
         {items.map((item) => {
           const isActive = config[keyName] === item;
           return (
             <Pressable
               key={`${keyName}-${item}`}
-              style={[styles.optionChip, isActive && styles.optionChipActive]}
+              style={[
+                styles.optionChip,
+                {
+                  backgroundColor: colors.backgroundElement,
+                  borderColor: colors.border,
+                },
+                isActive && [
+                  styles.optionChipActive,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(59, 76, 130, 0.2)"
+                      : "#E8EAF4",
+                  },
+                ],
+              ]}
               onPress={() => updateConfig(keyName, item)}
             >
               <Text
                 style={[
                   styles.optionChipText,
+                  { color: colors.textSecondary },
                   isActive && styles.optionChipTextActive,
                 ]}
               >
@@ -99,7 +116,7 @@ export function AvatarPickerModal({
     presets: string[],
   ) => (
     <View style={styles.group} key={keyName}>
-      <Text style={styles.groupTitle}>{title}</Text>
+      <Text style={[styles.groupTitle, { color: colors.text }]}>{title}</Text>
       <View style={styles.optionRow}>
         {presets.map((hex) => {
           const isActive = config[keyName] === hex;
@@ -123,6 +140,7 @@ export function AvatarPickerModal({
       <RgbColorPicker
         value={config[keyName]}
         onChange={(hex) => updateConfig(keyName, hex)}
+        colors={colors}
       />
     </View>
   );
@@ -135,11 +153,15 @@ export function AvatarPickerModal({
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { backgroundColor: colors.card }]}>
           <View style={styles.headerRow}>
-            <Text style={styles.title}>Chọn avatar</Text>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Chọn avatar
+            </Text>
             <Pressable onPress={onClose} hitSlop={10}>
-              <Text style={styles.closeText}>✕</Text>
+              <Text style={[styles.closeText, { color: colors.textSecondary }]}>
+                ✕
+              </Text>
             </Pressable>
           </View>
 
@@ -147,7 +169,7 @@ export function AvatarPickerModal({
             <AvatarDisplay
               uri={previewUrl}
               size={126}
-              backgroundColor="#F3E8FF"
+              backgroundColor={isDark ? "rgba(59, 76, 130, 0.2)" : "#E8EAF4"}
             />
           </View>
 
@@ -204,9 +226,11 @@ export function AvatarPickerModal({
 function RgbColorPicker({
   value,
   onChange,
+  colors,
 }: {
   value: string;
   onChange: (hex: string) => void;
+  colors: any;
 }) {
   const [rgb, setRgb] = useState<RgbColor>(() => hexToRgb(value));
 
@@ -222,12 +246,28 @@ function RgbColorPicker({
   };
 
   return (
-    <View style={styles.rgbPicker}>
+    <View
+      style={[
+        styles.rgbPicker,
+        {
+          backgroundColor: colors.backgroundElement,
+          borderColor: colors.border,
+        },
+      ]}
+    >
       <View style={styles.rgbPreviewRow}>
         <View
-          style={[styles.rgbPreviewBox, { backgroundColor: rgbToHex(rgb) }]}
+          style={[
+            styles.rgbPreviewBox,
+            {
+              backgroundColor: rgbToHex(rgb),
+              borderColor: colors.borderTransparent,
+            },
+          ]}
         />
-        <Text style={styles.rgbPreviewText}>{rgbToHex(rgb)}</Text>
+        <Text style={[styles.rgbPreviewText, { color: colors.textSecondary }]}>
+          {rgbToHex(rgb)}
+        </Text>
       </View>
 
       <RgbSlider
@@ -257,11 +297,13 @@ function RgbSlider({
   trackColor,
   value,
   onChange,
+  colors,
 }: {
   label: string;
   trackColor: string;
   value: number;
   onChange: (value: number) => void;
+  colors?: any;
 }) {
   const widthRef = useRef(0);
 
@@ -321,7 +363,14 @@ function RgbSlider({
         </View>
       </View>
 
-      <Text style={styles.rgbSliderValue}>{Math.round(value)}</Text>
+      <Text
+        style={[
+          styles.rgbSliderValue,
+          colors && { color: colors.textSecondary },
+        ]}
+      >
+        {Math.round(value)}
+      </Text>
     </View>
   );
 }
@@ -333,7 +382,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.35)",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: Spacing.five,
@@ -351,11 +399,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
   },
   closeText: {
     fontSize: 26,
-    color: Colors.textSecondary,
     lineHeight: 26,
   },
   previewWrap: {
@@ -373,7 +419,6 @@ const styles = StyleSheet.create({
   groupTitle: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
   },
   optionRow: {
     flexDirection: "row",
@@ -382,18 +427,14 @@ const styles = StyleSheet.create({
   },
   optionChip: {
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#F9FAFB",
     borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
   optionChipActive: {
     borderColor: Colors.primary,
-    backgroundColor: "#F3E8FF",
   },
   optionChipText: {
-    color: Colors.textSecondary,
     fontSize: 12,
     fontWeight: FontWeights.semibold,
   },
@@ -418,9 +459,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: "#F9FAFB",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     gap: 4,
   },
   rgbPreviewRow: {
@@ -434,12 +473,10 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.1)",
   },
   rgbPreviewText: {
     fontSize: 13,
     fontWeight: FontWeights.semibold,
-    color: Colors.textSecondary,
     letterSpacing: 0.5,
   },
   rgbSliderRow: {
@@ -460,7 +497,6 @@ const styles = StyleSheet.create({
     width: 32,
     textAlign: "right",
     fontSize: 12,
-    color: Colors.textSecondary,
   },
   saveButton: {
     backgroundColor: Colors.primary,

@@ -42,7 +42,6 @@ interface ItemSheetProps {
   onClose: () => void;
   onBuy: (entry: ShelfEntry) => void;
   onUse: (entry: ShelfEntry) => void;
-  onEquip: (entry: ShelfEntry) => void;
 }
 
 function StatCell({
@@ -73,18 +72,16 @@ export function ItemSheet({
   onClose,
   onBuy,
   onUse,
-  onEquip,
 }: ItemSheetProps) {
   const insets = useSafeAreaInsets();
   const remaining = useCountdown(activeUntil);
 
   if (!entry) return null;
 
-  const { item, rarity, owned, equipped } = entry;
+  const { item, rarity, owned } = entry;
   const tier = RARITY_STYLES[rarity];
   const meta = EFFECT_META[item.effectType];
   const stat = describeEffect(item);
-  const isCosmetic = item.itemType === "COSMETIC";
   const affordable = coins >= item.priceCoins;
   const shortfall = item.priceCoins - coins;
 
@@ -143,7 +140,6 @@ export function ItemSheet({
           <View style={styles.statRow}>
             <StatCell
               label="Hiệu lực"
-              // Cosmetics have no timer — once equipped they simply stay on.
               value={stat ?? "Vĩnh viễn"}
               accent={tier.accent}
               mutedColor={colors.textSecondary}
@@ -169,39 +165,29 @@ export function ItemSheet({
           ) : null}
 
           <View style={styles.actions}>
-            {isCosmetic && owned > 0 ? (
-              <ShopButton
-                label={equipped ? "Tháo ra" : "Trang bị"}
-                icon={equipped ? "close-circle" : "shirt"}
-                tone="gold"
-                loading={pending}
-                onPress={() => onEquip(entry)}
-              />
-            ) : (
-              <ShopButton
-                // Short on xu the button still works — it opens the way to
-                // earn the gap rather than dead-ending on a disabled control.
-                label={
-                  affordable
-                    ? "Mua"
-                    : "Kiếm thêm " + formatCoins(shortfall) + " xu"
-                }
-                tone={affordable ? "gold" : "lacquer"}
-                icon={affordable ? undefined : "book"}
-                loading={pending}
-                leading={affordable ? <CoinMark size={16} /> : undefined}
-                onPress={() => onBuy(entry)}
-              />
-            )}
+            <ShopButton
+              // Short on xu the button still works — it opens the way to
+              // earn the gap rather than dead-ending on a disabled control.
+              label={
+                affordable
+                  ? "Mua"
+                  : "Kiếm thêm " + formatCoins(shortfall) + " xu"
+              }
+              tone={affordable ? "gold" : "lacquer"}
+              icon={affordable ? undefined : "book"}
+              loading={pending}
+              leading={affordable ? <CoinMark size={16} /> : undefined}
+              onPress={() => onBuy(entry)}
+            />
 
-            {affordable && !(isCosmetic && owned > 0) ? (
+            {affordable ? (
               <Text style={[styles.priceHint, { color: colors.textSecondary }]}>
                 Trừ {formatCoins(item.priceCoins)} xu · còn lại{" "}
                 {formatCoins(coins - item.priceCoins)}
               </Text>
             ) : null}
 
-            {!isCosmetic && owned > 0 ? (
+            {owned > 0 ? (
               <ShopButton
                 label="Dùng ngay"
                 icon="play"

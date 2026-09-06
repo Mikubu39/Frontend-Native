@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
+  Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -15,6 +16,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
 import { useTheme } from "@/contexts/theme-context";
 import { useTutorial } from "@/contexts/tutorial-context";
+import { useSoundEffect } from "@/hooks/use-sound-effect";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import {
   Colors,
@@ -32,7 +34,10 @@ export default function SettingsScreen() {
   const { startTutorial } = useTutorial();
   const { showInfo, showSuccess } = useToast();
   const { colors, isDark, themeMode, setThemeMode } = useTheme();
+  const { soundEnabled, setSoundEnabled, playCorrect, playIncorrect } =
+    useSoundEffect();
   const [themeModalVisible, setThemeModalVisible] = useState(false);
+  const [soundModalVisible, setSoundModalVisible] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất không?", [
@@ -42,7 +47,6 @@ export default function SettingsScreen() {
         style: "destructive",
         onPress: async () => {
           await signOut();
-          router.replace("/welcome");
         },
       },
     ]);
@@ -207,11 +211,8 @@ export default function SettingsScreen() {
           {
             icon: "volume-high-outline",
             label: "Âm thanh và hiệu ứng",
-            onPress: () =>
-              showInfo(
-                "Âm thanh",
-                "Hiệu ứng âm thanh và Haptics đang được bật mặc định.",
-              ),
+            badge: soundEnabled ? "Bật 🔔" : "Tắt 🔕",
+            onPress: () => setSoundModalVisible(true),
           },
           {
             icon: "accessibility-outline",
@@ -260,15 +261,15 @@ export default function SettingsScreen() {
             onPress: () =>
               showInfo(
                 "Trợ giúp",
-                "Mọi thắc mắc xin liên hệ support@kotodama.app",
+                "Mọi thắc mắc xin liên hệ support@nihongo.app",
               ),
           },
           {
             icon: "information-circle-outline",
-            label: "Về Kotodama",
+            label: "Về Nihongo",
             onPress: () =>
               showInfo(
-                "Kotodama v1.0.0",
+                "Nihongo v1.0.0",
                 "Ứng dụng học tiếng Nhật phong cách Gamification.",
               ),
           },
@@ -305,6 +306,9 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setThemeModalVisible(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Đóng"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               >
                 <Ionicons name="close" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
@@ -325,7 +329,7 @@ export default function SettingsScreen() {
                         backgroundColor: isSelected
                           ? isDark
                             ? "#232338"
-                            : "#F5F3FF"
+                            : "#E8EAF4"
                           : "transparent",
                       },
                     ]}
@@ -395,6 +399,180 @@ export default function SettingsScreen() {
                   </AnimatedPressable>
                 );
               })}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <Modal
+        visible={soundModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSoundModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setSoundModalVisible(false)}
+        >
+          <View
+            style={[
+              styles.themeModalCard,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <View style={styles.themeModalHeader}>
+              <Text style={[styles.themeModalTitle, { color: colors.text }]}>
+                Âm thanh & Hiệu ứng
+              </Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setSoundModalVisible(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Đóng"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Ionicons name="close" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ gap: Spacing.four }}>
+              {/* Switch Row */}
+              <View
+                style={[
+                  styles.soundSettingCard,
+                  {
+                    backgroundColor: isDark ? "#232338" : "#F8FAFC",
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <View style={{ flex: 1, gap: 4, paddingRight: Spacing.three }}>
+                  <Text
+                    style={[styles.soundSettingLabel, { color: colors.text }]}
+                  >
+                    Hiệu ứng âm thanh (SFX)
+                  </Text>
+                  <Text
+                    style={[
+                      styles.soundSettingDesc,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Phát chuông vui tươi khi trả lời đúng và âm trầm nhẹ khi trả
+                    lời sai.
+                  </Text>
+                </View>
+                <Switch
+                  value={soundEnabled}
+                  onValueChange={(val) => {
+                    setSoundEnabled(val);
+                    showSuccess(
+                      "Âm thanh",
+                      val
+                        ? "Đã bật hiệu ứng âm thanh."
+                        : "Đã tắt hiệu ứng âm thanh.",
+                    );
+                  }}
+                  trackColor={{
+                    false: isDark ? "#3F3F5A" : "#CBD5E1",
+                    true: Colors.primary,
+                  }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+
+              {/* Sound Preview Section */}
+              <View style={{ gap: Spacing.two }}>
+                <Text
+                  style={[
+                    styles.soundPreviewTitle,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  NGHE THỬ HIỆU ỨNG
+                </Text>
+
+                <View style={styles.soundPreviewButtonsRow}>
+                  <AnimatedPressable
+                    style={[
+                      styles.soundPreviewButton,
+                      {
+                        backgroundColor: isDark ? "#1E293B" : "#F0FDF4",
+                        borderColor: Colors.success,
+                      },
+                    ]}
+                    onPress={() => playCorrect()}
+                    pressScale={0.96}
+                  >
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={Colors.success}
+                    />
+                    <Text
+                      style={[
+                        styles.soundPreviewButtonText,
+                        { color: Colors.success },
+                      ]}
+                    >
+                      Âm Đúng 🔔
+                    </Text>
+                  </AnimatedPressable>
+
+                  <AnimatedPressable
+                    style={[
+                      styles.soundPreviewButton,
+                      {
+                        backgroundColor: isDark ? "#1E293B" : "#FEF2F2",
+                        borderColor: Colors.error,
+                      },
+                    ]}
+                    onPress={() => playIncorrect()}
+                    pressScale={0.96}
+                  >
+                    <Ionicons
+                      name="close-circle"
+                      size={20}
+                      color={Colors.error}
+                    />
+                    <Text
+                      style={[
+                        styles.soundPreviewButtonText,
+                        { color: Colors.error },
+                      ]}
+                    >
+                      Âm Sai ❌
+                    </Text>
+                  </AnimatedPressable>
+                </View>
+              </View>
+
+              {/* Haptics info note */}
+              <View
+                style={[
+                  styles.soundInfoBox,
+                  {
+                    backgroundColor: isDark ? "#1C1C2E" : "#F1F5F9",
+                    borderColor: colors.borderSubtle,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="information-circle-outline"
+                  size={18}
+                  color={Colors.primary}
+                />
+                <Text
+                  style={[
+                    styles.soundInfoText,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Phản hồi rung (Haptics) và âm thanh phát âm tiếng Nhật luôn
+                  hoạt động song song.
+                </Text>
+              </View>
             </View>
           </View>
         </TouchableOpacity>
@@ -557,5 +735,59 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: Colors.primary,
+  },
+  soundSettingCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: Spacing.four,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+  },
+  soundSettingLabel: {
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.bold,
+  },
+  soundSettingDesc: {
+    fontSize: FontSizes.xs,
+    lineHeight: 18,
+  },
+  soundPreviewTitle: {
+    fontSize: FontSizes.xs,
+    fontWeight: FontWeights.bold,
+    letterSpacing: 0.5,
+    marginTop: Spacing.one,
+  },
+  soundPreviewButtonsRow: {
+    flexDirection: "row",
+    gap: Spacing.three,
+  },
+  soundPreviewButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.two,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+  },
+  soundPreviewButtonText: {
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.bold,
+  },
+  soundInfoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  soundInfoText: {
+    flex: 1,
+    fontSize: FontSizes.xs,
+    lineHeight: 16,
   },
 });

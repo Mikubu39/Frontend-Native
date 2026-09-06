@@ -5,21 +5,21 @@
 
 import { SocialAuthSection } from "@/components/auth/social-auth-section";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { StyledTextInput } from "@/components/ui/text-input";
-import {
-  BorderRadius,
-  Colors,
-  FontSizes,
-  FontWeights,
-  Shadows,
-  Spacing,
-} from "@/constants/theme";
+import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
 import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/use-theme";
@@ -59,6 +59,13 @@ export default function LoginScreen() {
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
+      {/*
+        `behavior="padding"` cho CẢ Android chứ không chỉ iOS.
+        Từ Android 15 trở lên, chế độ edge-to-edge khiến
+        `android:windowSoftInputMode="adjustResize"` bị BỎ QUA - bàn phím
+        che mất input/nút submit nếu không có KeyboardAvoidingView.
+      */}
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -74,6 +81,8 @@ export default function LoginScreen() {
               { backgroundColor: colors.cardElevated },
             ]}
             pressScale={0.9}
+            accessibilityRole="button"
+            accessibilityLabel="Đóng"
           >
             <Text
               style={[styles.closeButtonText, { color: colors.textSecondary }]}
@@ -125,28 +134,12 @@ export default function LoginScreen() {
             autoCapitalize="none"
           />
 
-          {/* 3D Login Button */}
-          <AnimatedPressable
-            style={[styles.submitButton, loading && styles.disabledButton]}
+          <GradientButton
+            title="ĐĂNG NHẬP"
             onPress={handleLogin}
-            disabled={loading}
-            pressScale={0.97}
-          >
-            <View style={styles.submitButtonShadow} />
-            <View style={styles.submitButtonContent}>
-              <Text style={styles.submitButtonText}>
-                {loading ? "ĐANG XỬ LÝ..." : "ĐĂNG NHẬP"}
-              </Text>
-            </View>
-          </AnimatedPressable>
-
-          <AnimatedPressable
-            style={styles.forgotButton}
-            onPress={() => {}}
-            pressScale={0.95}
-          >
-            <Text style={styles.forgotText}>QUÊN MẬT KHẨU</Text>
-          </AnimatedPressable>
+            loading={loading}
+            style={styles.submitButton}
+          />
         </Animated.View>
 
         {/* Social Auth */}
@@ -163,6 +156,7 @@ export default function LoginScreen() {
           />
         </Animated.View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -171,6 +165,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+  },
+  flex: {
+    flex: 1,
   },
   scroll: {
     flexGrow: 1,
@@ -233,50 +230,6 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     width: "100%",
-    height: 56,
     marginTop: Spacing.four,
-    position: "relative",
-  },
-  disabledButton: {
-    opacity: 0.7,
-  },
-  submitButtonShadow: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 5,
-    bottom: -5,
-    backgroundColor: Colors.primaryDark,
-    borderRadius: BorderRadius.lg,
-  },
-  submitButtonContent: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    justifyContent: "center",
-    alignItems: "center",
-    ...Shadows.md,
-  },
-  submitButtonText: {
-    color: "#FFFFFF",
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.bold,
-    letterSpacing: 1,
-  },
-  forgotButton: {
-    alignSelf: "center",
-    marginTop: Spacing.two,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
-  },
-  forgotText: {
-    color: Colors.primary,
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.bold,
-    letterSpacing: 0.8,
   },
 });

@@ -16,6 +16,7 @@ import {
 } from "@/constants/theme";
 import { AudioButton } from "../ui/audio-button";
 import { useAudio } from "@/hooks/use-audio";
+import { useJapaneseSpeech } from "@/hooks/use-japanese-speech";
 import type { PictureQuestion } from "@/types";
 import { DualText } from "@/components/ui/dual-text";
 import { useTheme } from "@/contexts/theme-context";
@@ -35,17 +36,17 @@ export function PictureQuestionCard({
   hasSubmitted,
   onSelectAnswer,
 }: PictureQuestionProps) {
-  const { isPlaying, play } = useAudio(question.audioUrl);
+  const { isPlaying, play } = useAudio(question.audioUrl, question.word);
+  const { speak: speakOption } = useJapaneseSpeech();
   const { colors, isDark } = useTheme();
 
   useEffect(() => {
-    // Câu chọn hình vốn không cần nghe (đề bài là chữ, đáp án là ảnh) nên phần
-    // lớn không có audio. Chỉ tự phát khi thật sự có file.
-    if (question.audioUrl) play();
-  }, [question]);
+    // Có file thật thì phát file, không thì đọc bằng TTS từ chính từ đang hỏi.
+    play();
+  }, [question, play]);
 
-  const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
-  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
+  const cardBg = colors.cardQuiz;
+  const cardBorder = colors.cardQuizBorder;
 
   return (
     <View
@@ -60,9 +61,9 @@ export function PictureQuestionCard({
       />
 
       <View style={styles.audioRow}>
-        {/* Không có file thì không vẽ nút loa: một cái loa bấm vào không kêu
-            còn tệ hơn là không có loa. */}
-        {question.audioUrl ? (
+        {/* Có file thật hoặc từ để đọc TTS thì mới vẽ nút loa: một cái loa bấm
+            vào không kêu còn tệ hơn là không có loa. */}
+        {question.audioUrl || question.word ? (
           <AudioButton isPlaying={isPlaying} onPress={play} size="medium" />
         ) : null}
         <DualText
@@ -71,7 +72,7 @@ export function PictureQuestionCard({
           glossary={question.glossary}
           mainStyle={{
             ...styles.wordText,
-            color: isDark ? "#F9FAFB" : Colors.textPrimary,
+            color: colors.text,
           }}
           align="flex-start"
           containerStyle={{ flexShrink: 1 }}
@@ -84,9 +85,7 @@ export function PictureQuestionCard({
           const isCorrectAnswer = img.isCorrect;
 
           let borderColor: string = cardBorder;
-          let bgColor: string = isDark
-            ? "rgba(255,255,255,0.04)"
-            : colors.backgroundElement;
+          let bgColor: string = colors.backgroundElement;
           let showCheck = false;
           let checkBg: string = Colors.accent;
           let iconName: "checkmark" | "close" = "checkmark";
@@ -94,13 +93,13 @@ export function PictureQuestionCard({
           if (hasSubmitted) {
             if (isCorrectAnswer) {
               borderColor = Colors.success;
-              bgColor = isDark ? "rgba(74,222,128,0.12)" : "#DCFCE7";
+              bgColor = isDark ? Colors.success + "22" : Colors.success + "18";
               showCheck = true;
               checkBg = Colors.success;
               iconName = "checkmark";
             } else if (isSelected) {
               borderColor = Colors.error;
-              bgColor = isDark ? "rgba(248,113,113,0.12)" : "#FEE2E2";
+              bgColor = isDark ? Colors.error + "22" : Colors.errorLight;
               showCheck = true;
               checkBg = Colors.error;
               iconName = "close";
@@ -116,15 +115,36 @@ export function PictureQuestionCard({
           return (
             <AnimatedPressable
               key={img.id}
+              testID={`picture-option-${img.id}`}
               style={[
                 styles.optionCard,
                 { backgroundColor: bgColor, borderColor },
               ]}
-              onPress={() => onSelectAnswer(img.id, img.isCorrect)}
+              onPress={() => {
+                onSelectAnswer(img.id, img.isCorrect);
+                // Chạm vào ảnh nào đọc luôn từ vựng của ảnh đó, để người học
+                // nghe cách phát âm ngay cả khi chọn sai.
+                if (img.text) speakOption(img.text);
+              }}
               pressScale={0.95}
             >
-              {img.imageUrl && (
-                <Image source={{ uri: img.imageUrl }} style={styles.image} />
+              {img.imageUrl ? (
+                <Image
+                  source={{ uri: img.imageUrl }}
+                  style={styles.image}
+                  accessible
+                  accessibilityLabel={img.text || "Hình ảnh đáp án"}
+                  accessibilityRole="image"
+                />
+              ) : (
+                <View style={styles.fallbackContainer}>
+                  <Text
+                    style={[styles.fallbackText, { color: colors.text }]}
+                    numberOfLines={2}
+                  >
+                    {img.text}
+                  </Text>
+                </View>
               )}
               {showCheck && (
                 <Animated.View
@@ -200,5 +220,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+  },
+  fallbackContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.two,
+  },
+  fallbackText: {
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.bold,
+    textAlign: "center",
   },
 });

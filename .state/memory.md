@@ -5,6 +5,7 @@
 - Follow established project structures (such as separating concerns into `src/components/`, `src/types/`, etc. as defined in workspace rules).
 - Use path alias `@/` mapping to `./src/`.
 - Use barrel exports (`index.ts`) for clean imports.
+- **Biểu tượng Cúp & Huy hiệu Game (Duolingo Style)**: Sử dụng vector SVG thuần túy (`react-native-svg`) thay vì ảnh bitmap/raster hoặc sticker có viền trắng. SVG cho phép render 2-tone cel-shading chuẩn Duolingo, vệt sáng cong reflection, quai chữ C bo góc, đế nổi 3D (`borderBottom` chunky bevel) và nền trong suốt 100% không bị vỡ hạt hay dính khung viền trắng trên bất kỳ màu nền nào.
 
 ## What Doesn't
 
@@ -39,7 +40,7 @@
 
 Trên emulator Android, `<Text>` mặc định render 円 / 市 ở cỡ nhỏ (≤12px) thành ô vuông hoặc vệt không đọc được, và ở cỡ rất lớn cũng cho ra hình khối lạ. Với ký hiệu trong UI (đồng xu, watermark), hãy **vẽ bằng View** thay vì dựa vào glyph. Ví dụ `src/components/shop/coin-mark.tsx`: hình tròn vàng + lỗ vuông ở giữa (đồng "mon"), đọc rõ từ 14px đến 240px và không phụ thuộc font.
 
-Chữ Nhật *nội dung* (bảng chữ cái, câu ví dụ) vẫn render bình thường ở cỡ lớn — chỉ tránh dùng làm ký hiệu nhỏ.
+Chữ Nhật _nội dung_ (bảng chữ cái, câu ví dụ) vẫn render bình thường ở cỡ lớn — chỉ tránh dùng làm ký hiệu nhỏ.
 
 ## Bottom sheet trong tab screen phải trừ chiều cao thanh tab nổi
 
@@ -127,11 +128,11 @@ rect cua phan tu dich (`origin` trong `src/components/tutorial/tutorial-overlay.
 dung tren moi may/cau hinh edge-to-edge, khong phai doan chieu cao status bar.
 
 Hai diem kem theo:
+
 - View bao quanh phan tu dich PHAI co `collapsable={false}`, khong Android gop View vao cha
   va `measureInWindow` tra ve 0.
 - Man trong `(tabs)` da mo la con song mai -> dang ky thu gi voi context toan cuc thi dung
   `useFocusEffect`, KHONG dung `useEffect` (effect theo vong doi khong chay lai o lan ghe sau).
-
 
 ## Metro KHONG thay file sua bang script (Windows)
 
@@ -161,8 +162,153 @@ npx expo start --clear
 ```
 
 Ghi chu them khi lai emulator bang adb:
+
 - Git Bash doi `/sdcard/ui.xml` thanh `C:/Program Files/Git/sdcard/...`. Dung `MSYS_NO_PATHCONV=1`.
 - `uiautomator dump` bao "could not get idle state" tren man co Lottie chay lien tuc.
 - Deep link vao thang man hinh nhanh hon mo toa do tap:
   `adb shell am start -a android.intent.action.VIEW -d "frontend://quiz/1?lessonId=1"`
 - Ho `sleep` bi chan trong Bash tool -> dung `adb shell sleep 3` (chay tren may ao).
+
+## Tối ưu hiệu năng bản đồ lộ trình (Roadmap FlatList + SVG + Reanimated)
+
+- **Tránh tạo Reanimated hook đại trà trên danh sách dài:** Khi danh sách có gần 100 node bài học, KHÔNG khởi tạo `useSharedValue` / `useAnimatedStyle` / `AnimatedPressable` cho từng node. Chỉ duy nhất node đang mở (`isActive`) mới bọc Reanimated; các node tĩnh dùng `Pressable` thuần.
+- **Tiền tính toán SVG Polygon Points:** Không gọi `Math.cos`/`Math.sin` và nối chuỗi polygon points ở mỗi lượt render của từng node — định nghĩa hằng số `HEX_POINTS_OUTER/INNER/SHIMMER` ở module scope.
+- **SVG Bezier Dash Overhead trên Android:** Tuyệt đối tránh `strokeDasharray` trên các đường cong Bezier dài hàng nghìn pixel; Android Skia/Canvas phải tích phân cung đường liên tục gây drop frame nghiêm trọng. Thay bằng đường kẻ mờ thuần.
+- **FlatList Full Pre-rendering cho Bản đồ Lộ trình (TopicSection):**
+  - **Khắc phục lag khi vuốt nhanh (fling):** Không dùng virtualization hẹp kèm `removeClippedSubviews={true}` trên Android vì Android Skia liên tục unmount/mount lại native canvas của các thẻ `<Svg>` khổng lồ, gây nghẽn JS thread (`dt: 680-1008ms`).
+  - **Cấu hình chuẩn tối ưu:** `initialNumToRender={14}`, `maxToRenderPerBatch={14}`, `windowSize={15}`, `removeClippedSubviews={false}`. Vì mỗi `TopicSection` đã hợp nhất vào 1 thẻ `<Svg>` duy nhất (<60KB), việc dựng sẵn toàn bộ 14 chủ đề nằm trong GPU texture giúp người dùng vuốt nhanh (fling) mượt mà 60-120fps mà không bị khựng hay drop frame.
+  - `scrollEventThrottle={16}`: Giữ mượt mà 60fps khi cuộn.
+
+## Context Re-render Cascade & Performance Anti-patterns
+
+- **Bắt buộc memoize Context Value:** Mọi Provider (`Gamification`, `Auth`, `Toast`, `Tutorial`, `Onboarding`, `Quiz`) PHẢI bọc `useMemo` cho `value` và `useCallback` cho mọi method. Tránh truyền object literal `value={{ ...state, fn }}` trực tiếp vào Provider vì mỗi render của cha sẽ tạo object mới khiến toàn bộ cây con (tất cả các tab) re-render cascade.
+- **Gộp nhiều async state updates thành 1 lần `setState` duy nhất:** Trong các hàm fetch tổng hợp (như `fetchGamificationData`), sử dụng `Promise.all` và gọi đúng 1 lần `setState` với dữ liệu gộp từ tất cả các nguồn thay vì gọi tuần tự 3-4 lần `setState`.
+- **Countdown Hook Memory & Re-render Guard:** Tránh sinh timestamp `resetAt` mới trong thân function component mỗi lần render; dùng `useMemo(() => nextResetAt(), [])` để tránh re-render storm 1s. Trong hook `useCountdown`, luôn guard `setLabel((prev) => (prev === next ? prev : next))` để triệt tiêu re-render khi giá trị không đổi hoặc đã hết giờ.
+
+## Cơ chế số sao (⭐) bài học (TIMED_REVIEW vs NORMAL/TOPIC_REVIEW)
+
+- **Chỉ TIMED_REVIEW mới có sao:** `TIMED_REVIEW` (Ôn tập tính giờ, biểu tượng cú 🦉) là loại bài học duy nhất có hệ thống chấm 1-3 sao (dựa trên thời gian hoàn thành + phạt thời gian).
+- **Màn hình kết quả (`QuizResultScreen` / `QuizResultCard`):**
+  - `TIMED_REVIEW`: Nhận `starsEarned` từ backend (1-3 sao) và hiển thị tương ứng trong `starsRow`.
+  - Các bài khác (`NORMAL`, `TOPIC_REVIEW`, `JUMP_TEST`): Luôn đặt `stars = 0` (chỉ hiển thị phần thưởng EXP & Coin), **không** dùng fallback gán 3 sao khi `expEarned > 0`.
+- Roadmap (`HexNode` vs `TimedReviewBadge`):
+  - `TimedReviewBadge`: Hiển thị 3 sao dưới mascot cú và trong popover.
+  - `HexNode`: Không hiển thị sao trên node lẫn trong popover.
+
+## QR Code & Camera Scanner (expo-camera & Deep Linking)
+
+- **Mock native module `expo-camera` trong Jest:**
+  `expo-camera` là native module, không có JS implementation khi chạy dưới Node/Jest. Cần mock `CameraView` và `useCameraPermissions` trong `jest-setup.js` trả về component View có `testID="mock-camera-view"` để các test suite có thể kích hoạt event `barcodeScanned` hoặc kiểm tra props `enableTorch`.
+- **Animated.loop trong môi trường Jest:**
+  Các animation lặp vô hạn (như laser scan beam trong Viewfinder) sẽ giữ open handle khiến Jest không thoát sau khi chạy xong test (`Jest did not exit one second after the test run has completed`). Luôn guard: `if (isScanning && process.env.NODE_ENV !== "test") { animation.start(); }`.
+- **Dọn dẹp timeout (`scanTimeoutRef`):**
+  Mọi `setTimeout` trì hoãn điều hướng hoặc kích hoạt lại quét mã phải được lưu vào `useRef` và dọn dẹp trong `return () => clearTimeout(...)` của `useEffect` unmount để tránh rò rỉ bộ nhớ hoặc gọi `setState` trên unmounted component.
+- **Deep Linking Scheme & Path Sanitization:**
+  Mã QR nên sử dụng scheme chính `nihongo://friends/profile/{username}`, nhưng bộ bóc tách (`parseUsernameFromQR`) cần linh hoạt hỗ trợ cả legacy scheme (`nihongoapp://`), Expo scheme (`frontend://`), URL web (`https://nihongoapp.com/...`) và username thuần. Đồng thời, luôn tự động strip ký tự `@` (`^@+`) trước khi truyền param vào API backend (`GET /api/v1/users/profile/{username}`).
+
+## Duolingo Polish Patterns & Gotchas
+
+- **Safe Context Fallback (`useToast`):**
+  Khi viết hook context dùng rộng rãi trong app (`useToast`), thay vì ném lỗi `throw new Error(...)` làm crash các test suite đơn vị hoặc component render độc lập không bọc Provider, hãy fallback về một no-op object `NOOP_TOAST` an toàn.
+- **Ghost Slot Word Bank State Isolation:**
+  Để tạo hiệu ứng Word Bank giữ nguyên vị trí thẻ (Ghost Slot), không dùng mảng chuỗi đơn giản vì sẽ bị trùng từ và xáo trộn vị trí. Định danh mỗi thẻ bằng ID duy nhất kèm trạng thái `isPlaced: boolean`. Khi chọn thẻ, giữ nguyên thẻ trong bank với kiểu dashed ghost slot, và khi hoàn tác, khôi phục lại đúng vị trí ban đầu. Sử dụng functional state update `setArranged((prev) => ...)` để đảm bảo cập nhật nguyên tử (atomic) tránh race-conditions.
+- **SafeAreaProvider initialMetrics trong Jest:**
+  Trong Jest, `SafeAreaProvider` thiếu native insets từ OS nên sẽ render ra thẻ rỗng `<RNCSafeAreaProvider />`. Luôn truyền prop `initialMetrics={{ frame: { x: 0, y: 0, width: 400, height: 800 }, insets: { top: 24, left: 0, right: 0, bottom: 0 } }` khi render màn hình trong test.
+
+## Duolingo 3-tier Streak State Machine (`ACTIVE` / `UNLIT` / `FROZEN`)
+
+- **Vấn đề Lazy Backend Streak:** Backend không có cron job reset streak 00:00 và chỉ cập nhật streak khi user nộp bài (`completeAttempt`). Nếu user nghỉ nhiều ngày không học, DB vẫn lưu số streak cũ (ví dụ `2`), khiến user mở app lên thấy số cũ rồi học xong lại bị tụt về `1` gây hụt hẫng.
+- **Giải pháp Frontend State Machine (`evaluateStreak`):**
+  - Tự động so sánh `lastStreakDate` với ngày hôm nay:
+    - `lastStreakDate === today`: `ACTIVE` (🔥 cam sáng rực `#FF9600`, `studiedToday = true`).
+    - `diffDays === 1`: `UNLIT` (🩶 xám mờ `#9CA3AF`, chuỗi giữ nguyên, nhắc nhở học bài để giữ chuỗi).
+    - `diffDays === 2 && freezeCount > 0`: `FROZEN` (❄️ xanh băng `#00C8FF`, đang được khiên băng bảo vệ).
+    - `diffDays >= 2 && freezeCount == 0`: Tự động reset hiển thị về `0` ngay khi mở app thay vì hiển thị con số cũ.
+  - Trên màn hình ăn mừng (`StreakExtendedScreen`): Khi `streak === 1` hiển thị "Bắt đầu chuỗi mới!", khi `frozenToday` hiển thị "Khiên băng đã bảo vệ bạn!", khi `streak > 1` hiển thị "Streak đã tăng!".
+
+## Android Native `elevation` & Translucent Background Gotcha ("Ô vuông đen")
+
+- **Nguyên nhân cốt lõi:**
+  Trên Android, `elevation` sinh ra bóng đổ native màu đen/xám đục từ hệ thống. Nếu một `View` có màu nền bán trong suốt (`rgba(...)` có alpha < 1) hoặc trong suốt, Android RenderNode vẽ bóng đổ bên dưới và màu nền trong suốt sẽ **để lộ xuyên thấu bóng đổ đen ra mặt trước**, tạo thành một mảng/ô vuông đen đục rất xấu ngay sau nội dung component. Nếu màu nền là đặc (`#FFFFFF` hoặc opaque hex), bóng đổ bị che khuất và chỉ tỏa viền mờ ra ngoài.
+- **Giải pháp triệt để:**
+  1. Đối với các thẻ / nút bấm tương tác (như `AlphabetCell`, `PracticeMultipleChoice`): Luôn giữ màu nền đặc (`colors.card` hoặc mã hex đặc) ở lớp gốc; nếu cần hiệu ứng tint màu (như độ thông thạo), dùng một lớp `View` phủ (`StyleSheet.absoluteFill`) lên trên nền đặc.
+  2. Tắt `elevation` trên Android (`...(Platform.OS === 'ios' ? Shadows.sm : {})`) và chuyển sang phong cách viền nổi 3D đặc trưng của Duolingo (`borderWidth: 2`, `borderBottomWidth: 3.5` hoặc `4`). Phong cách này vừa đẹp, đồng bộ với toàn bộ quiz trong app, vừa triệt tiêu 100% các lỗi bóng đổ đen trên Android.
+
+## Streak Calendar & Lịch Tuần Đồng Bộ Chuẩn Duolingo
+
+- **Tránh dùng logic giả định quá khứ `isPast && streak > 0`:**
+  Nếu một modal hay widget hiển thị lịch tuần (T2 đến CN) chỉ kiểm tra `isPast && streak > 0`, tất cả các ngày trong tuần trước ngày hôm nay sẽ luôn bị ngộ nhận là đã học (`✓`), ngay cả khi người dùng chỉ mới học ngày hôm nay (streak = 1).
+- **Giải pháp chuẩn:**
+  1. Đưa `studyDates: string[]` vào `GamificationState` lấy trực tiếp từ API backend `GET /api/v1/users/me/streak/calendar` (`streakApi.getStreakCalendar(30)`).
+  2. Tính toán ngày Thứ 2 đầu tuần bằng công thức: `diffToMonday = (now.getDay() + 6) % 7; monday.setDate(now.getDate() - diffToMonday)`.
+  3. Duyệt 7 ngày trong tuần, sinh chuỗi ISO `YYYY-MM-DD` cho từng ngày và đối chiếu `studyDates.includes(isoDate)`: chỉ ngày thực sự có trong danh sách mới hiển thị chấm cam dấu tích `✓`, các ngày quá khứ không học giữ nguyên chấm xám rỗng, đảm bảo khớp 100% với trang Hồ sơ (Profile).
+
+## Onboarding & Placement Test Gotchas & Patterns
+
+- **Kanji Fill Question Delimiter Bug (`\uFF3F`)**:
+  `KanjiFillQuestionCard` thực hiện bóc tách câu qua `question.sentence.split("＿")` với ký tự gạch dưới full-width tiếng Nhật `＿` (`\uFF3F`), KHÔNG phải ký tự ASCII gạch dưới `_` thông thường. Nếu dữ liệu seed truyền `_` ASCII, hàm `split` trả về mảng 1 phần tử và không bao giờ render thẻ ô trống `[ ? ]` cho người học điền. Luôn đảm bảo dùng `＿` full-width trong câu hỏi Kanji Fill.
+- **Vocab Question Card bắt buộc trường `prompt`**:
+  `VocabQuestionCard` render mặt chữ Nhật to ở trung tâm thẻ từ `question.prompt` (và furigana/romaji từ `question.promptRomaji`), không đọc trường `word`. Nếu thiếu `prompt`, thẻ câu hỏi sẽ bị trống trơn không thấy chữ để trả lời.
+- **Static vs Dynamic Import cho `expo-haptics`**:
+  Tuyệt đối không dùng dynamic import `import("expo-haptics")` bên trong event handler. Dưới môi trường Jest / Node runtime (thiếu cờ `--experimental-vm-modules`), dynamic import sẽ lập tức văng ngoại lệ `A dynamic import callback was invoked without --experimental-vm-modules`. Luôn sử dụng static import `import * as Haptics from "expo-haptics"` ở đầu file.
+- **Tránh gọi callback setState của cha bên trong functional update của con**:
+  Trong `KanaQuestionCard`, không gọi `onAnswer(validate(...))` hay bất kỳ callback cập nhật state cha bên trong `setArranged((prev) => ...)`. Điều này sẽ kích hoạt cảnh báo nghiêm trọng của React: *"Cannot update a component (`PlacementScreen`) while rendering a different component (`KanaQuestionCard`)"*. Hãy tính toán mảng mới trước hoặc gọi `validate` ngoài phạm vi dispatch của React.
+
+## Friends Hub Routing & Discovery Gotchas
+
+- **Friends Hub Route (`/friends`)**: Màn hình trung tâm quản lý bạn bè tại `src/app/friends/index.tsx` (Route `/friends`) chứa đủ 4 tính năng: Tìm bạn bè (`/friends/search`), Quét QR (`/friends/scan`), Mã QR cá nhân (`/profile/qr`), và Đồng bộ danh bạ (`expo-contacts` gọi `POST /api/v1/users/sync-contacts`).
+- **Nút "THÊM BẠN BÈ" ở Profile**: Phải luôn trỏ tới `/friends` thay vì nhảy thẳng vào `/friends/search` để người dùng có thể lựa chọn đồng bộ danh bạ hoặc quét QR.
+- **Route xem hồ sơ kết bạn**: Luôn là `/friends/view-search-profile`, không phải `/profile/view-search-profile` (không tồn tại).
+
+## Android Emulator DNS Failure & Google Sign-In `NETWORK_ERROR` Gotcha (Windows Hyper-V/WSL)
+
+- **Triệu chứng**:
+  - Khởi chạy app trên máy ảo Android báo lỗi mất mạng (Network Error) ngay màn hình đầu tiên khi gọi API backend.
+  - Đăng nhập bằng Google trên máy ảo văng lỗi `Google Sign-In error: NETWORK_ERROR` (code 7).
+  - Logcat báo lỗi: `Caused by: m1.kv: Exception in CronetUrlRequest: net::ERR_NAME_NOT_RESOLVED, ErrorCode=1, InternalErrorCode=-105`.
+  - Kiểm tra `adb shell ping 8.8.8.8` thành công nhưng `adb shell ping google.com` báo `unknown host`.
+- **Nguyên nhân gốc rễ**:
+  - Trên Windows có cài WSL2 hoặc Hyper-V, hệ thống sinh ra adapter ảo `vEthernet (WSL)`.
+  - Khi QEMU (Android Emulator) khởi động không có cờ `-dns-server`, nó tự dò danh sách adapter của Windows và hay bắt nhầm adapter `vEthernet` (không có DNS server). Do đó, máy chủ DNS ảo nội bộ `10.0.2.3` của emulator bị "điếc" (không thể phân giải bất kỳ hostname nào ra IP).
+- **Cách khắc phục**:
+  - *Cách 1 (Trực tiếp trong máy ảo đang chạy)*: Vào `Settings` -> `Network & internet` -> `Internet` -> Chạm biểu tượng bút chì/bánh răng ở mạng `AndroidWifi` -> Mở `Advanced options` -> Chuyển `IP settings` từ `DHCP` sang `Static`:
+    - IP address: `10.0.2.16`
+    - Gateway: `10.0.2.2`
+    - Network prefix length: `24`
+    - DNS 1: `8.8.8.8`
+    - DNS 2: `8.8.4.4`
+    -> Bấm `Save`. Emulator sẽ lập tức phân giải được DNS và vào mạng mượt mà.
+  - *Cách 2 (Khởi động emulator qua terminal)*: Luôn truyền cờ DNS:
+    `emulator -avd Medium_Phone -dns-server 8.8.8.8,1.1.1.1`
+
+## Expo Linking URI Scheme Warning
+
+- Trong `app.json`, trường `"scheme"` nếu truyền mảng (ví dụ `["nihongo", "nihongoapp", "frontend"]`) sẽ kích hoạt cảnh báo:
+  `WARN Linking found multiple possible URI schemes in your Expo config. Using 'nihongo'. Ignoring: ... Provide the preferred URI scheme to the Linking API.`
+
+## Gemini 503 High Demand & Model Fallback Gotcha
+
+- **Triệu chứng**:
+  - Gọi `/api/v1/conversation/respond` (hoặc `/start`, `/summary`) bị HTTP 502 Bad Gateway.
+  - UI frontend hiện banner: *"Gemini đang quá tải hoặc đã hết lượt miễn phí trong phút này. Chờ khoảng một phút rồi thử lại nhé."* hoặc *"Gemini đang gặp sự cố. Bạn thử lại sau ít phút nhé."*
+- **Nguyên nhân**:
+  1. *Lỗi 503*: Mô hình bị spike demand trên toàn cầu.
+  2. *Lỗi 429 ("GenerateRequestsPerDayPerProjectPerModel-FreeTier")*: Các model preview thử nghiệm (như `gemini-3.6-flash`, `gemini-3.7-flash`) bị Google giới hạn cứng chỉ **20 requests/ngày** trên tài khoản miễn phí. Khi gọi tới lượt 21, Google khóa toàn bộ model đó trong 24h.
+- **Giải pháp chuẩn**:
+  - Sử dụng model GA sản xuất ổn định: `DEFAULT_MODEL = "gemini-2.5-flash"` (hạn mức chuẩn **1,500 requests/ngày** và 15 RPM trên Free Tier).
+  - Đặt `FALLBACK_MODEL = "gemini-3.5-flash-lite"`.
+  - Cấu hình trong `ai-service/.env`: `GEMINI_MODEL=gemini-2.5-flash`.
+  - Triển khai cơ chế **Automatic Fallback** trong `llm.py` cho cả 2 mã lỗi: `if exc.code in (429, 503) and primary_model != FALLBACK_MODEL: raw = _execute(FALLBACK_MODEL)`.
+
+## AI Conversation Redesign & UI/UX Gotchas
+
+- **Lỗi co rúm thẻ góp ý & Ký hiệu lạ `✨` (CorrectionCard Flexbox & Praise Bug)**:
+  - Khi `CorrectionCard` nhận dạng `praise` từ Gemini bên dưới bong bóng của user (`alignSelf: 'flex-end'`), cấu trúc flexbox không có `minWidth` khiến phần text bị co về 0px, chỉ chừa lại icon `✨` (sparkles) trơ trọi trong ô vuông xanh lá nhỏ.
+  - *Giải pháp*: Lọc bỏ hoàn toàn loại `praise` khỏi danh sách góp ý thời gian thực trong chat (chỉ giữ `error` và `suggestion` cần sửa); đặt `minWidth: 220`, `width: '100%'`, `flexShrink: 1` cho `CorrectionCard`.
+- **Lỗi dính sát đáy màn hình (SafeAreaView Edges Bug)**:
+  - Khai báo `<SafeAreaView edges={["top"]}>` sẽ bỏ qua insets đáy khiến `ChatComposer` và nút kết thúc bị thanh điều hướng hệ thống (Android Gesture Navigation bar / iOS Home Indicator) đè lên.
+  - *Giải pháp*: Luôn dùng `edges={["top", "bottom"]}`, kết hợp `paddingBottom: Spacing.eight` cho FlatList tin nhắn để bong bóng cuối cùng không bao giờ bị che khuất.
+- **Bản dịch tiếng Việt hai chiều & Chế độ chạm để lật mở (Two-way Translation & Reveal)**:
+  - Phía backend AI: Bổ sung trường `userVi` vào schema JSON của LLM để dịch tự nhiên câu tiếng Nhật của người dùng sang tiếng Việt; hook `use-conversation.ts` tự động cập nhật trường `vi` cho tin nhắn người dùng.
+  - Phía frontend: Công tắc cấu hình lưu vào `AsyncStorage` (`@nihongo_conversation_show_translation`) và nút toggle nhanh trên Header chat; khi tắt, bong bóng hỗ trợ chạm (tap) hoặc nhấn giữ (long-press) để mở/đóng bản dịch từng câu.
+

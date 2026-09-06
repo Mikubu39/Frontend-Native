@@ -4,30 +4,29 @@
  */
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { GradientButton } from "@/components/ui/gradient-button";
 import {
   AnimationPresets,
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
-  Shadows,
   Spacing,
 } from "@/constants/theme";
 import { useRouter } from "expo-router";
+import LottieView from "lottie-react-native";
 import React, { useEffect } from "react";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/hooks/use-theme";
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withSequence,
   withSpring,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const { width } = Dimensions.get("window");
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -42,7 +41,7 @@ export default function WelcomeScreen() {
       withSpring(1, AnimationPresets.springBouncy),
     );
     // Removed rotation animation to keep the owl straight
-  }, []);
+  }, [mascotScale]);
 
   const mascotStyle = useAnimatedStyle(() => ({
     transform: [
@@ -58,15 +57,20 @@ export default function WelcomeScreen() {
       <View style={styles.content}>
         {/* Mascot & Brand Header */}
         <View style={styles.mascotContainer}>
-          <Animated.Text style={[styles.mascotEmoji, mascotStyle]}>
-            🦉
-          </Animated.Text>
+          <Animated.View style={[styles.mascotWrap, mascotStyle]}>
+            <LottieView
+              source={require("@/assets/animations/hi_mascot.json")}
+              autoPlay
+              loop
+              style={styles.mascot}
+            />
+          </Animated.View>
 
           <Animated.Text
             entering={FadeInDown.delay(400).duration(500)}
             style={styles.brandTitle}
           >
-            Kotodama
+            Nihongo
           </Animated.Text>
 
           <Animated.Text
@@ -82,16 +86,11 @@ export default function WelcomeScreen() {
           entering={FadeInDown.delay(800).duration(500)}
           style={styles.buttonContainer}
         >
-          <AnimatedPressable
-            style={styles.primaryButton}
+          <GradientButton
+            title="BẮT ĐẦU NGAY"
             onPress={() => router.push("/(auth)/signup")}
-            pressScale={0.97}
-          >
-            <View style={styles.primaryButtonShadow} />
-            <View style={styles.primaryButtonContent}>
-              <Text style={styles.primaryButtonText}>BẮT ĐẦU NGAY</Text>
-            </View>
-          </AnimatedPressable>
+            style={styles.primaryButton}
+          />
 
           <AnimatedPressable
             style={styles.secondaryButton}
@@ -143,18 +142,21 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
     width: "100%",
   },
-  mascotEmoji: {
-    fontSize: 120,
-    textAlign: "center",
+  mascotWrap: {
     marginBottom: Spacing.two,
+  },
+  mascot: {
+    width: 200,
+    height: 200,
   },
   brandTitle: {
     fontSize: 46,
     fontWeight: FontWeights.extrabold,
+    fontFamily: Fonts.display,
     color: Colors.primary,
     fontStyle: "italic",
     textAlign: "center",
-    textShadowColor: "rgba(139, 92, 246, 0.2)",
+    textShadowColor: "rgba(59, 76, 130, 0.2)",
     textShadowOffset: { width: 0, height: 3 },
     textShadowRadius: 10,
   },
@@ -171,38 +173,8 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
     paddingBottom: Spacing.four,
   },
-  // 3D Primary Button Style
   primaryButton: {
     width: "100%",
-    height: 58,
-    position: "relative",
-  },
-  primaryButtonShadow: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 5,
-    bottom: -5,
-    backgroundColor: Colors.primaryDark,
-    borderRadius: BorderRadius.lg,
-  },
-  primaryButtonContent: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    justifyContent: "center",
-    alignItems: "center",
-    ...Shadows.md,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.bold,
-    letterSpacing: 1,
   },
   // 3D Secondary Button Style
   secondaryButton: {

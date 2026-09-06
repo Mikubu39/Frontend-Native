@@ -88,6 +88,9 @@ def _corrections(raw: Any, limit: int = 2) -> list[dict[str, str]]:
         if not isinstance(item, dict):
             continue
         severity = str(item.get("severity") or "suggestion")
+        # Ẩn thẻ lời khen (praise) để khung chat gọn gàng, chỉ giữ lại lỗi và gợi ý
+        if severity == "praise":
+            continue
         explanation = str(item.get("explanationVi") or "").strip()
         suggestion = str(item.get("suggestion") or "").strip()
         if not explanation and not suggestion:
@@ -95,7 +98,7 @@ def _corrections(raw: Any, limit: int = 2) -> list[dict[str, str]]:
         result.append(
             {
                 "severity": severity
-                if severity in ("error", "suggestion", "praise")
+                if severity in ("error", "suggestion")
                 else "suggestion",
                 "category": str(item.get("category") or "grammar"),
                 "original": str(item.get("original") or "").strip(),
@@ -151,6 +154,7 @@ def respond(
         "hints": _hints(raw.get("hints")),
         "corrections": _corrections(raw.get("corrections")),
         "understood": bool(raw.get("understood", True)),
+        "userVi": str(raw.get("userVi") or "").strip(),
     }
 
 

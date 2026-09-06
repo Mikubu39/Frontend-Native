@@ -8,6 +8,7 @@ import { SpotlightTarget } from "@/components/tutorial";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useTheme } from "@/contexts/theme-context";
 import { vocabularyApi } from "@/services/api/vocabulary";
+import { mistakesApi } from "@/services/api/mistakes";
 import { useTutorial } from "@/contexts/tutorial-context";
 import { StaggeredList } from "@/components/ui/staggered-list";
 import {
@@ -63,16 +64,14 @@ export default function PracticeHubScreen() {
         .then((res) => !cancelled && setDueCount(res.dueCount))
         .catch(() => !cancelled && setDueCount(0));
 
-      import("@/services/api/mistakes").then(({ mistakesApi }) => {
-        mistakesApi
-          .getSummary()
-          .then((res) => {
-            if (cancelled) return;
-            setMistakeCount(res.activeCount);
-            setLoading(false);
-          })
-          .catch(() => !cancelled && setLoading(false));
-      });
+      mistakesApi
+        .getSummary()
+        .then((res) => {
+          if (cancelled) return;
+          setMistakeCount(res.activeCount);
+          setLoading(false);
+        })
+        .catch(() => !cancelled && setLoading(false));
 
       return () => {
         cancelled = true;
@@ -104,6 +103,7 @@ export default function PracticeHubScreen() {
   const primaryItems: PracticeItem[] = [
     {
       id: "p0",
+      tutorialTarget: "review-vocab",
       title: "Ôn tập từ vựng",
       description:
         dueCount > 0
@@ -112,7 +112,7 @@ export default function PracticeHubScreen() {
       icon: "time-outline",
       route: "/review/vocabulary",
       badge: loading ? "..." : dueCount > 0 ? `${dueCount} từ` : undefined,
-      color: "#F59E0B",
+      color: Colors.accent,
     },
     {
       id: "p1",
@@ -136,7 +136,7 @@ export default function PracticeHubScreen() {
       icon: "chatbubbles-outline",
       route: "/conversation",
       badge: "Mới",
-      color: "#8B5CF6",
+      color: Colors.primary,
     },
     {
       id: "p3",
@@ -152,11 +152,12 @@ export default function PracticeHubScreen() {
   const additionalItems: PracticeItem[] = [
     {
       id: "p5",
+      tutorialTarget: "review-pronunciation",
       title: "Luyện phát âm chuyên sâu",
       description: "Nghe giọng bản xứ và tập nói lại chuẩn xác.",
       icon: "mic-outline",
       route: "/voice/record",
-      color: "#10B981",
+      color: Colors.success,
     },
   ];
 
@@ -195,7 +196,7 @@ export default function PracticeHubScreen() {
           <Ionicons
             name="chevron-forward"
             size={20}
-            color={Colors.textSecondary}
+            color={colors.textSecondary}
           />
         </View>
       </AnimatedPressable>
@@ -259,26 +260,13 @@ export default function PracticeHubScreen() {
         {/* Section 1 */}
         <Animated.Text
           entering={FadeIn.delay(100).duration(400)}
-          style={styles.sectionTitle}
+          style={[styles.sectionTitle, { color: colors.textSecondary }]}
         >
-          Bài học tập trung
+          Luyện tập kỹ năng
         </Animated.Text>
         <StaggeredList staggerDelay={80} initialDelay={200}>
-          {primaryItems.map(renderCard)}
+          {[...primaryItems, ...additionalItems].map(renderCard)}
         </StaggeredList>
-
-        {/* Section 2 */}
-        <Animated.Text
-          entering={FadeIn.delay(300).duration(400)}
-          style={[styles.sectionTitle, { marginTop: Spacing.four }]}
-        >
-          Hoạt động tự học
-        </Animated.Text>
-        <SpotlightTarget targetId="review-extra">
-          <StaggeredList staggerDelay={80} initialDelay={400}>
-            {additionalItems.map(renderCard)}
-          </StaggeredList>
-        </SpotlightTarget>
       </ScrollView>
     </SafeAreaView>
   );
@@ -397,7 +385,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(139, 92, 246, 0.1)", // Primary with opacity
+    backgroundColor: "rgba(59, 76, 130, 0.1)", // Primary with opacity
     alignItems: "center",
     justifyContent: "center",
   },

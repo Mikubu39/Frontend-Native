@@ -66,8 +66,8 @@ export function FlashcardQuestionCard({
     };
   });
 
-  const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
-  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
+  const cardBg = colors.cardQuiz;
+  const cardBorder = colors.cardQuizBorder;
 
   return (
     <View style={styles.container}>
@@ -89,28 +89,17 @@ export function FlashcardQuestionCard({
             frontAnimatedStyle,
           ]}
         >
-          <Text
-            style={[
-              styles.frontText,
-              { color: isDark ? "#F9FAFB" : Colors.textPrimary },
-            ]}
-          >
+          <Text style={[styles.frontText, { color: colors.text }]}>
             {question.frontText}
           </Text>
           {!flipped && (
             <View style={styles.tapHintRow}>
-              <Ionicons
-                name="refresh"
-                size={14}
-                color={isDark ? "rgba(255,255,255,0.3)" : Colors.textSecondary}
-              />
+              <Ionicons name="refresh" size={14} color={colors.textSecondary} />
               <Text
                 style={[
                   styles.tapHintInline,
                   {
-                    color: isDark
-                      ? "rgba(255,255,255,0.3)"
-                      : Colors.textSecondary,
+                    color: colors.textSecondary,
                   },
                 ]}
               >

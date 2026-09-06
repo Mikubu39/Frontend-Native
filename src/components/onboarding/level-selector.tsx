@@ -1,9 +1,10 @@
 /**
- * LevelSelector - Level selection cards + dropdown for onboarding.
+ * LevelSelector - Level selection cards for onboarding.
  */
 
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { ONBOARDING_LEVELS } from "@/data";
 import type { OnboardingLevelId } from "@/types";
 import {
@@ -12,7 +13,9 @@ import {
   FontWeights,
   BorderRadius,
   Spacing,
+  Fonts,
 } from "@/constants/theme";
+import { useTheme } from "@/contexts/theme-context";
 
 interface LevelSelectorProps {
   selectedLevel: OnboardingLevelId | null;
@@ -20,36 +23,74 @@ interface LevelSelectorProps {
 }
 
 export function LevelSelector({ selectedLevel, onSelect }: LevelSelectorProps) {
+  const { colors, isDark } = useTheme();
+
   return (
     <View style={styles.container}>
       {ONBOARDING_LEVELS.map((level) => {
         const isSelected = selectedLevel === level.id;
+        const cardBg = isSelected
+          ? isDark
+            ? Colors.primary + "30"
+            : "#E8EAF4"
+          : colors.card;
+        const borderColor = isSelected ? Colors.primary : colors.border;
+
         return (
-          <TouchableOpacity
+          <AnimatedPressable
             key={level.id}
-            style={[styles.card, isSelected && styles.cardSelected]}
+            testID={`level-card-${level.id}`}
+            style={[
+              styles.card,
+              {
+                backgroundColor: cardBg,
+                borderColor: borderColor,
+              },
+            ]}
             onPress={() => onSelect(level.id)}
-            activeOpacity={0.7}
+            pressScale={0.97}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: isSelected }}
           >
-            <Text style={[styles.title, isSelected && styles.titleSelected]}>
-              {level.title}
-            </Text>
-            <Text style={styles.description}>{level.description}</Text>
-          </TouchableOpacity>
+            <View style={styles.content}>
+              <Text
+                style={[
+                  styles.title,
+                  {
+                    color: isSelected
+                      ? isDark
+                        ? "#FFFFFF"
+                        : Colors.primaryDark
+                      : colors.text,
+                  },
+                ]}
+              >
+                {level.title}
+              </Text>
+              <Text
+                style={[
+                  styles.description,
+                  {
+                    color: isSelected
+                      ? isDark
+                        ? "rgba(255,255,255,0.85)"
+                        : Colors.primary
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                {level.description}
+              </Text>
+            </View>
+
+            {isSelected && (
+              <View style={styles.checkCircle}>
+                <Text style={styles.checkMark}>✓</Text>
+              </View>
+            )}
+          </AnimatedPressable>
         );
       })}
-
-      <TouchableOpacity
-        style={[
-          styles.dropdownCard,
-          selectedLevel === "jlpt" && styles.cardSelected,
-        ]}
-        onPress={() => onSelect("jlpt")}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.dropdownText}>Chọn trình độ hiện tại của bạn</Text>
-        <Text style={styles.dropdownArrow}>▼</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -60,40 +101,39 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: Spacing.six,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.accentPale,
-    gap: Spacing.two,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  cardSelected: {
-    backgroundColor: Colors.accent,
+  content: {
+    flex: 1,
+    gap: Spacing.one,
   },
   title: {
     fontSize: FontSizes.lg,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-  },
-  titleSelected: {
-    color: Colors.textOnDark,
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   description: {
     fontSize: FontSizes.md,
-    color: Colors.textPrimary,
-    opacity: 0.8,
+    fontFamily: Fonts.sans,
+    lineHeight: 20,
   },
-  dropdownCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  checkCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
     alignItems: "center",
-    padding: Spacing.four,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.accentPale,
+    justifyContent: "center",
+    marginLeft: Spacing.three,
   },
-  dropdownText: {
-    fontSize: FontSizes.md,
-    color: Colors.textPrimary,
-  },
-  dropdownArrow: {
-    fontSize: FontSizes.md,
-    color: Colors.textSecondary,
+  checkMark: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: FontWeights.extrabold,
   },
 });

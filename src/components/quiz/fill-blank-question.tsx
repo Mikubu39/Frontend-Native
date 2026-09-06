@@ -34,8 +34,8 @@ export function FillBlankQuestionCard({
     onAnswerChange(option === question.correctAnswer);
   };
 
-  const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
-  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
+  const cardBg = colors.cardQuiz;
+  const cardBorder = colors.cardQuizBorder;
   const selectedBg = isDark ? Colors.primary + "33" : Colors.primary + "18";
 
   const renderSentence = () => {
@@ -44,10 +44,7 @@ export function FillBlankQuestionCard({
       <View style={styles.sentenceContainer}>
         <JapaneseText
           text={parts[0]}
-          style={[
-            styles.sentenceText,
-            { color: isDark ? "#F9FAFB" : Colors.textPrimary },
-          ]}
+          style={[styles.sentenceText, { color: colors.text }]}
         />
         <View
           style={[
@@ -55,9 +52,7 @@ export function FillBlankQuestionCard({
             {
               borderBottomColor: selectedOption
                 ? Colors.primary
-                : isDark
-                  ? "rgba(255,255,255,0.3)"
-                  : Colors.textSecondary,
+                : colors.textSecondary,
               backgroundColor: selectedOption
                 ? isDark
                   ? Colors.primary + "22"
@@ -83,10 +78,7 @@ export function FillBlankQuestionCard({
         </View>
         <JapaneseText
           text={parts[1]}
-          style={[
-            styles.sentenceText,
-            { color: isDark ? "#F9FAFB" : Colors.textPrimary },
-          ]}
+          style={[styles.sentenceText, { color: colors.text }]}
         />
       </View>
     );
@@ -125,9 +117,7 @@ export function FillBlankQuestionCard({
                       ? isDark
                         ? Colors.primaryLight
                         : Colors.primaryDark
-                      : isDark
-                        ? "#F9FAFB"
-                        : Colors.textPrimary,
+                      : colors.text,
                   },
                 ]}
               >

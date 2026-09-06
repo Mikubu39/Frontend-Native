@@ -21,13 +21,13 @@ import type {
  * hằng số này chỉ là giá trị dự phòng để đồng hồ có gì đó mà chạy trước khi
  * phản hồi đầu tiên về tới.
  */
-export const SESSION_DURATION_SECONDS = 300;
+export const SESSION_DURATION_SECONDS = 90;
 
 /**
  * Còn dưới ngần này giây thì đồng hồ chuyển sang màu cảnh báo và AI bắt đầu
  * lái hội thoại về phần kết.
  */
-export const WRAP_UP_WARNING_SECONDS = 60;
+export const WRAP_UP_WARNING_SECONDS = 20;
 
 /** Id quy ước cho chủ đề người học tự nhập. Khớp với `CUSTOM_TOPIC_ID` ở server. */
 export const CUSTOM_TOPIC_ID = "custom";

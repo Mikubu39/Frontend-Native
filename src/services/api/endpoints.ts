@@ -36,6 +36,11 @@ export const API_ENDPOINTS = {
     SUBMIT: (id: number | string) => `/api/v1/lessons/${id}/submit`,
     CANCEL: (id: number | string) => `/api/v1/lessons/${id}/cancel`,
   },
+  PLACEMENT: {
+    START: "/api/v1/placement/start",
+    ANSWER: (attemptId: number | string) =>
+      `/api/v1/placement/${attemptId}/answer`,
+  },
   UPLOADS: {
     IMAGE: "/api/v1/uploads/images",
     AUDIO: "/api/v1/uploads/audio",
@@ -85,6 +90,10 @@ export const API_ENDPOINTS = {
     GLOSSARY: "/api/v1/vocabulary/glossary",
     /** Nộp kết quả phiên ôn -> server áp SM-2. */
     REVIEW_SUBMIT: "/api/v1/vocabulary/review/submit",
+  },
+  PRONUNCIATION: {
+    DUE: "/api/v1/pronunciation/due",
+    REVIEW_SUBMIT: "/api/v1/pronunciation/review/submit",
   },
   MISTAKES: {
     SUMMARY: "/api/v1/reviews/mistakes/summary",

@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useImageFallback } from "@/hooks/use-image-fallback";
-import { resolveMediaUrl } from "@/utils/media";
+import { resolveAvatarUri } from "@/utils/media";
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
@@ -19,10 +19,11 @@ export function AvatarDisplay({
   borderWidth = 0,
   borderColor = Colors.primaryLight,
 }: AvatarDisplayProps) {
-  // URL avatar từ backend là đường dẫn tương đối (`/uploads/images/avatars/...`).
-  // `useImageFallback`: avatar bị xoá trên server thì rơi về con gấu trúc, thay
-  // vì để lại một vòng tròn trống không giải thích được.
-  const { uri: resolvedUri, onError } = useImageFallback(resolveMediaUrl(uri));
+  // Chuẩn hoá theo avatar nhân vật DiceBear (bỏ qua Google photo, fallback avatar hoạt hình)
+  const finalUri = resolveAvatarUri(uri);
+
+  // `useImageFallback`: avatar bị lỗi tải mạng/xoá trên server thì rơi về emoji gấu trúc 🐼
+  const { uri: resolvedUri, onError } = useImageFallback(finalUri);
 
   return (
     <View

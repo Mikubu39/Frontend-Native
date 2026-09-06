@@ -22,6 +22,16 @@ jest.mock("@/contexts/gamification-context", () => ({
   useGamification: jest.fn(),
 }));
 
+jest.mock("expo-router", () => {
+  const { useEffect } = require("react");
+  return {
+    useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() }),
+    useFocusEffect: (callback: () => void) => {
+      useEffect(callback, [callback]);
+    },
+  };
+});
+
 jest.mock("@/contexts/theme-context", () => ({
   useTheme: jest.fn(),
 }));
@@ -126,7 +136,7 @@ describe("LeaderboardScreen", () => {
   });
 
   it("loads the user's current rank, shows the podium and marks the user's row", async () => {
-    const { findByText, getByText } = await renderScreen();
+    const { findByText, getByText, getAllByText } = await renderScreen();
 
     expect(await findByText("Hạng Đồng")).toBeTruthy();
     expect(mockedRankApi.getLeaderboard).toHaveBeenCalledWith(1);
@@ -136,13 +146,16 @@ describe("LeaderboardScreen", () => {
     expect(getByText("Minh")).toBeTruthy();
     expect(getByText("An")).toBeTruthy();
 
-    // The current user (position 4) shows in the ranked list with a "Bạn" badge.
-    expect(getByText("Bạn Test")).toBeTruthy();
-    expect(getByText("Bạn")).toBeTruthy();
+    // The current user (position 4) shows in the ranked list & sticky bar with a "Bạn" badge.
+    expect(getAllByText("Bạn Test").length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText("Bạn").length).toBeGreaterThanOrEqual(1);
 
-    // A user with `exp: null` renders as 0 EXP instead of crashing.
+    // A user with `exp: null` renders as 0 instead of crashing.
     expect(getByText("Lam")).toBeTruthy();
-    expect(getByText("0 EXP")).toBeTruthy();
+    expect(getByText("0")).toBeTruthy();
+
+    // Top Group indicator is visible
+    expect(getByText("NHÓM DẪN ĐẦU (TOP 3)")).toBeTruthy();
   });
 
   it("switches ranks when a different tab is pressed", async () => {

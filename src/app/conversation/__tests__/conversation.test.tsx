@@ -40,7 +40,11 @@ jest.mock("@/contexts/theme-context", () => ({
 const mockPush = jest.fn();
 const mockBack = jest.fn();
 
-let mockSearchParams: { id: string; topic?: string } = { id: "restaurant" };
+let mockSearchParams: {
+  id: string;
+  topic?: string;
+  showTranslation?: string;
+} = { id: "restaurant" };
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: mockPush, back: mockBack, replace: jest.fn() }),
@@ -172,7 +176,9 @@ describe("Màn chọn chủ đề", () => {
     expect(getByText("Gọi được một món và xin tính tiền.")).toBeTruthy();
 
     await fireEvent.press(getByText("Ở nhà hàng"));
-    expect(mockPush).toHaveBeenCalledWith("/conversation/restaurant");
+    expect(mockPush).toHaveBeenCalledWith(
+      expect.stringContaining("/conversation/restaurant"),
+    );
   });
 
   it("nói rõ phiên có giới hạn thời gian ngay trước khi vào", async () => {
@@ -180,9 +186,7 @@ describe("Màn chọn chủ đề", () => {
 
     // Đồng hồ đếm ngược là luật chơi, không phải bất ngờ giữa chừng.
     await waitFor(() =>
-      expect(
-        getByText(/Mỗi phiên 5 phút\. Hết giờ, AI sẽ chỉ ra lỗi/),
-      ).toBeTruthy(),
+      expect(getByText(/Mỗi phiên .*Hết giờ, AI sẽ chỉ ra lỗi/)).toBeTruthy(),
     );
   });
 
@@ -198,7 +202,9 @@ describe("Màn chọn chủ đề", () => {
     await fireEvent.press(getByLabelText("Bắt đầu luyện chủ đề này"));
 
     expect(mockPush).toHaveBeenCalledWith(
-      `/conversation/custom?topic=${encodeURIComponent("đặt phòng khách sạn")}`,
+      expect.stringContaining(
+        `/conversation/custom?topic=${encodeURIComponent("đặt phòng khách sạn")}`,
+      ),
     );
   });
 
@@ -340,6 +346,20 @@ describe("Màn hội thoại", () => {
     expect(
       utils.getByLabelText("Ô nhập câu trả lời bằng tiếng Nhật").props.value,
     ).toBe("二人です。");
+  });
+
+  it("ẩn bản dịch tiếng Việt của gợi ý khi showTranslation là false và lật mở khi nhấn giữ", async () => {
+    mockSearchParams = { id: "restaurant", showTranslation: "false" };
+    const utils = await openChat();
+
+    // Câu tiếng Nhật có mặt
+    expect(utils.getByText("二人です。")).toBeTruthy();
+    // Tiếng Việt trong gợi ý bị ẩn theo cài đặt
+    expect(utils.queryByText("Hai người ạ.")).toBeNull();
+
+    // Nhấn giữ chip gợi ý để lật mở bản dịch riêng
+    await fireEvent(utils.getByLabelText(/Gợi ý: 二人です。/), "longPress");
+    expect(utils.getByText("Hai người ạ.")).toBeTruthy();
   });
 
   it("lỗi mạng giữa chừng không làm mất lượt đã gõ và vẫn cho gửi lại", async () => {

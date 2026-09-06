@@ -10,6 +10,7 @@
  */
 
 import { config } from "@/config";
+import { buildAvatarUrl, DEFAULT_AVATAR_CONFIG } from "@/data/avatar-options";
 
 /** Các scheme đã tự đủ thông tin, không cần ghép base URL. */
 const ABSOLUTE_SCHEME = /^(https?:|file:|data:|content:|asset:|blob:)/i;
@@ -39,4 +40,23 @@ export function resolveMediaUrl(url?: string | null): string | undefined {
 /** Bản `resolveMediaUrl` trả `null` thay vì `undefined`, hợp với các prop kiểu `string | null`. */
 export function resolveMediaUrlOrNull(url?: string | null): string | null {
   return resolveMediaUrl(url) ?? null;
+}
+
+/**
+ * Chuẩn hoá avatar URL trên toàn bộ app theo phong cách hoạt hình (DiceBear).
+ * - Bỏ qua ảnh Google (googleusercontent.com) hoặc rỗng để luôn rơi về avatar nhân vật tùy chỉnh mặc định.
+ * - Nếu là đường dẫn Dicebear hoặc file upload từ backend, resolve đúng URL.
+ */
+export function resolveAvatarUri(url?: string | null): string {
+  if (!url) {
+    return buildAvatarUrl(DEFAULT_AVATAR_CONFIG);
+  }
+  const trimmed = String(url).trim();
+  if (EMPTY_VALUES.has(trimmed) || EMPTY_VALUES.has(trimmed.toLowerCase())) {
+    return buildAvatarUrl(DEFAULT_AVATAR_CONFIG);
+  }
+  if (trimmed.includes("googleusercontent.com")) {
+    return buildAvatarUrl(DEFAULT_AVATAR_CONFIG);
+  }
+  return resolveMediaUrl(trimmed) ?? buildAvatarUrl(DEFAULT_AVATAR_CONFIG);
 }

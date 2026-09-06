@@ -21,6 +21,7 @@ import { JapaneseText } from "@/components/ui/japanese-text";
 import { QuestionPrompt } from "@/components/quiz/question-prompt";
 import { GlossaryLockdown } from "@/contexts/glossary-context";
 import { useAudio } from "@/hooks/use-audio";
+import { useJapaneseSpeech } from "@/hooks/use-japanese-speech";
 import { useTheme } from "@/contexts/theme-context";
 
 interface VocabQuestionProps {
@@ -39,10 +40,15 @@ export function VocabQuestionCard({
 }: VocabQuestionProps) {
   const [showHint, setShowHint] = useState(false);
   const { colors, isDark } = useTheme();
-  const { isPlaying, play } = useAudio(question.audioUrl);
+  // Đề bài chỉ đọc được khi CHÍNH ĐỀ BÀI là tiếng Nhật (chiều dịch JP→VN);
+  // chiều ngược lại (VN→JP) đề bài là tiếng Việt, không có gì để đọc ở đây.
+  const promptFallback =
+    question.promptLang === "ja" ? question.word : undefined;
+  const { isPlaying, play } = useAudio(question.audioUrl, promptFallback);
+  const { speak: speakAnswer } = useJapaneseSpeech();
 
-  const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
-  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
+  const cardBg = colors.cardQuiz;
+  const cardBorder = colors.cardQuizBorder;
   const selectedBg = isDark ? Colors.primary + "33" : Colors.primary + "18";
   const selectedBorder = Colors.primary;
 
@@ -125,10 +131,7 @@ export function VocabQuestionCard({
                       hỏi chiều ngược) không có gì để tra nên in thẳng. */}
                   {question.promptLang === "vi" ? (
                     <Text
-                      style={[
-                        styles.speechBubbleText,
-                        { color: isDark ? "#F9FAFB" : Colors.textPrimary },
-                      ]}
+                      style={[styles.speechBubbleText, { color: colors.text }]}
                     >
                       {question.prompt}
                     </Text>
@@ -138,7 +141,7 @@ export function VocabQuestionCard({
                       glossary={question.glossary}
                       style={{
                         ...styles.speechBubbleText,
-                        color: isDark ? "#F9FAFB" : Colors.textPrimary,
+                        color: colors.text,
                       }}
                     />
                   )}
@@ -153,10 +156,8 @@ export function VocabQuestionCard({
         <Image source={{ uri: question.imageUrl }} style={styles.image} />
       ) : null}
 
-      {/* Nút loa CHỈ vẽ khi thật sự có file để phát. Trước đây nút này được vẽ
-          vô điều kiện với onPress rỗng, nên toàn bộ câu dịch (hơn một nửa số câu
-          trong bài) đều mọc ra một cái loa bấm vào không kêu. Câu dịch cũng
-          không cần nghe: đề bài đã in sẵn mặt chữ kèm phiên âm. */}
+      {/* Nút loa chỉ vẽ khi có file audioUrl để phát. Câu dịch đề bài đã in
+          sẵn mặt chữ kèm phiên âm nên không cần loa fallback. */}
       {question.audioUrl ? (
         <View style={styles.audioRow}>
           <AudioButton
@@ -199,7 +200,7 @@ export function VocabQuestionCard({
               glossary={question.glossary}
               mainStyle={{
                 ...styles.word,
-                color: isDark ? "#F9FAFB" : Colors.textPrimary,
+                color: colors.text,
               }}
             />
           </View>
@@ -225,7 +226,12 @@ export function VocabQuestionCard({
                     borderColor: isSelected ? selectedBorder : cardBorder,
                   },
                 ]}
-                onPress={() => onSelectAnswer(answer.id)}
+                onPress={() => {
+                  onSelectAnswer(answer.id);
+                  // Đáp án tiếng Nhật (có romaji) thì đọc luôn khi chạm vào,
+                  // để người học nghe cách phát âm ngay lúc chọn.
+                  if (answer.romaji) speakAnswer(answer.text);
+                }}
                 pressScale={0.97}
               >
                 <Text

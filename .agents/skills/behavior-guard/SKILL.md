@@ -14,6 +14,7 @@ description: Prevents tool-use loops, checks limits, and implements safety guard
 - Do not call the same tool more than 3 times with the exact same arguments.
 
 ## Verification & Zero-Tolerance Syntax Check
+
 - **Code & Import Integrity:**
   - Strictly avoid duplicate imports within the same file (e.g. duplicate identifiers in `{ ... }`).
   - Verify JSX matching tags (`<Tag>...</Tag>`) and braces `{}` after any code replacement.
@@ -24,6 +25,7 @@ description: Prevents tool-use loops, checks limits, and implements safety guard
 - Describe exactly what has changed and what manual testing the user should perform on the React Native emulator or device.
 
 ## TDD (Test-Driven Development)
+
 - When writing or modifying core logic (e.g. `src/hooks`, `src/utils`), you must prioritize writing unit tests before the actual implementation.
 
 ## Safety Guard

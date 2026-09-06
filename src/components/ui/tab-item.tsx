@@ -43,10 +43,10 @@ interface TabItemProps {
 }
 
 const SPRING = { damping: 22, stiffness: 300, mass: 0.6 };
-const ACTIVE_COLOR = Colors.tabActive; // #E91E8E (brand pink)
+const ACTIVE_COLOR = Colors.tabActive; // shu-iro vermillion
 const PILL_COLOR = Colors.tabActive + "18"; // ~10% opacity tint
 
-export function TabItem({
+export const TabItem = React.memo(function TabItem({
   iconName,
   iconNameActive,
   label,
@@ -65,7 +65,7 @@ export function TabItem({
     if (focused) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
-  }, [focused]);
+  }, [focused, progress]);
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [
@@ -134,7 +134,7 @@ export function TabItem({
       </Animated.View>
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   root: {

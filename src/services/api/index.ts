@@ -7,6 +7,7 @@ export { authService } from "./auth";
 export { userService } from "./user";
 export { roadmapApi } from "./roadmap";
 export { lessonAttemptApi } from "./lessons";
+export { placementApi } from "./placement";
 export { uploadApi } from "./uploads";
 export { API_ENDPOINTS } from "./endpoints";
 export { energyApi } from "./energy";

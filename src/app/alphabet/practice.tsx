@@ -27,6 +27,7 @@ import {
   PracticeResultCard,
 } from "@/components/alphabet";
 import { useAlphabetPractice } from "@/hooks/use-alphabet-practice";
+import { useSoundEffect } from "@/hooks/use-sound-effect";
 import { useGamification } from "@/contexts/gamification-context";
 import { useTheme } from "@/contexts/theme-context";
 import {
@@ -42,6 +43,7 @@ export default function AlphabetPracticeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { addExp } = useGamification();
+  const { playCorrect, playIncorrect } = useSoundEffect();
   const { status, current, progress, result, error, answer, restart } =
     useAlphabetPractice();
 
@@ -71,7 +73,13 @@ export default function AlphabetPracticeScreen() {
     const option = question.options.find(
       (item) => item.optionId === selectedOptionId,
     );
-    setLastCorrect(!!option?.isCorrect);
+    const isCorrect = !!option?.isCorrect;
+    setLastCorrect(isCorrect);
+    if (isCorrect) {
+      playCorrect();
+    } else {
+      playIncorrect();
+    }
   };
 
   const handleContinue = () => {
@@ -184,7 +192,11 @@ export default function AlphabetPracticeScreen() {
         {question && isDrawing && (
           <PracticeDrawing
             question={question}
-            onComplete={(isCorrect) => setLastCorrect(isCorrect)}
+            onComplete={(isCorrect) => {
+              setLastCorrect(isCorrect);
+              if (isCorrect) playCorrect();
+              else playIncorrect();
+            }}
           />
         )}
       </ScrollView>
@@ -291,7 +303,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
   },
   feedbackCorrect: {
-    backgroundColor: "rgba(76, 175, 80, 0.14)",
+    backgroundColor: Colors.success + "24",
   },
   feedbackWrong: {
     backgroundColor: Colors.errorLight,

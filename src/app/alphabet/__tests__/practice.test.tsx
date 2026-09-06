@@ -81,6 +81,15 @@ function renderScreen() {
   );
 }
 
+async function drawStroke(canvas: any) {
+  await fireEvent(canvas, "touchStart", {
+    nativeEvent: { locationX: 20, locationY: 20 },
+  });
+  await fireEvent(canvas, "touchEnd", {
+    nativeEvent: { locationX: 50, locationY: 50 },
+  });
+}
+
 describe("AlphabetPracticeScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -114,7 +123,7 @@ describe("AlphabetPracticeScreen", () => {
   });
 
   it("requeues a wrong answer and submits the FIRST attempt of every character", async () => {
-    const { findByText, getByText } = await renderScreen();
+    const { findByText, getByText, getByTestId } = await renderScreen();
 
     // Câu 1: trắc nghiệm - trả lời SAI.
     expect(await findByText("Nghe và chọn chữ cái đúng")).toBeTruthy();
@@ -127,6 +136,10 @@ describe("AlphabetPracticeScreen", () => {
 
     // Câu 2: tập viết (không có strokeOrderData -> viết tự do).
     expect(await findByText("Viết chữ: o")).toBeTruthy();
+    expect(
+      await findByText("Viết tự do theo chữ mẫu mờ bên dưới."),
+    ).toBeTruthy();
+    await drawStroke(getByTestId("stroke-order-canvas"));
     fireEvent.press(getByText("Tôi đã viết xong"));
     expect(await findByText("Chính xác!")).toBeTruthy();
     fireEvent.press(getByText("Tiếp tục"));
@@ -191,7 +204,7 @@ describe("AlphabetPracticeScreen", () => {
       currentExp: 500,
     });
 
-    const { findByText, getByText } = await renderScreen();
+    const { findByText, getByText, getByTestId } = await renderScreen();
 
     await findByText("Nghe và chọn chữ cái đúng");
     fireEvent.press(getByText("あ"));
@@ -199,6 +212,7 @@ describe("AlphabetPracticeScreen", () => {
     fireEvent.press(await findByText("Tiếp tục"));
 
     await findByText("Viết chữ: o");
+    await drawStroke(getByTestId("stroke-order-canvas"));
     fireEvent.press(getByText("Tôi đã viết xong"));
     fireEvent.press(await findByText("Tiếp tục"));
 

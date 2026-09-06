@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useTheme } from "@/contexts/theme-context";
 import { BorderRadius, Colors, FontWeights, Shadows } from "@/constants/theme";
@@ -37,15 +37,34 @@ export function AlphabetCell({
           height: size + 10,
           backgroundColor: colors.card,
           borderColor: palette.border,
+          borderBottomColor: palette.border,
         },
-        !isNew && { backgroundColor: palette.fill },
-        selected && [styles.selectedCell, { borderColor: Colors.primary }],
+        selected && [
+          styles.selectedCell,
+          {
+            borderColor: Colors.primary,
+            borderBottomColor: Colors.primaryDark,
+          },
+        ],
       ]}
       onPress={() => onPress(character)}
       pressScale={0.92}
       accessibilityLabel={`${character.symbol}, ${character.romaji}, mức thông thạo ${level} trên ${MAX_MASTERY_LEVEL}`}
       accessibilityState={{ selected }}
     >
+      {/* Lớp phủ tint thông thạo trên nền card đặc, tránh thay thế màu nền đặc làm lộ bóng đen elevation Android */}
+      {!isNew && (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: palette.fill,
+              borderRadius: BorderRadius.lg - 2,
+            },
+          ]}
+          pointerEvents="none"
+        />
+      )}
       <Text
         style={[
           styles.symbol,
@@ -83,10 +102,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    ...Shadows.sm,
+    borderBottomWidth: 3.5,
+    ...(Platform.OS === "ios" ? Shadows.sm : {}),
   },
   selectedCell: {
-    ...Shadows.glow(Colors.primary),
+    ...(Platform.OS === "ios" ? Shadows.glow(Colors.primary) : {}),
   },
   symbol: {
     fontSize: 24,

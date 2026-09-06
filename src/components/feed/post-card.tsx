@@ -25,7 +25,7 @@ import {
   Spacing,
 } from "@/constants/theme";
 import { FeedPostResponse } from "@/types/api";
-import { resolveMediaUrl } from "@/utils/media";
+import { resolveAvatarUri } from "@/utils/media";
 import { formatRelativeTime } from "@/utils/relative-time";
 
 interface PostCardProps {
@@ -48,7 +48,7 @@ function AuthorAvatar({
   avatarUrl: string | null;
   displayName: string;
 }) {
-  const resolved = resolveMediaUrl(avatarUrl);
+  const resolved = resolveAvatarUri(avatarUrl);
   if (resolved) {
     return <Image source={{ uri: resolved }} style={styles.avatar} />;
   }
@@ -61,7 +61,7 @@ function AuthorAvatar({
   );
 }
 
-export function PostCard({
+export const PostCard = React.memo(function PostCard({
   post,
   isOwnPost,
   cardColor,
@@ -118,19 +118,22 @@ export function PostCard({
             pressScale={0.9}
             style={styles.deleteBtn}
           >
-            <Ionicons
-              name="trash-outline"
-              size={18}
-              color={textSecondaryColor}
-            />
+            <Ionicons name="trash-outline" size={18} color={Colors.error} />
           </AnimatedPressable>
         )}
       </View>
 
       {isAchievement ? (
-        <View style={styles.achievementContent}>
-          <Text style={styles.achievementEmoji}>🏆</Text>
-          <Text style={styles.achievementText}>{post.content}</Text>
+        <View
+          style={[
+            styles.achievementContent,
+            { backgroundColor: Colors.accent + "20" },
+          ]}
+        >
+          <Ionicons name="trophy" size={28} color={Colors.accent} />
+          <Text style={[styles.achievementText, { color: textColor }]}>
+            {post.content}
+          </Text>
         </View>
       ) : (
         <View
@@ -149,20 +152,23 @@ export function PostCard({
         <AnimatedPressable
           style={[
             styles.actionBtn,
+            { borderColor: borderColor },
             post.likedByMe && styles.actionBtnActive,
-            { borderColor },
           ]}
           onPress={handleLikePress}
           pressScale={0.95}
         >
-          <Animated.Text style={[styles.actionIcon, heartStyle]}>
-            {post.likedByMe ? "❤️" : "♡"}
-          </Animated.Text>
+          <Animated.View style={heartStyle}>
+            <Ionicons
+              name={post.likedByMe ? "heart" : "heart-outline"}
+              size={20}
+              color={post.likedByMe ? Colors.secondary : textSecondaryColor}
+            />
+          </Animated.View>
           <Text
             style={[
               styles.actionText,
-              { color: textColor },
-              post.likedByMe && { color: Colors.secondary },
+              { color: post.likedByMe ? Colors.secondary : textSecondaryColor },
             ]}
           >
             {post.likeCount}
@@ -170,23 +176,23 @@ export function PostCard({
         </AnimatedPressable>
 
         <AnimatedPressable
-          style={[styles.actionBtn, { borderColor }]}
+          style={[styles.actionBtn, { borderColor: borderColor }]}
           onPress={() => onOpenComments(post)}
           pressScale={0.95}
         >
           <Ionicons
             name="chatbubble-outline"
-            size={16}
-            color={textColor as string}
+            size={18}
+            color={textSecondaryColor}
           />
-          <Text style={[styles.actionText, { color: textColor }]}>
+          <Text style={[styles.actionText, { color: textSecondaryColor }]}>
             {post.commentCount}
           </Text>
         </AnimatedPressable>
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -246,24 +252,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.three,
-    backgroundColor: "#FFF7E6",
     borderRadius: BorderRadius.xl,
     padding: Spacing.four,
     marginTop: Spacing.four,
     borderWidth: 1,
-    borderColor: "#F5A623",
-  },
-  achievementEmoji: {
-    fontSize: 32,
+    borderColor: Colors.accent,
   },
   achievementText: {
     flex: 1,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     lineHeight: 22,
-    // Achievement card keeps a fixed light-gold background in both themes,
-    // so its text must stay a fixed dark color instead of following textColor.
-    color: "#7A4F01",
   },
   footer: {
     flexDirection: "row",
@@ -283,10 +282,7 @@ const styles = StyleSheet.create({
   },
   actionBtnActive: {
     borderColor: Colors.secondary,
-    backgroundColor: "#FFF1F2",
-  },
-  actionIcon: {
-    fontSize: FontSizes.lg,
+    backgroundColor: Colors.secondary + "14",
   },
   actionText: {
     fontSize: FontSizes.sm,

@@ -1,5 +1,7 @@
 export * from "./quiz-header";
 export * from "./question-prompt";
+export * from "./quiz-bottom-bar";
+export * from "./question-mascot";
 export * from "./vocab-question";
 export * from "./kana-question";
 export * from "./picture-question";

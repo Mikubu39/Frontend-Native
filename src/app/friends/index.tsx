@@ -17,7 +17,6 @@ import {
   FlatList,
   ActivityIndicator,
   Image,
-  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,7 +27,7 @@ import { userService } from "@/services/api/user";
 import * as Contacts from "expo-contacts";
 import { UserOverviewResponse } from "@/types/user-api";
 import { useTheme } from "@/hooks/use-theme";
-import { resolveMediaUrl } from "@/utils/media";
+import { resolveAvatarUri } from "@/utils/media";
 
 interface FriendOption {
   id: string;
@@ -51,14 +50,21 @@ const OPTIONS: FriendOption[] = [
     icon: "phone-portrait-outline",
     title: "Tìm từ danh bạ",
     subtitle: "Kết nối với bạn bè trong danh bạ",
-    color: "#10B981",
+    color: Colors.success,
   },
   {
     id: "share",
     icon: "qr-code-outline",
     title: "Chia sẻ mã cá nhân",
-    subtitle: "Quét mã để kết bạn nhanh chóng",
-    color: "#F59E0B",
+    subtitle: "Mã QR để bạn bè kết nối nhanh chóng",
+    color: Colors.accent,
+  },
+  {
+    id: "scan",
+    icon: "scan-outline",
+    title: "Quét mã QR",
+    subtitle: "Quét mã của bạn bè để kết nối",
+    color: Colors.secondary,
   },
 ];
 
@@ -127,6 +133,8 @@ export default function FriendsScreen() {
       handleSyncContacts();
     } else if (id === "share") {
       router.push("/profile/qr");
+    } else if (id === "scan") {
+      router.push("/friends/scan");
     } else {
       showInfo("Thông báo", "Tính năng đang phát triển.");
     }
@@ -145,13 +153,25 @@ export default function FriendsScreen() {
           },
         ]}
       >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Quay lại"
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+        >
           <Ionicons name="arrow-back" size={24} color={themeColors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: themeColors.text }]}>
           Thêm Bạn Bè
         </Text>
-        <View style={styles.backBtn} />
+        <TouchableOpacity
+          onPress={() => router.push("/friends/scan")}
+          style={styles.backBtn}
+          accessibilityLabel="Quét mã QR"
+        >
+          <Ionicons name="scan-outline" size={22} color={themeColors.text} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.options}>
@@ -182,16 +202,28 @@ export default function FriendsScreen() {
                 <Text style={[styles.optionTitle, { color: themeColors.text }]}>
                   {option.title}
                 </Text>
-                <Text style={styles.optionSubtitle}>{option.subtitle}</Text>
+                <Text
+                  style={[
+                    styles.optionSubtitle,
+                    { color: themeColors.textSecondary },
+                  ]}
+                >
+                  {option.subtitle}
+                </Text>
               </View>
               {option.id === "sync" && isSyncing ? (
                 <ActivityIndicator size="small" color={Colors.primary} />
               ) : (
-                <View style={styles.arrowContainer}>
+                <View
+                  style={[
+                    styles.arrowContainer,
+                    { backgroundColor: themeColors.backgroundElement },
+                  ]}
+                >
                   <Ionicons
                     name="chevron-forward"
                     size={20}
-                    color={Colors.textSecondary}
+                    color={themeColors.textSecondary}
                   />
                 </View>
               )}
@@ -224,6 +256,9 @@ export default function FriendsScreen() {
               <TouchableOpacity
                 onPress={() => setSyncResults(null)}
                 style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Đóng"
+                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
               >
                 <Ionicons name="close" size={24} color={Colors.textSecondary} />
               </TouchableOpacity>
@@ -245,7 +280,7 @@ export default function FriendsScreen() {
                   onPress={() => {
                     setSyncResults(null);
                     router.push({
-                      pathname: "/profile/view-search-profile",
+                      pathname: "/friends/view-search-profile",
                       params: {
                         id: item.id?.toString() || "",
                         username: (item as any).username || item.id?.toString(),
@@ -259,7 +294,7 @@ export default function FriendsScreen() {
                 >
                   {item.avatarUrl ? (
                     <Image
-                      source={{ uri: resolveMediaUrl(item.avatarUrl) }}
+                      source={{ uri: resolveAvatarUri(item.avatarUrl) }}
                       style={styles.avatar}
                     />
                   ) : (
@@ -277,12 +312,19 @@ export default function FriendsScreen() {
                     >
                       {item.displayName || "Người dùng"}
                     </Text>
-                    <Text style={styles.userLevel}>Lv {item.level || 1}</Text>
+                    <Text
+                      style={[
+                        styles.userLevel,
+                        { color: themeColors.textSecondary },
+                      ]}
+                    >
+                      Lv {item.level || 1}
+                    </Text>
                   </View>
                   <Ionicons
                     name="chevron-forward"
                     size={20}
-                    color={Colors.textSecondary}
+                    color={themeColors.textSecondary}
                   />
                 </TouchableOpacity>
               )}
@@ -291,10 +333,15 @@ export default function FriendsScreen() {
                   <Ionicons
                     name="people-outline"
                     size={48}
-                    color={Colors.textSecondary}
+                    color={themeColors.textSecondary}
                     style={{ marginBottom: Spacing.four }}
                   />
-                  <Text style={styles.emptyText}>
+                  <Text
+                    style={[
+                      styles.emptyText,
+                      { color: themeColors.textSecondary },
+                    ]}
+                  >
                     Không tìm thấy bạn bè nào dùng ứng dụng này trong danh bạ
                     của bạn.
                   </Text>
@@ -318,9 +365,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
-    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   backBtn: {
     width: 40,
@@ -400,7 +445,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.six,
     paddingBottom: Spacing.four,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   modalTitle: {
     fontSize: FontSizes.lg,

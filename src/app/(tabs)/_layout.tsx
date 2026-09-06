@@ -10,7 +10,7 @@
  *  - Motion: tight spring, no carnival bounce.
  */
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Tabs } from "expo-router";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
@@ -40,7 +40,7 @@ const TABS = [
     tutorialTarget: "tab-leaderboard" as const,
   },
   {
-    name: "search",
+    name: "shop",
     label: "Cửa hàng",
     icon: "storefront-outline" as const,
     iconActive: "storefront" as const,
@@ -175,25 +175,29 @@ function CustomTabBar({
   );
 }
 
+// Memo hóa để 6 TabItem không bị dựng lại mỗi khi TabLayout re-render.
+const MemoCustomTabBar = React.memo(CustomTabBar);
+
 // ------------------------------------------------------------------
 // Layout
 // ------------------------------------------------------------------
 export default function TabLayout() {
   const [moreSheetVisible, setMoreSheetVisible] = useState(false);
 
+  const handleMorePress = useCallback(() => setMoreSheetVisible(true), []);
+
   return (
     <>
       <Tabs
         screenOptions={{ headerShown: false }}
         tabBar={(props) => (
-          <CustomTabBar
-            {...props}
-            onMorePress={() => setMoreSheetVisible(true)}
-          />
+          <MemoCustomTabBar {...props} onMorePress={handleMorePress} />
         )}
       >
-        {/* Visible tabs */}
-        {TABS.map((tab) => (
+        {/* Visible tabs — "more" is excluded: it opens `MoreBottomSheet` as an
+            overlay instead of navigating to a route, so it has no screen of
+            its own (see `handlePress` in `CustomTabBar` below). */}
+        {TABS.filter((tab) => tab.name !== "more").map((tab) => (
           <Tabs.Screen
             key={tab.name}
             name={tab.name}

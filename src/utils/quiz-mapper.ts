@@ -12,6 +12,157 @@ import {
 } from "@/types/quiz";
 
 /**
+ * Regex kiểm tra chuỗi chỉ chứa dấu câu (tiếng Nhật & quốc tế) hoặc khoảng trắng.
+ */
+const PUNCTUATION_ONLY_REGEX = /^[。、.,?!？！:;·…~～\-—\s]+$/;
+
+/**
+ * Kiểm tra xem một chuỗi có hoàn toàn chỉ là dấu câu hay không.
+ */
+export function isPunctuationOnly(text: string): boolean {
+  if (!text) return true;
+  return PUNCTUATION_ONLY_REGEX.test(text.trim());
+}
+
+/**
+ * Loại bỏ khoảng trắng thừa và cắt các dấu câu ở hai đầu của token.
+ */
+export function cleanArrangementToken(text: string): string {
+  if (!text) return "";
+  return text
+    .trim()
+    .replace(/^[。、.,?!？！:;·…~～\-—\s]+|[。、.,?!？！:;·…~～\-—\s]+$/g, "");
+}
+
+/**
+ * Kho thẻ ma (distractors) trợ từ và ngữ pháp phổ biến trong tiếng Nhật sơ cấp.
+ */
+export interface DistractorItem {
+  text: string;
+  romaji: string;
+}
+
+export const COMMON_GRAMMAR_DISTRACTORS: DistractorItem[] = [
+  { text: "は", romaji: "wa" },
+  { text: "が", romaji: "ga" },
+  { text: "を", romaji: "o" },
+  { text: "に", romaji: "ni" },
+  { text: "で", romaji: "de" },
+  { text: "も", romaji: "mo" },
+  { text: "と", romaji: "to" },
+  { text: "へ", romaji: "e" },
+  { text: "です", romaji: "desu" },
+  { text: "でした", romaji: "deshita" },
+  { text: "ます", romaji: "masu" },
+  { text: "じゃない", romaji: "janai" },
+  { text: "から", romaji: "kara" },
+  { text: "まで", romaji: "made" },
+];
+
+interface LessonVocabEntry {
+  text: string;
+  romaji?: string;
+}
+
+/**
+ * Trích xuất kho từ vựng và phiên âm từ tất cả câu hỏi trong cùng bài học.
+ */
+function extractLessonVocabPool(
+  apiQuestions: StartLessonQuestion[],
+): LessonVocabEntry[] {
+  const pool: LessonVocabEntry[] = [];
+  const seen = new Set<string>();
+
+  // Chỉ lấy những token có ít nhất 1 ký tự tiếng Nhật (Hiragana, Katakana, Kanji)
+  const IS_JAPANESE_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
+
+  for (const q of apiQuestions) {
+    // 1. Trích xuất từ bảng glossary
+    const glossary = q.metadataJson?.glossary;
+    if (glossary && typeof glossary === "object") {
+      for (const [word, entry] of Object.entries(glossary)) {
+        const cleaned = cleanArrangementToken(word);
+        if (
+          cleaned &&
+          !isPunctuationOnly(cleaned) &&
+          IS_JAPANESE_REGEX.test(cleaned) &&
+          !seen.has(cleaned)
+        ) {
+          seen.add(cleaned);
+          const r = (entry as { r?: string })?.r;
+          pool.push({ text: cleaned, romaji: r });
+        }
+      }
+    }
+
+    // 2. Trích xuất từ options của các câu hỏi khác
+    for (const opt of q.options || []) {
+      const cleaned = cleanArrangementToken(opt.content || "");
+      if (
+        cleaned &&
+        !isPunctuationOnly(cleaned) &&
+        IS_JAPANESE_REGEX.test(cleaned) &&
+        !seen.has(cleaned)
+      ) {
+        seen.add(cleaned);
+        const r = opt.metadataJson?.romaji;
+        pool.push({ text: cleaned, romaji: r });
+      }
+    }
+  }
+
+  return pool;
+}
+
+/**
+ * Sinh danh sách thẻ ma (distractors) không trùng lặp với các token đáp án đúng.
+ */
+function generateDistractors(
+  correctTokens: string[],
+  explicitDistractors: { text: string; romaji?: string }[],
+  lessonVocabPool: LessonVocabEntry[],
+  targetCount: number,
+): { text: string; romaji?: string }[] {
+  const result: { text: string; romaji?: string }[] = [];
+  const usedTexts = new Set<string>(correctTokens);
+
+  // 1. Ưu tiên thẻ ma có sẵn từ backend nếu có (isCorrect === false)
+  for (const d of explicitDistractors) {
+    if (!usedTexts.has(d.text)) {
+      usedTexts.add(d.text);
+      result.push(d);
+      if (result.length >= targetCount) return result;
+    }
+  }
+
+  // 2. Lấy từ kho từ vựng của bài học (Glossary & options của câu khác)
+  const shuffledLessonVocab = [...lessonVocabPool].sort(
+    () => Math.random() - 0.5,
+  );
+  for (const item of shuffledLessonVocab) {
+    if (!usedTexts.has(item.text)) {
+      usedTexts.add(item.text);
+      result.push(item);
+      if (result.length >= targetCount) return result;
+    }
+  }
+
+  // 3. Bổ sung từ kho trợ từ / ngữ pháp phổ biến
+  const shuffledGrammar = [...COMMON_GRAMMAR_DISTRACTORS].sort(
+    () => Math.random() - 0.5,
+  );
+  for (const item of shuffledGrammar) {
+    if (!usedTexts.has(item.text)) {
+      usedTexts.add(item.text);
+      result.push(item);
+      if (result.length >= targetCount) return result;
+    }
+  }
+
+  return result;
+}
+
+/**
  * Bảng tra nghĩa mà backend gửi kèm câu hỏi, đã lọc bỏ mục rỗng.
  *
  * Chỉ nhận đúng hình dạng `{ "ねこ": { r, v } }`; dữ liệu cũ hoặc câu hỏi do
@@ -36,12 +187,6 @@ function readGlossary(metadataJson: any): Glossary | undefined {
  *
  * Backend đã tách sẵn: `kana` cho câu hỏi mức TỪ (「おはようございます」), `jp` cho
  * câu hỏi mức CÂU (「せんせい、おはようございます。」). Chỉ một trong hai có mặt.
- *
- * Trước đây chỗ này đọc `question_text` rồi cắt chuỗi theo dấu hai chấm để moi
- * lấy phần chữ Nhật. Cách đó hỏng với mọi câu không có dấu hai chấm — và phần
- * lớn dữ liệu thật không có: `「こんにちは」 (konnichiwa) nghĩa là gì?` sẽ nhảy
- * NGUYÊN CẢ CÂU TIẾNG VIỆT vào bong bóng. Đọc thẳng trường đã tách thì không
- * còn phải đoán.
  */
 function readPrompt(metadataJson: any): string | undefined {
   const kana = metadataJson?.kana;
@@ -71,13 +216,15 @@ function legacyPrompt(content: string | undefined): string {
 export function mapApiQuestionsToQuizQuestions(
   apiQuestions: StartLessonQuestion[],
 ): QuizQuestion[] {
+  const lessonVocabPool = extractLessonVocabPool(apiQuestions);
+
   return apiQuestions.map((q, index) => {
     const questionId = String(q.questionId || index);
 
-    // Map options to QuizAnswer
+    // Map options to QuizAnswer (bổ sung fallback label từ metadataJson cho câu SELECT_IMAGE)
     const answers: QuizAnswer[] = (q.options || []).map((opt) => ({
       id: String(opt.optionId),
-      text: opt.content || "",
+      text: opt.content || opt.metadataJson?.label || "",
       romaji: opt.metadataJson?.romaji || undefined,
       imageUrl: resolveMediaUrl(opt.imageUrl),
       audioUrl: resolveMediaUrl(opt.audioUrl),
@@ -92,20 +239,11 @@ export function mapApiQuestionsToQuizQuestions(
 
     /**
      * Đề bài tiếng Nhật (「おはようございます」). CHỈ dùng cho những loại câu mà
-     * chữ Nhật là ĐỀ, không phải ĐÁP ÁN — xem bảng ngay dưới.
+     * chữ Nhật là ĐỀ, không phải ĐÁP ÁN.
      */
     const jpPrompt = readPrompt(q.metadataJson) || legacyPrompt(q.content);
     /** Nghĩa tiếng Việt; là đề bài của những câu hỏi ngược chiều. */
     const vnPrompt = q.metadataJson?.vn || undefined;
-
-    // Chiều của câu hỏi quyết định được in cái gì:
-    //
-    //   SELECT_IMAGE / TRANSLATE_TO_VN  →  đề là chữ Nhật, đáp án là tiếng Việt/ảnh
-    //   TRANSLATE_TO_JP                 →  đề là TIẾNG VIỆT, `kana` chính là ĐÁP ÁN
-    //   LISTEN_AND_ARRANGE              →  đề là audio + nghĩa, `jp` là ĐÁP ÁN cần xếp
-    //   LISTEN_AND_SELECT               →  đề CHỈ là audio, không in gì
-    //
-    // In nhầm `kana`/`jp` ở hai loại giữa là phát đáp án cho người học.
 
     // Based on questionType from backend, determine the frontend QuizType
     switch (q.questionType) {
@@ -132,7 +270,6 @@ export function mapApiQuestionsToQuizQuestions(
           id: questionId,
           type: "listening",
           instruction: "Nghe và chọn đáp án đúng",
-          // Không có `prompt`: nghe được đề rồi thì in chữ ra là mất chỗ để nghe.
           hint,
           glossary,
           isNew,
@@ -142,23 +279,63 @@ export function mapApiQuestionsToQuizQuestions(
         } as ListeningQuestion;
 
       case "LISTEN_AND_ARRANGE": {
-        const sortedOptions = [...(q.options || [])].sort(
-          (a, b) => (a.order ?? 0) - (b.order ?? 0),
-        );
-        const correctOrder = sortedOptions.map((opt) => opt.content || "");
+        // 1. Lọc và làm sạch các options (loại bỏ thẻ chỉ chứa dấu câu như 。、.,?!)
+        const validOptions = (q.options || [])
+          .map((opt) => ({
+            ...opt,
+            cleanedContent: cleanArrangementToken(opt.content || ""),
+          }))
+          .filter(
+            (opt) =>
+              opt.cleanedContent && !isPunctuationOnly(opt.cleanedContent),
+          );
 
-        // Phiên âm của từng thẻ rời. Khoá theo nội dung thẻ chứ không theo vị
-        // trí vì các thẻ sẽ bị xáo trộn ngay bên dưới.
+        // 2. Tách đáp án đúng và đáp án ma từ API (nếu có)
+        const correctOptions = validOptions
+          .filter((opt) => opt.isCorrect !== false)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+        const explicitDistractorOptions = validOptions
+          .filter((opt) => opt.isCorrect === false)
+          .map((opt) => ({
+            text: opt.cleanedContent,
+            romaji: opt.metadataJson?.romaji,
+          }));
+
+        const correctOrder = correctOptions.map((opt) => opt.cleanedContent);
+
+        // 3. Số lượng thẻ ma linh hoạt: 2 thẻ nếu câu ngắn (< 5 từ), 3 thẻ nếu câu dài (>= 5 từ)
+        const targetDistractorCount = correctOrder.length < 5 ? 2 : 3;
+
+        const distractors = generateDistractors(
+          correctOrder,
+          explicitDistractorOptions,
+          lessonVocabPool,
+          targetDistractorCount,
+        );
+
+        // 4. Phiên âm của từng thẻ rời (cho cả thẻ đúng và thẻ ma).
         const blockRomaji: Record<string, string> = {};
-        for (const opt of sortedOptions) {
-          const text = opt.content;
+        for (const opt of correctOptions) {
+          const text = opt.cleanedContent;
           const blockR = opt.metadataJson?.romaji;
           if (text && blockR) blockRomaji[text] = blockR;
         }
 
-        let characters = [...correctOrder].sort(() => Math.random() - 0.5);
+        for (const d of distractors) {
+          if (d.text && d.romaji) {
+            blockRomaji[d.text] = d.romaji;
+          }
+        }
+
+        // 5. Ngân hàng thẻ bao gồm cả thẻ đúng và thẻ ma, được xáo trộn
+        const allTokens = [...correctOrder, ...distractors.map((d) => d.text)];
+        let characters = [...allTokens].sort(() => Math.random() - 0.5);
+
+        // Đảm bảo không tình cờ trùng khớp hoàn toàn vị trí ban đầu
         if (
-          characters.join("") === correctOrder.join("") &&
+          characters.slice(0, correctOrder.length).join("") ===
+            correctOrder.join("") &&
           characters.length > 1
         ) {
           characters = [characters[1], characters[0], ...characters.slice(2)];
@@ -168,8 +345,6 @@ export function mapApiQuestionsToQuizQuestions(
           id: questionId,
           type: "kana",
           instruction: "Nghe và sắp xếp thành câu",
-          // Đề là AUDIO; `jp` là đáp án cần xếp nên tuyệt đối không in ra.
-          // Nghĩa tiếng Việt thì in được, đó là gợi ý chứ không phải đáp án.
           prompt: vnPrompt,
           promptLang: "vi",
           hint,
@@ -204,7 +379,6 @@ export function mapApiQuestionsToQuizQuestions(
           glossary,
           isNew,
           originalOptions,
-          // Câu mẫu người bản xứ đọc: nghe trước rồi bắt chước mới nói được.
           audioUrl:
             resolveMediaUrl(q.audioUrl) ??
             resolveMediaUrl(firstOption?.audioUrl),
@@ -214,8 +388,6 @@ export function mapApiQuestionsToQuizQuestions(
       case "TRANSLATE_TO_VN":
       case "TRANSLATE_TO_JP":
       default: {
-        // Hai chiều ngược nhau: TO_VN in chữ Nhật rồi hỏi nghĩa; TO_JP in
-        // tiếng Việt rồi hỏi cách nói — ở chiều đó `kana` là ĐÁP ÁN.
         const toJp = q.questionType === "TRANSLATE_TO_JP";
         const word = toJp ? vnPrompt || legacyPrompt(q.content) : jpPrompt;
         const isSentence = (word || "").length > 8;
@@ -237,9 +409,6 @@ export function mapApiQuestionsToQuizQuestions(
           isNew,
           originalOptions,
           imageUrl: resolveMediaUrl(q.imageUrl) ?? "",
-          // Câu dịch không có âm thanh (đề bài đã in sẵn chữ), nhưng vẫn đọc từ
-          // API thay vì bỏ trắng: nút loa sẽ tự ẩn khi không có, nên nếu sau này
-          // có câu dịch thật sự cần nghe thì chỉ việc thêm audio ở backend.
           audioUrl: resolveMediaUrl(q.audioUrl),
           answers,
         } as VocabQuestion;

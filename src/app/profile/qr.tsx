@@ -1,12 +1,14 @@
 import React, { useRef } from "react";
-import { View, Text, StyleSheet, Share, Alert } from "react-native";
+import { View, Text, StyleSheet, Share, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
+import { useTheme } from "@/hooks/use-theme";
 import QRCode from "react-native-qrcode-svg";
 import ViewShot from "react-native-view-shot";
 import * as MediaLibrary from "expo-media-library";
+import { Ionicons } from "@expo/vector-icons";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
   Colors,
@@ -21,9 +23,10 @@ export default function MyQRScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { showSuccess, showError, showWarning } = useToast();
+  const themeColors = useTheme();
 
-  const username = user?.email?.split("@")[0] || "user";
-  const profileUrl = `nihongoapp://profile/@${username}`;
+  const username = user?.username || user?.email?.split("@")[0] || "user";
+  const profileUrl = `nihongo://friends/profile/${username}`;
   const viewShotRef = useRef<ViewShot>(null);
 
   const [status, requestPermission] = MediaLibrary.usePermissions();
@@ -31,7 +34,7 @@ export default function MyQRScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Thêm tôi trên Kotodama: ${profileUrl}`,
+        message: `Thêm tôi trên Nihongo: ${profileUrl}`,
       });
     } catch (error) {
       console.error(error);
@@ -63,20 +66,79 @@ export default function MyQRScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: themeColors.background }]}
+    >
       <View style={styles.header}>
-        <Text style={styles.backBtn} onPress={() => router.back()}>
-          ←
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Quay lại"
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+        >
+          <Ionicons name="arrow-back" size={24} color={themeColors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: themeColors.text }]}>
+          Mã QR cá nhân
         </Text>
-        <Text style={styles.headerTitle}>Mã QR của tôi</Text>
-        <View style={{ width: 40 }} />
+        {/* Chỗ giữ chỗ để tiêu đề luôn canh giữa - nút quét mã đã bị bỏ vì
+            trùng chức năng với tab "Quét mã" của segmented control bên dưới. */}
+        <View style={styles.headerRightBtn} />
+      </View>
+
+      <View style={styles.segmentWrapper}>
+        <View
+          style={[
+            styles.segmentContainer,
+            {
+              backgroundColor: themeColors.card,
+              borderColor: themeColors.borderSubtle,
+            },
+          ]}
+        >
+          <View style={[styles.segmentBtn, styles.segmentBtnActive]}>
+            <Ionicons name="qr-code" size={16} color="#FFFFFF" />
+            <Text style={styles.segmentTextActive}>Mã của tôi</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.segmentBtn}
+            onPress={() => router.push("/friends/scan")}
+            accessibilityLabel="Chuyển sang Quét mã QR"
+          >
+            <Ionicons
+              name="scan-outline"
+              size={16}
+              color={themeColors.textSecondary}
+            />
+            <Text
+              style={[styles.segmentText, { color: themeColors.textSecondary }]}
+            >
+              Quét mã
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.content}>
         <ViewShot ref={viewShotRef} options={{ format: "png", quality: 1 }}>
-          <View style={styles.qrCard}>
-            <Text style={styles.displayName}>{user?.displayName}</Text>
-            <Text style={styles.username}>@{username}</Text>
+          <View
+            style={[
+              styles.qrCard,
+              {
+                backgroundColor: themeColors.card,
+                borderColor: themeColors.borderSubtle,
+              },
+            ]}
+          >
+            <Text style={[styles.displayName, { color: themeColors.text }]}>
+              {user?.displayName || "Người học Nihongo"}
+            </Text>
+            <Text
+              style={[styles.username, { color: themeColors.textSecondary }]}
+            >
+              @{username}
+            </Text>
 
             <View style={styles.qrWrapper}>
               <QRCode
@@ -87,7 +149,9 @@ export default function MyQRScreen() {
               />
             </View>
 
-            <Text style={styles.hint}>Quét mã để kết bạn với tôi</Text>
+            <Text style={[styles.hint, { color: themeColors.textSecondary }]}>
+              Quét mã để kết bạn với tôi trên Nihongo
+            </Text>
           </View>
         </ViewShot>
 
@@ -97,9 +161,18 @@ export default function MyQRScreen() {
             onPress={handleSaveImage}
             style={styles.actionBtn}
           />
-          <Text style={styles.shareTextBtn} onPress={handleShare}>
-            Chia sẻ liên kết
-          </Text>
+          <TouchableOpacity
+            onPress={handleShare}
+            style={styles.shareBtnWrapper}
+            accessibilityLabel="Chia sẻ liên kết cá nhân"
+          >
+            <Ionicons
+              name="share-social-outline"
+              size={18}
+              color={Colors.primary}
+            />
+            <Text style={styles.shareTextBtn}>Chia sẻ liên kết</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
@@ -109,74 +182,121 @@ export default function MyQRScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: Spacing.four,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
   },
   backBtn: {
-    fontSize: FontSizes.xxl,
     width: 40,
-    color: Colors.textPrimary,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
+  },
+  headerRightBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  segmentWrapper: {
+    alignItems: "center",
+    marginTop: Spacing.two,
+    paddingHorizontal: Spacing.four,
+  },
+  segmentContainer: {
+    flexDirection: "row",
+    borderRadius: BorderRadius.full,
+    padding: 4,
+    borderWidth: 1,
+    width: "100%",
+    maxWidth: 280,
+  },
+  segmentBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.two,
+    paddingVertical: Spacing.two,
+    borderRadius: BorderRadius.full,
+  },
+  segmentBtnActive: {
+    backgroundColor: Colors.primary,
+    ...Shadows.sm,
+  },
+  segmentTextActive: {
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.bold,
+    color: "#FFFFFF",
+  },
+  segmentText: {
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.medium,
   },
   content: {
     flex: 1,
     alignItems: "center",
     padding: Spacing.six,
-    gap: Spacing.eight,
-    marginTop: Spacing.eight,
+    gap: Spacing.six,
+    marginTop: Spacing.four,
   },
   qrCard: {
-    backgroundColor: "#FFFFFF",
     borderRadius: BorderRadius.xl,
     padding: Spacing.eight,
     alignItems: "center",
     width: "100%",
+    maxWidth: 340,
+    borderWidth: 1,
     ...Shadows.md,
   },
   displayName: {
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
     marginBottom: 2,
+    textAlign: "center",
   },
   username: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
     marginBottom: Spacing.six,
+    textAlign: "center",
   },
   qrWrapper: {
     padding: Spacing.four,
     backgroundColor: "#FFFFFF",
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     ...Shadows.sm,
   },
   hint: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
     marginTop: Spacing.six,
     textAlign: "center",
   },
   actions: {
     width: "100%",
+    maxWidth: 340,
     alignItems: "center",
-    gap: Spacing.four,
+    gap: Spacing.three,
   },
   actionBtn: {
     width: "100%",
+  },
+  shareBtnWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.two,
+    padding: Spacing.three,
   },
   shareTextBtn: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     color: Colors.primary,
-    padding: Spacing.three,
   },
 });

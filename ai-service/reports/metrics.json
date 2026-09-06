@@ -57,9 +57,7 @@
       "model_kb": 128.1357421875,
       "gives_proba": true,
       "heavy": false,
-      "tags": [
-        "baseline"
-      ],
+      "tags": ["baseline"],
       "error": null
     },
     {
@@ -78,9 +76,7 @@
       "model_kb": 365.515625,
       "gives_proba": false,
       "heavy": false,
-      "tags": [
-        "baseline"
-      ],
+      "tags": ["baseline"],
       "error": null
     },
     {
@@ -118,9 +114,7 @@
       "model_kb": 1828.2841796875,
       "gives_proba": true,
       "heavy": false,
-      "tags": [
-        "primary"
-      ],
+      "tags": ["primary"],
       "error": null
     },
     {
@@ -215,9 +209,7 @@
       "model_kb": 70.951171875,
       "gives_proba": true,
       "heavy": false,
-      "tags": [
-        "ablation"
-      ],
+      "tags": ["ablation"],
       "error": null
     },
     {
@@ -236,9 +228,7 @@
       "model_kb": 1814.505859375,
       "gives_proba": true,
       "heavy": false,
-      "tags": [
-        "ablation"
-      ],
+      "tags": ["ablation"],
       "error": null
     }
   ],

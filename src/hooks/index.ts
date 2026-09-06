@@ -9,3 +9,4 @@ export * from "./use-speech-input";
 export * from "./use-countdown";
 export * from "./use-quests";
 export * from "./use-shop";
+export * from "./use-sound-effect";

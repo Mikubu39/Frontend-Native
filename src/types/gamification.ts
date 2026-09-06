@@ -4,11 +4,16 @@ export interface EnergyResponse {
   lastRecoveryDate: string | null;
 }
 
+export type StreakStatus = "ACTIVE" | "UNLIT" | "FROZEN";
+
 export interface StreakResponse {
   currentStreak: number;
   longestStreak: number;
   lastStreakDate: string | null;
   streakFreezeCount: number;
+  streakStatus?: StreakStatus;
+  studiedToday?: boolean;
+  frozenToday?: boolean;
 }
 
 export type QuestType =

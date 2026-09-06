@@ -85,6 +85,8 @@ export interface ConversationRespondResponse {
   corrections: Correction[];
   /** false khi AI không hiểu được câu vừa rồi hoặc câu lạc hẳn chủ đề. */
   understood: boolean;
+  /** Bản dịch tiếng Việt của câu người học vừa nói. */
+  userVi?: string;
 }
 
 export interface ConversationSummaryRequest {

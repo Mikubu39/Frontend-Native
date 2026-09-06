@@ -3,8 +3,8 @@
  * Enhanced with smoother native-like transitions and gesture support.
  */
 
-import { Colors } from "@/constants/theme";
-import { AuthProvider } from "@/contexts/auth-context";
+import { Colors, Fonts } from "@/constants/theme";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { GamificationProvider } from "@/contexts/gamification-context";
 import { GlossaryProvider } from "@/contexts/glossary-context";
 import { OnboardingProvider } from "@/contexts/onboarding-context";
@@ -20,16 +20,15 @@ import {
   Nunito_800ExtraBold,
   useFonts,
 } from "@expo-google-fonts/nunito";
-import { LinearGradient } from "expo-linear-gradient";
-import { Stack } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  StyleSheet,
-  Text,
-  View
-} from "react-native";
+  ZenMaruGothic_500Medium,
+  ZenMaruGothic_700Bold,
+  ZenMaruGothic_900Black,
+} from "@expo-google-fonts/zen-maru-gothic";
+import { LinearGradient } from "expo-linear-gradient";
+import { Stack, useRouter, useSegments } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, Dimensions, StyleSheet, Text, View } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -80,7 +79,14 @@ function SplashAnimation({ onFinish }: { onFinish: () => void }) {
     ]).start(() => {
       onFinish();
     });
-  }, []);
+  }, [
+    circleScale,
+    fadeOut,
+    onFinish,
+    subtitleOpacity,
+    titleOpacity,
+    titleScale,
+  ]);
 
   const maxDimension = Math.max(width, height) * 2;
 
@@ -99,7 +105,7 @@ function SplashAnimation({ onFinish }: { onFinish: () => void }) {
         ]}
       >
         <LinearGradient
-          colors={["#FF00FF", "#8B5CF6", "#E88D67", "#FFB800"]}
+          colors={Colors.gradients.splash}
           style={[
             styles.gradientCircle,
             {
@@ -123,7 +129,7 @@ function SplashAnimation({ onFinish }: { onFinish: () => void }) {
           },
         ]}
       >
-        <Text style={styles.splashTitle}>Kotodama</Text>
+        <Text style={styles.splashTitle}>Nihongo</Text>
         <Animated.Text
           style={[styles.splashSubtitle, { opacity: subtitleOpacity }]}
         >
@@ -136,6 +142,23 @@ function SplashAnimation({ onFinish }: { onFinish: () => void }) {
 
 function RootNavigation() {
   const { colors } = useTheme();
+  const { isAuthenticated, isLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === "(auth)" || segments[0] === "welcome";
+
+    if (!isAuthenticated && !inAuthGroup) {
+      // Clear navigation history when signing out to prevent back navigation
+      if (router.canDismiss()) {
+        router.dismissAll();
+      }
+      router.replace("/welcome");
+    }
+  }, [isAuthenticated, isLoading, segments, router]);
 
   return (
     <Stack
@@ -176,10 +199,6 @@ function RootNavigation() {
       />
       <Stack.Screen name="profile" />
       <Stack.Screen name="friends" />
-      <Stack.Screen
-        name="reward"
-        options={{ presentation: "transparentModal" }}
-      />
     </Stack>
   );
 }
@@ -193,6 +212,9 @@ export default function RootLayout() {
     Nunito_600SemiBold,
     Nunito_700Bold,
     Nunito_800ExtraBold,
+    ZenMaruGothic_500Medium,
+    ZenMaruGothic_700Bold,
+    ZenMaruGothic_900Black,
   });
 
   if (!fontsLoaded) {
@@ -252,9 +274,8 @@ const styles = StyleSheet.create({
   },
   splashTitle: {
     fontSize: 52,
-    fontWeight: "800",
+    fontFamily: Fonts.display,
     color: "#FFFFFF",
-    fontStyle: "italic",
     textShadowColor: "rgba(0,0,0,0.2)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 8,
@@ -262,6 +283,6 @@ const styles = StyleSheet.create({
   splashSubtitle: {
     fontSize: 18,
     color: "rgba(255,255,255,0.85)",
-    fontWeight: "500",
+    fontFamily: Fonts.sans,
   },
 });

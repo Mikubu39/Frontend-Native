@@ -1,12 +1,14 @@
 import { Stack } from "expo-router";
-import { Colors } from "@/constants/theme";
+import { useTheme } from "@/contexts/theme-context";
 
 export default function QuizLayout() {
+  const { colors } = useTheme();
+
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: Colors.cream },
+        contentStyle: { backgroundColor: colors.background },
         animation: "slide_from_right",
         animationDuration: 300,
       }}

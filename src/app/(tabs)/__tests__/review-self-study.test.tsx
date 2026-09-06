@@ -6,14 +6,22 @@ import PracticeHubScreen from "../review";
 import { vocabularyApi } from "@/services/api/vocabulary";
 import { useTheme } from "@/contexts/theme-context";
 
-const push = jest.fn();
+const mockPush = jest.fn();
 
-jest.mock("expo-router", () => ({
-  useRouter: () => ({ push }),
-  useFocusEffect: (callback: () => void | (() => void)) => {
-    useEffect(callback, [callback]);
-  },
-}));
+jest.mock("expo-router", () => {
+  const React = require("react");
+  return {
+    useRouter: () => ({ push: mockPush }),
+    useFocusEffect: (callback: () => void | (() => void)) => {
+      React.useEffect(() => {
+        const cleanup = callback();
+        if (typeof cleanup === "function") {
+          return cleanup;
+        }
+      }, [callback]);
+    },
+  };
+});
 
 jest.mock("@/components/tutorial", () => ({
   SpotlightTarget: ({ children }: { children: React.ReactNode }) => children,
@@ -26,7 +34,15 @@ jest.mock("@/services/api/vocabulary", () => ({
 }));
 jest.mock("@/contexts/theme-context", () => ({ useTheme: jest.fn() }));
 jest.mock("@/services/api/mistakes", () => ({
-  mistakesApi: { getSummary: jest.fn() },
+  mistakesApi: {
+    getSummary: jest.fn(() => Promise.resolve({ activeCount: 0 })),
+  },
+}));
+
+jest.mock("react-native-safe-area-context", () => ({
+  SafeAreaProvider: ({ children }: any) => children,
+  SafeAreaView: ({ children }: any) => children,
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
 
 const mockedVocabularyApi = vocabularyApi as jest.Mocked<typeof vocabularyApi>;
@@ -59,12 +75,12 @@ describe("Trung tâm luyện tập — khu tự học", () => {
     );
 
     await waitFor(() => expect(mockedVocabularyApi.getDue).toHaveBeenCalled());
-    expect(screen.getByText("Hoạt động tự học")).toBeTruthy();
+    expect(screen.getByText("Luyện tập kỹ năng")).toBeTruthy();
     expect(screen.queryByText("Thử thách thời gian")).toBeNull();
 
     await fireEvent.press(screen.getByText("Ôn tập từ vựng"));
 
-    expect(push).toHaveBeenCalledWith("/review/vocabulary");
-    expect(push).not.toHaveBeenCalledWith("/quiz/ready?lessonId=lp1");
+    expect(mockPush).toHaveBeenCalledWith("/review/vocabulary");
+    expect(mockPush).not.toHaveBeenCalledWith("/quiz/ready?lessonId=lp1");
   });
 });

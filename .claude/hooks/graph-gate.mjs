@@ -20,7 +20,8 @@ import { tmpdir } from "node:os";
 
 const MAX_BLOCKS = 2;
 const GRAPH_TOOL = /^mcp__codebase-memory-mcp__/;
-const CODE_EXT = /\.(ts|tsx|js|jsx|java|kt|py|go|rb|php|c|cpp|h|hpp|cs|swift|dart)\b/i;
+const CODE_EXT =
+  /\.(ts|tsx|js|jsx|java|kt|py|go|rb|php|c|cpp|h|hpp|cs|swift|dart)\b/i;
 
 let payload = {};
 try {
@@ -28,7 +29,10 @@ try {
 } catch {
   /* no stdin, treat as empty */
 }
-const session = String(payload.session_id || "nosession").replace(/[^\w-]/g, "");
+const session = String(payload.session_id || "nosession").replace(
+  /[^\w-]/g,
+  "",
+);
 const flagFile = join(tmpdir(), `claude-graph-used-${session}.flag`);
 const attemptFile = join(tmpdir(), `claude-graph-gate-${session}.count`);
 const toolName = String(payload.tool_name || "");

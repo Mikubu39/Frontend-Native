@@ -1,6 +1,5 @@
 /**
- * InAppToast - Premium animated toast notification for React Native.
- * Features glassmorphism, kawaii emoji badges, haptic feedback, and spring animations.
+ * InAppToast - Animated toast notification for React Native.
  */
 
 import React, { useEffect } from "react";
@@ -14,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { Ionicons } from "@expo/vector-icons";
 import {
   BorderRadius,
   Colors,
@@ -32,40 +32,40 @@ interface InAppToastProps {
 
 const TOAST_CONFIG = {
   success: {
-    emoji: "🎉",
+    icon: "checkmark-circle" as const,
     accentColor: Colors.success,
     bgColor: "rgba(255, 255, 255, 0.95)",
-    borderColor: "rgba(76, 175, 80, 0.3)",
+    borderColor: "rgba(76, 140, 99, 0.3)",
     haptic: () =>
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
         () => {},
       ),
   },
   error: {
-    emoji: "⚠️",
+    icon: "alert-circle" as const,
     accentColor: Colors.error,
     bgColor: "rgba(255, 255, 255, 0.95)",
-    borderColor: "rgba(239, 68, 68, 0.3)",
+    borderColor: "rgba(228, 72, 58, 0.3)",
     haptic: () =>
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
         () => {},
       ),
   },
   warning: {
-    emoji: "⚡",
+    icon: "warning" as const,
     accentColor: Colors.warning,
     bgColor: "rgba(255, 255, 255, 0.95)",
-    borderColor: "rgba(255, 184, 0, 0.3)",
+    borderColor: "rgba(196, 146, 46, 0.3)",
     haptic: () =>
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
         () => {},
       ),
   },
   info: {
-    emoji: "💡",
+    icon: "information-circle" as const,
     accentColor: Colors.primary,
     bgColor: "rgba(255, 255, 255, 0.95)",
-    borderColor: "rgba(139, 92, 246, 0.3)",
+    borderColor: "rgba(59, 76, 130, 0.3)",
     haptic: () =>
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}),
   },
@@ -86,6 +86,7 @@ export function InAppToast({ toast, onDismiss }: InAppToastProps) {
 
       return () => clearTimeout(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast]);
 
   if (!toast) return null;
@@ -120,14 +121,20 @@ export function InAppToast({ toast, onDismiss }: InAppToastProps) {
             },
           ]}
         >
-          {/* Left Emoji Badge */}
+          {/* Left icon badge */}
           <View
             style={[
               styles.emojiBadge,
               { backgroundColor: `${config.accentColor}18` },
             ]}
           >
-            <Text style={styles.emojiText}>{toast.icon || config.emoji}</Text>
+            <Ionicons
+              name={
+                (toast.icon as keyof typeof Ionicons.glyphMap) || config.icon
+              }
+              size={22}
+              color={config.accentColor}
+            />
           </View>
 
           {/* Toast Text Content */}
@@ -144,7 +151,7 @@ export function InAppToast({ toast, onDismiss }: InAppToastProps) {
 
           {/* Close Icon / Pill indicator */}
           <View style={styles.closeButton}>
-            <Text style={styles.closeIcon}>✕</Text>
+            <Ionicons name="close" size={13} color={Colors.textSecondary} />
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -182,9 +189,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  emojiText: {
-    fontSize: 22,
-  },
   textContainer: {
     flex: 1,
     gap: 2,
@@ -208,10 +212,5 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.05)",
     alignItems: "center",
     justifyContent: "center",
-  },
-  closeIcon: {
-    fontSize: 10,
-    color: Colors.textSecondary,
-    fontWeight: "bold",
   },
 });

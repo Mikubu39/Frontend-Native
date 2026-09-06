@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import * as Haptics from "expo-haptics";
 import { AudioButton } from "@/components/ui/audio-button";
 import { DualText } from "@/components/ui/dual-text";
 import { useAudio } from "@/hooks/use-audio";
@@ -26,62 +27,87 @@ interface KanaQuestionProps {
   onAnswerChange: (isCorrect: boolean, arrangedString: string) => void;
 }
 
+interface BankItem {
+  id: string;
+  char: string;
+  isPlaced: boolean;
+}
+
 export function KanaQuestionCard({
   question,
   onAnswerChange,
 }: KanaQuestionProps) {
-  const [arranged, setArranged] = useState<string[]>([]);
-  const [bank, setBank] = useState<string[]>(question.characters);
-  const { isPlaying, play } = useAudio(question.audioUrl);
+  const [arranged, setArranged] = useState<{ id: string; char: string }[]>([]);
+  const [bank, setBank] = useState<BankItem[]>(() =>
+    question.characters.map((char, index) => ({
+      id: `${index}-${char}`,
+      char,
+      isPlaced: false,
+    })),
+  );
+  const fallbackSentence = question.correctOrder?.join("") || undefined;
+  const { isPlaying, play } = useAudio(question.audioUrl, fallbackSentence);
   const { colors, isDark } = useTheme();
 
-  // Chỉ dựa vào việc CÓ FILE hay không. Trước đây còn xét cả chữ "nghe" trong
-  // đề bài, mà đề bài dạng này luôn là "Nghe và sắp xếp câu" — thiếu file là
-  // hiện ra một nút loa bấm vào không kêu.
-  const isListening = !!question.audioUrl;
+  // Loại câu này luôn là "Nghe và sắp xếp câu": có file thật thì phát file,
+  // không thì đọc bằng TTS từ chính các thẻ đúng — không còn trường hợp
+  // thiếu cả hai vì correctOrder luôn có nội dung.
+  const isListening = !!question.audioUrl || !!fallbackSentence;
 
   useEffect(() => {
     setArranged([]);
-    setBank(question.characters);
-    if (question.audioUrl) {
-      play();
-    }
-  }, [question]);
+    setBank(
+      question.characters.map((char, index) => ({
+        id: `${index}-${char}`,
+        char,
+        isPlaced: false,
+      })),
+    );
+    play();
+  }, [question.id]);
 
-  const selectTile = (char: string) => {
-    const newArranged = [...arranged, char];
-    setArranged(newArranged);
+  const selectTile = (item: BankItem) => {
+    if (item.isPlaced) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
-    const idx = bank.indexOf(char);
-    if (idx > -1) {
-      const newBank = [...bank];
-      newBank.splice(idx, 1);
-      setBank(newBank);
-    }
+    const next = [...arranged, { id: item.id, char: item.char }];
+    setArranged(next);
+    validate(next.map((a) => a.char));
 
-    validate(newArranged);
+    setBank((prev) =>
+      prev.map((t) => (t.id === item.id ? { ...t, isPlaced: true } : t)),
+    );
   };
 
-  const removeTile = (char: string, index: number) => {
-    const newArranged = [...arranged];
-    newArranged.splice(index, 1);
-    setArranged(newArranged);
+  const removeTile = (index: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
-    setBank([...bank, char]);
-    validate(newArranged);
+    const removedItem = arranged[index];
+    const next = arranged.filter((_, i) => i !== index);
+    setArranged(next);
+    if (removedItem) {
+      setBank((bPrev) =>
+        bPrev.map((t) =>
+          t.id === removedItem.id ? { ...t, isPlaced: false } : t,
+        ),
+      );
+    }
+    validate(next.map((a) => a.char));
   };
 
-  const validate = (currentArranged: string[]) => {
+  const validate = (currentArrangedChars: string[]) => {
     const isCorrect =
-      currentArranged.length === question.correctOrder.length &&
-      currentArranged.every((char, i) => char === question.correctOrder[i]);
-    onAnswerChange(isCorrect, currentArranged.join(""));
+      currentArrangedChars.length === question.correctOrder.length &&
+      currentArrangedChars.every(
+        (char, i) => char === question.correctOrder[i],
+      );
+    onAnswerChange(isCorrect, currentArrangedChars.join(""));
   };
 
-  const cardBg = isDark ? "rgba(255,255,255,0.05)" : colors.card;
-  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
-  const previewBorder = isDark ? "rgba(139,92,246,0.4)" : Colors.primary + "55";
-  const previewBg = isDark ? "rgba(139,92,246,0.07)" : Colors.primary + "07";
+  const cardBg = colors.cardQuiz;
+  const cardBorder = colors.cardQuizBorder;
+  const previewBorder = isDark ? Colors.primary + "66" : Colors.primary + "55";
+  const previewBg = isDark ? Colors.primary + "11" : Colors.primary + "07";
 
   return (
     <View
@@ -122,17 +148,18 @@ export function KanaQuestionCard({
             style={[
               styles.placeholderText,
               {
-                color: isDark ? "rgba(255,255,255,0.2)" : Colors.textSecondary,
+                color: colors.textSecondary,
               },
             ]}
           >
-            Chạm vào các ký tự bên dưới để sắp xếp
+            Chạm vào các từ bên dưới để sắp xếp
           </Text>
         ) : (
-          arranged.map((char, index) => (
+          arranged.map((item, index) => (
             <TouchableOpacity
-              key={`arranged-${index}`}
-              onPress={() => removeTile(char, index)}
+              key={`arranged-${item.id}-${index}`}
+              testID={`arranged-tile-${index}`}
+              onPress={() => removeTile(index)}
               activeOpacity={0.7}
             >
               <LinearGradient
@@ -142,8 +169,8 @@ export function KanaQuestionCard({
                 style={styles.tile}
               >
                 <DualText
-                  text={char}
-                  hint={question.blockRomaji?.[char]}
+                  text={item.char}
+                  hint={question.blockRomaji?.[item.char]}
                   mainStyle={styles.tileText}
                   subStyle={styles.tileSubText}
                 />
@@ -157,53 +184,66 @@ export function KanaQuestionCard({
         style={[
           styles.divider,
           {
-            backgroundColor: isDark
-              ? "rgba(255,255,255,0.08)"
-              : colors.borderSubtle,
+            backgroundColor: colors.borderSubtle,
           },
         ]}
       />
 
-      <Text
-        style={[
-          styles.label,
-          { color: isDark ? "rgba(255,255,255,0.3)" : Colors.textSecondary },
-        ]}
-      >
-        CÁC KÝ TỰ
+      <Text style={[styles.label, { color: colors.textSecondary }]}>
+        CÁC TỪ VỰNG
       </Text>
 
       {/* Bank */}
       {/* Các thẻ rời ghép lại chính là câu đáp án — khoá tra từ. */}
       <GlossaryLockdown>
         <View style={styles.bankContainer}>
-          {bank.map((char, index) => {
-            const tileTextColor = isDark ? "#F9FAFB" : Colors.textPrimary;
-            const tileSubColor = isDark
-              ? "rgba(255,255,255,0.45)"
-              : Colors.textSecondary;
+          {bank.map((item) => {
+            const tileTextColor = colors.text;
+            const tileSubColor = colors.textSecondary;
+
+            if (item.isPlaced) {
+              return (
+                <View
+                  key={`ghost-${item.id}`}
+                  testID={`ghost-tile-${item.char}`}
+                  style={[
+                    styles.bankTileGhost,
+                    {
+                      borderColor: isDark
+                        ? "rgba(255,255,255,0.18)"
+                        : "rgba(0,0,0,0.15)",
+                    },
+                  ]}
+                >
+                  <DualText
+                    text={item.char}
+                    hint={question.blockRomaji?.[item.char]}
+                    mainStyle={{ ...styles.bankTileText, opacity: 0 }}
+                    subStyle={{ ...styles.bankTileSubText, opacity: 0 }}
+                  />
+                </View>
+              );
+            }
+
             return (
               <TouchableOpacity
-                key={`bank-${index}`}
+                key={`bank-${item.id}`}
+                testID={`bank-tile-${item.char}`}
                 style={[
                   styles.bankTile,
                   {
-                    backgroundColor: isDark
-                      ? "rgba(255,255,255,0.08)"
-                      : colors.backgroundElement,
-                    borderColor: isDark
-                      ? "rgba(255,255,255,0.14)"
-                      : colors.border,
+                    backgroundColor: colors.backgroundElement,
+                    borderColor: colors.border,
                   },
                 ]}
-                onPress={() => selectTile(char)}
+                onPress={() => selectTile(item)}
                 activeOpacity={0.7}
               >
                 {/* Thẻ rời là chữ Nhật trần; không có phiên âm thì người mới
                   không đọc được thẻ nào để mà xếp thành câu. */}
                 <DualText
-                  text={char}
-                  hint={question.blockRomaji?.[char]}
+                  text={item.char}
+                  hint={question.blockRomaji?.[item.char]}
                   mainStyle={{ ...styles.bankTileText, color: tileTextColor }}
                   subStyle={{ ...styles.bankTileSubText, color: tileSubColor }}
                 />
@@ -309,6 +349,18 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     justifyContent: "center",
     alignItems: "center",
+  },
+  bankTileGhost: {
+    minWidth: 52,
+    minHeight: 52,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderRadius: BorderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
+    opacity: 0.35,
   },
   bankTileText: {
     fontSize: FontSizes.xl,

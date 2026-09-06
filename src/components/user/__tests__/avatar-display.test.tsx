@@ -39,15 +39,30 @@ describe("AvatarDisplay", () => {
     expect(getByText("🐼")).toBeTruthy();
   });
 
-  it("hiện gấu trúc ngay khi không có URL", async () => {
-    const { getByText } = await render(<AvatarDisplay />);
+  it("hiện avatar nhân vật DiceBear mặc định khi không có URL hoặc URL là Google photo", async () => {
+    const { getByTestId, queryByText } = await render(<AvatarDisplay />);
 
-    expect(getByText("🐼")).toBeTruthy();
+    expect(getByTestId("avatar-image").props.source.uri).toContain(
+      "api.dicebear.com",
+    );
+    expect(queryByText("🐼")).toBeNull();
+
+    const googleRes = await render(
+      <AvatarDisplay uri="https://lh3.googleusercontent.com/a/mock-photo" />,
+    );
+    expect(googleRes.getByTestId("avatar-image").props.source.uri).toContain(
+      "api.dicebear.com",
+    );
+    expect(googleRes.queryByText("🐼")).toBeNull();
   });
 
-  it("cho lineHeight co theo kích thước để emoji không bị cắt ở avatar nhỏ", async () => {
-    // lineHeight cứng 60 trong khung 40px đẩy emoji lệch hẳn khỏi vòng tròn.
-    const { getByText } = await render(<AvatarDisplay size={40} />);
+  it("cho lineHeight co theo kích thước để emoji không bị cắt ở avatar nhỏ khi tải hỏng", async () => {
+    // lineHeight co theo size khi rơi vào fallback lỗi tải ảnh
+    const { getByTestId, getByText } = await render(
+      <AvatarDisplay uri="/uploads/images/avatars/broken.png" size={40} />,
+    );
+
+    await fireEvent(getByTestId("avatar-image"), "error");
 
     expect(getByText("🐼")).toHaveStyle({ lineHeight: 40 });
   });

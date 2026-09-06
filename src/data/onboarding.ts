@@ -46,13 +46,13 @@ export const ONBOARDING_INTERESTS: OnboardingInterest[] = [
 export const ONBOARDING_LEVELS: OnboardingLevelOption[] = [
   {
     id: "starter",
-    title: "NGƯỜI MỚI",
-    description: "Lần đầu tiên học ngôn ngữ này",
+    title: "Tôi mới bắt đầu từ con số 0",
+    description: "Lần đầu tiên học tiếng Nhật, bắt đầu từ bảng chữ cái",
   },
   {
     id: "beginner",
-    title: "ĐÃ BIẾT MỘT CHÚT",
-    description: "Tôi đã biết một vài từ vựng",
+    title: "Tôi đã biết một chút tiếng Nhật",
+    description: "Làm bài kiểm tra đầu vào để xác định điểm xuất phát",
   },
 ];
 

@@ -2,20 +2,20 @@
 
 > **Trạng thái:** RESEARCH / PLANNING — chưa viết code tính năng.
 > **Ngày lập:** 2026-08-21
-> **Phạm vi tài liệu:** Frontend-Native (Kotodama). Phần backend chỉ mô tả *yêu cầu*, không sửa code `BE_NihongoApp`.
+> **Phạm vi tài liệu:** Frontend-Native (Kotodama). Phần backend chỉ mô tả _yêu cầu_, không sửa code `BE_NihongoApp`.
 > **Xác nhận hiện trạng repo:** `package.json` KHÔNG có SDK LLM nào (`openai`, `@anthropic-ai/sdk`, `@google/generative-ai` đều không có). `.env` chỉ có đúng một biến: `EXPO_PUBLIC_API_URL`. → Chưa có bất kỳ tích hợp LLM nào.
 
 ---
 
 ## 0. Tóm tắt điều hành (đọc cái này nếu chỉ có 2 phút)
 
-| Câu hỏi | Trả lời |
-|---|---|
-| Có nên tự train/fine-tune model không? | **KHÔNG, không phải bây giờ.** |
-| Nên làm gì cho MVP? | Gọi **LLM API hosted giá rẻ** (tier "mini/flash-lite"), **qua backend**, với system prompt + whitelist từ vựng đã học + prompt caching. |
-| Vì sao? | Ở cả 3 mốc 1k / 10k / 100k DAU, self-host GPU **đắt hơn** API rẻ (xem §2). Fine-tune còn cộng thêm 4–8 person-week và chi phí bảo trì vĩnh viễn, đổi lại chất lượng tiếng Nhật *thấp hơn* model lớn. |
-| Chi phí MVP dự kiến | ~**$54–75/tháng @ 1k DAU**, ~**$540–750/tháng @ 10k DAU** (tier rẻ nhất, có caching). |
-| Rủi ro lớn nhất | KHÔNG phải chi phí LLM. Là **backend chưa có API trả về "tập từ vựng user đã học"** — hiện `RoadmapTopicResponse` chỉ có `topicId/topicTitle/lessons[]`, không có vocab. Đây là blocker số 1. |
+| Câu hỏi                                | Trả lời                                                                                                                                                                                              |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Có nên tự train/fine-tune model không? | **KHÔNG, không phải bây giờ.**                                                                                                                                                                       |
+| Nên làm gì cho MVP?                    | Gọi **LLM API hosted giá rẻ** (tier "mini/flash-lite"), **qua backend**, với system prompt + whitelist từ vựng đã học + prompt caching.                                                              |
+| Vì sao?                                | Ở cả 3 mốc 1k / 10k / 100k DAU, self-host GPU **đắt hơn** API rẻ (xem §2). Fine-tune còn cộng thêm 4–8 person-week và chi phí bảo trì vĩnh viễn, đổi lại chất lượng tiếng Nhật _thấp hơn_ model lớn. |
+| Chi phí MVP dự kiến                    | ~**$54–75/tháng @ 1k DAU**, ~**$540–750/tháng @ 10k DAU** (tier rẻ nhất, có caching).                                                                                                                |
+| Rủi ro lớn nhất                        | KHÔNG phải chi phí LLM. Là **backend chưa có API trả về "tập từ vựng user đã học"** — hiện `RoadmapTopicResponse` chỉ có `topicId/topicTitle/lessons[]`, không có vocab. Đây là blocker số 1.        |
 
 ---
 
@@ -97,29 +97,29 @@ System prompt lắp theo thứ tự **cố định** để tối ưu prompt cach
 
 ### 2.1. Giả định tính toán (nêu rõ để kiểm chứng lại được)
 
-| Tham số | Giá trị | Ghi chú |
-|---|---|---|
-| Số lượt/hội thoại | 8 | Cap cứng, cũng là cơ chế kiểm soát chi phí |
-| System prompt + vocab pack | ~1.200 token | Khối 1+2+3 |
-| Câu user/lượt | ~25 token | |
-| Câu AI/lượt | ~80 token | Câu ngắn trình độ N5–N4 + gợi ý |
-| Lời gọi chấm điểm cuối | 1 lần, ~2.400 in / 250 out | Transcript + rubric |
-| **Tổng/hội thoại (không cache)** | **~15.100 input / ~890 output** | |
-| **Tổng/hội thoại (có cache)** | **~8.000 input hiệu dụng / ~890 output** | ~47% tiết kiệm input |
-| Tần suất | 1 hội thoại/user/ngày hoạt động | |
-| Quy đổi tháng | DAU × 30 hội thoại | 1k → 30K, 10k → 300K, 100k → 3M |
+| Tham số                          | Giá trị                                  | Ghi chú                                    |
+| -------------------------------- | ---------------------------------------- | ------------------------------------------ |
+| Số lượt/hội thoại                | 8                                        | Cap cứng, cũng là cơ chế kiểm soát chi phí |
+| System prompt + vocab pack       | ~1.200 token                             | Khối 1+2+3                                 |
+| Câu user/lượt                    | ~25 token                                |                                            |
+| Câu AI/lượt                      | ~80 token                                | Câu ngắn trình độ N5–N4 + gợi ý            |
+| Lời gọi chấm điểm cuối           | 1 lần, ~2.400 in / 250 out               | Transcript + rubric                        |
+| **Tổng/hội thoại (không cache)** | **~15.100 input / ~890 output**          |                                            |
+| **Tổng/hội thoại (có cache)**    | **~8.000 input hiệu dụng / ~890 output** | ~47% tiết kiệm input                       |
+| Tần suất                         | 1 hội thoại/user/ngày hoạt động          |                                            |
+| Quy đổi tháng                    | DAU × 30 hội thoại                       | 1k → 30K, 10k → 300K, 100k → 3M            |
 
 ### 2.2. Phương án (a) — Gọi LLM API hosted giá rẻ + prompt caching
 
 Chi phí/hội thoại (đã áp caching):
 
-| Model | Giá in/out ($/1M tok) | $/hội thoại | 1k DAU | 10k DAU | 100k DAU |
-|---|---|---|---|---|---|
-| GPT-4o-mini | $0.15 / $0.60 *(cached in $0.075)* | **~$0,0018** | **~$54/th** | **~$540/th** | **~$5.400/th** |
-| Gemini 2.5 Flash-Lite ⚠️ | $0.10 / $0.40 | ~$0,0016 | ~$48/th | ~$480/th | ~$4.800/th |
-| Gemini 3.5 Flash-Lite | $0.15 / $1.25 | ~$0,0025 | ~$75/th | ~$750/th | ~$7.500/th |
-| Gemini 3.7 Flash | $0.38 / $1.88 ⚠️ intro | ~$0,0060 | ~$180/th | ~$1.800/th | ~$18.000/th |
-| Claude Haiku 4.5 | $1.00 / $5.00 *(cache read ~0,1×)* | ~$0,0125 | ~$390/th | ~$3.900/th | ~$39.000/th |
+| Model                    | Giá in/out ($/1M tok)              | $/hội thoại  | 1k DAU      | 10k DAU      | 100k DAU       |
+| ------------------------ | ---------------------------------- | ------------ | ----------- | ------------ | -------------- |
+| GPT-4o-mini              | $0.15 / $0.60 _(cached in $0.075)_ | **~$0,0018** | **~$54/th** | **~$540/th** | **~$5.400/th** |
+| Gemini 2.5 Flash-Lite ⚠️ | $0.10 / $0.40                      | ~$0,0016     | ~$48/th     | ~$480/th     | ~$4.800/th     |
+| Gemini 3.5 Flash-Lite    | $0.15 / $1.25                      | ~$0,0025     | ~$75/th     | ~$750/th     | ~$7.500/th     |
+| Gemini 3.7 Flash         | $0.38 / $1.88 ⚠️ intro             | ~$0,0060     | ~$180/th    | ~$1.800/th   | ~$18.000/th    |
+| Claude Haiku 4.5         | $1.00 / $5.00 _(cache read ~0,1×)_ | ~$0,0125     | ~$390/th    | ~$3.900/th   | ~$39.000/th    |
 
 ⚠️ **Cảnh báo giá — PHẢI kiểm tra lại trước khi quyết:**
 
@@ -143,11 +143,11 @@ Giá thuê GPU **[uncertain — cần check lại trên RunPod/Vast.ai/Lambda]**
 - A100 spot: **~$0,60/giờ** (bị preempt — không dùng cho production interactive)
 - H100: $1,49–$6,98/giờ tuỳ provider — **không cần thiết cho model 7B**
 
-| Quy mô | Hội thoại/tháng | Số GPU cần (kèm HA + peak headroom) | Chi phí GPU on-demand @$1,50/h | $/hội thoại |
-|---|---|---|---|---|
-| 1k DAU | 30.000 | 2 (1 chạy + 1 dự phòng — vẫn phải bật 24/7) | **~$2.160/th** | ~$0,072 |
-| 10k DAU | 300.000 | 2 | **~$2.160/th** | ~$0,0072 |
-| 100k DAU | 3.000.000 | 9–10 | **~$9.700–10.800/th** | ~$0,0036 |
+| Quy mô   | Hội thoại/tháng | Số GPU cần (kèm HA + peak headroom)         | Chi phí GPU on-demand @$1,50/h | $/hội thoại |
+| -------- | --------------- | ------------------------------------------- | ------------------------------ | ----------- |
+| 1k DAU   | 30.000          | 2 (1 chạy + 1 dự phòng — vẫn phải bật 24/7) | **~$2.160/th**                 | ~$0,072     |
+| 10k DAU  | 300.000         | 2                                           | **~$2.160/th**                 | ~$0,0072    |
+| 100k DAU | 3.000.000       | 9–10                                        | **~$9.700–10.800/th**          | ~$0,0036    |
 
 **Kết luận quan trọng:** ở **cả 3 mốc**, self-host **đắt hơn** phương án (a) với model tier mini ($54 / $540 / $5.400). Ở 1k DAU nó đắt hơn **~40 lần**. Lý do: GPU phải bật 24/7 kể cả khi không ai dùng, còn API tính theo token thực dùng.
 Chỉ khi dùng spot GPU ($0,60/h → ~$4.320/th @100k DAU) thì (b) mới rẻ hơn (a) — đánh đổi bằng preemption và độ phức tạp vận hành.
@@ -160,13 +160,13 @@ Chỉ khi dùng spot GPU ($0,60/h → ~$4.320/th @100k DAU) thì (b) mới rẻ 
 
 Chi phí = **toàn bộ chi phí (b)** + các khoản dưới:
 
-| Hạng mục | Ước tính | Ghi chú |
-|---|---|---|
-| Sinh dữ liệu synthetic | **~$225–700** một lần | 30K hội thoại mẫu × ~1.500 output token = 45M token, sinh bằng model mạnh |
-| Compute train LoRA | **~$10–40/lần chạy** | 7B + LoRA, 3 epoch, ~8–20 GPU-giờ trên 1×A100 — **rẻ bất ngờ, không phải rào cản** |
-| **Review chất lượng bởi người** | **4–8 person-week** | ⬅️ **ĐÂY MỚI LÀ CHI PHÍ THẬT.** Cần người trình độ N2+ soát dữ liệu synthetic; dữ liệu train sai = model dạy sai vĩnh viễn |
-| Hạ tầng eval | 1–2 person-week | Không có eval thì không biết fine-tune có tốt hơn hay không |
-| Re-train khi đổi giáo trình | 1–3 ngày/lần, lặp lại mãi | Thêm topic mới → phải train lại, hoặc chấp nhận model tụt hậu |
+| Hạng mục                        | Ước tính                  | Ghi chú                                                                                                                    |
+| ------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Sinh dữ liệu synthetic          | **~$225–700** một lần     | 30K hội thoại mẫu × ~1.500 output token = 45M token, sinh bằng model mạnh                                                  |
+| Compute train LoRA              | **~$10–40/lần chạy**      | 7B + LoRA, 3 epoch, ~8–20 GPU-giờ trên 1×A100 — **rẻ bất ngờ, không phải rào cản**                                         |
+| **Review chất lượng bởi người** | **4–8 person-week**       | ⬅️ **ĐÂY MỚI LÀ CHI PHÍ THẬT.** Cần người trình độ N2+ soát dữ liệu synthetic; dữ liệu train sai = model dạy sai vĩnh viễn |
+| Hạ tầng eval                    | 1–2 person-week           | Không có eval thì không biết fine-tune có tốt hơn hay không                                                                |
+| Re-train khi đổi giáo trình     | 1–3 ngày/lần, lặp lại mãi | Thêm topic mới → phải train lại, hoặc chấp nhận model tụt hậu                                                              |
 
 **Tổng đầu tư giai đoạn đầu: ~$500–1.500 compute + 6–12 person-week người.** Và chi phí runtime **vẫn bằng (b)**, tức vẫn đắt hơn (a).
 
@@ -176,21 +176,21 @@ Chi phí = **toàn bộ chi phí (b)** + các khoản dưới:
 
 ### 3.1. Yêu cầu hạ tầng thực tế
 
-| Việc | Yêu cầu |
-|---|---|
-| LoRA fine-tune model 7–8B | 1× A100 80GB (hoặc 1× H100), ~8–20 giờ. **Khả thi về mặt kỹ thuật.** |
-| Full fine-tune 7B | 4–8× A100, hàng trăm GPU-giờ. **Không cần thiết** — LoRA đủ để ép phong cách/phạm vi. |
-| Dữ liệu cần | ~20.000–50.000 cặp hội thoại có gắn nhãn topic + vocab constraint. Sinh synthetic được, **nhưng phải review**. |
-| Serving | vLLM + autoscaler + health check + fallback provider. Ít nhất 2 GPU cho HA. |
-| Nhân sự | 1 ML engineer (không phải "dev kiêm nhiệm"). |
+| Việc                      | Yêu cầu                                                                                                        |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| LoRA fine-tune model 7–8B | 1× A100 80GB (hoặc 1× H100), ~8–20 giờ. **Khả thi về mặt kỹ thuật.**                                           |
+| Full fine-tune 7B         | 4–8× A100, hàng trăm GPU-giờ. **Không cần thiết** — LoRA đủ để ép phong cách/phạm vi.                          |
+| Dữ liệu cần               | ~20.000–50.000 cặp hội thoại có gắn nhãn topic + vocab constraint. Sinh synthetic được, **nhưng phải review**. |
+| Serving                   | vLLM + autoscaler + health check + fallback provider. Ít nhất 2 GPU cho HA.                                    |
+| Nhân sự                   | 1 ML engineer (không phải "dev kiêm nhiệm").                                                                   |
 
 ### 3.2. Rủi ro
 
-1. **Chất lượng thấp hơn, và sai theo cách khó phát hiện.** Model 7B fine-tune sẽ *trôi chảy* nhưng có thể sai ngữ pháp tinh vi. Với app dạy học, đây là loại lỗi tệ nhất — user tin tưởng và học sai theo.
+1. **Chất lượng thấp hơn, và sai theo cách khó phát hiện.** Model 7B fine-tune sẽ _trôi chảy_ nhưng có thể sai ngữ pháp tinh vi. Với app dạy học, đây là loại lỗi tệ nhất — user tin tưởng và học sai theo.
 2. **Vòng lặp tự nhiễm (self-poisoning).** Dữ liệu synthetic sinh từ model lớn kế thừa cả lỗi của model lớn, rồi được nhân bản 30.000 lần.
 3. **Gánh nặng bảo trì vĩnh viễn.** Mỗi lần thêm topic/đổi giáo trình → train lại. Model hosted thì chỉ cần sửa prompt (5 phút).
 4. **Chi phí cơ hội.** 6–12 person-week đổ vào fine-tune là 6–12 person-week KHÔNG dùng để làm voice, spaced repetition, hay sửa bug. Ở giai đoạn tính năng chưa có user, đây là đánh đổi rất tệ.
-5. **Fine-tune không giải quyết được vấn đề bạn nghĩ nó giải quyết.** Ràng buộc "chỉ dùng từ đã học" **thay đổi theo từng user, từng ngày**. Đó là bài toán *runtime constraint*, không phải *model weights*. Fine-tune không thể encode "user #4821 đã học 137 từ tính đến hôm nay". Việc đó bắt buộc phải làm bằng prompt + validate deterministic — **và nếu đã phải làm rồi thì phần lớn lợi ích của fine-tune biến mất.** Đây là lý do kỹ thuật mạnh nhất để không fine-tune.
+5. **Fine-tune không giải quyết được vấn đề bạn nghĩ nó giải quyết.** Ràng buộc "chỉ dùng từ đã học" **thay đổi theo từng user, từng ngày**. Đó là bài toán _runtime constraint_, không phải _model weights_. Fine-tune không thể encode "user #4821 đã học 137 từ tính đến hôm nay". Việc đó bắt buộc phải làm bằng prompt + validate deterministic — **và nếu đã phải làm rồi thì phần lớn lợi ích của fine-tune biến mất.** Đây là lý do kỹ thuật mạnh nhất để không fine-tune.
 
 ### 3.3. Khi nào tự train THỰC SỰ đáng làm
 
@@ -222,19 +222,19 @@ Thiếu bất kỳ mục nào → tiếp tục prompt-constrain model có sẵn.
 
 ### 4.2. Cơ chế kiểm soát chi phí (thiết kế NGAY từ MVP, không để sau)
 
-| # | Cơ chế | Tiết kiệm ước tính |
-|---|---|---|
-| 1 | **Cap 8 lượt/hội thoại** (server-enforce, không tin client) | Chặn trên cứng cho chi phí xấu nhất/session |
-| 2 | **`max_tokens` = 120/lượt** | Chặn đuôi output dài bất thường (output đắt gấp 4–8× input) |
-| 3 | **Prompt caching, khối tĩnh đặt trước khối cá nhân hoá** | ~45–50% chi phí input |
-| 4 | **Câu mở đầu + 3 chip gợi ý soạn sẵn lúc tạo nội dung**, lưu DB | Bỏ hẳn 1 lời gọi LLM/session; chip gợi ý là nội dung tĩnh theo topic, không cần sinh runtime |
-| 5 | **Chấm điểm 1 lần ở cuối**, KHÔNG chấm từng lượt | Tiết kiệm ~7 lời gọi/session (~60% tổng chi phí nếu làm sai) |
-| 6 | **Pre-filter từ ngoài whitelist bằng code, không bằng LLM** | Phần lớn feedback "từ chưa học" là $0 |
-| 7 | **Rate limit qua hệ thống Energy có sẵn** + hard cap 3 session/user/ngày | Chặn abuse; tái dùng gamification đã có |
-| 8 | **Cache câu trả lời cho input phổ biến** (hash của `topicId + turnIndex + normalized user text`) | Người mới học gõ những câu giống hệt nhau (`はい`, `わかりません`, `おげんきですか`). Hit rate thực tế có thể 15–30% ở các lượt đầu |
-| 9 | **Model rẻ hơn cho phần chấm điểm/feedback** — chấm điểm là classification có rubric, không cần model mạnh | 20–30% chi phí phần feedback |
-| 10 | **Log `input_tokens` / `output_tokens` / `cache_read` cho MỌI request từ ngày 1** | Không đo được thì không tối ưu được. Đây là mục quan trọng nhất trong bảng. |
-| 11 | Cân nhắc **Batch API (giảm 50%)** nếu chấp nhận feedback trả về sau vài phút | 50% phần chấm điểm — nhưng đánh đổi UX, chỉ làm nếu đo thấy chi phí thật sự đau |
+| #   | Cơ chế                                                                                                     | Tiết kiệm ước tính                                                                                                                  |
+| --- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Cap 8 lượt/hội thoại** (server-enforce, không tin client)                                                | Chặn trên cứng cho chi phí xấu nhất/session                                                                                         |
+| 2   | **`max_tokens` = 120/lượt**                                                                                | Chặn đuôi output dài bất thường (output đắt gấp 4–8× input)                                                                         |
+| 3   | **Prompt caching, khối tĩnh đặt trước khối cá nhân hoá**                                                   | ~45–50% chi phí input                                                                                                               |
+| 4   | **Câu mở đầu + 3 chip gợi ý soạn sẵn lúc tạo nội dung**, lưu DB                                            | Bỏ hẳn 1 lời gọi LLM/session; chip gợi ý là nội dung tĩnh theo topic, không cần sinh runtime                                        |
+| 5   | **Chấm điểm 1 lần ở cuối**, KHÔNG chấm từng lượt                                                           | Tiết kiệm ~7 lời gọi/session (~60% tổng chi phí nếu làm sai)                                                                        |
+| 6   | **Pre-filter từ ngoài whitelist bằng code, không bằng LLM**                                                | Phần lớn feedback "từ chưa học" là $0                                                                                               |
+| 7   | **Rate limit qua hệ thống Energy có sẵn** + hard cap 3 session/user/ngày                                   | Chặn abuse; tái dùng gamification đã có                                                                                             |
+| 8   | **Cache câu trả lời cho input phổ biến** (hash của `topicId + turnIndex + normalized user text`)           | Người mới học gõ những câu giống hệt nhau (`はい`, `わかりません`, `おげんきですか`). Hit rate thực tế có thể 15–30% ở các lượt đầu |
+| 9   | **Model rẻ hơn cho phần chấm điểm/feedback** — chấm điểm là classification có rubric, không cần model mạnh | 20–30% chi phí phần feedback                                                                                                        |
+| 10  | **Log `input_tokens` / `output_tokens` / `cache_read` cho MỌI request từ ngày 1**                          | Không đo được thì không tối ưu được. Đây là mục quan trọng nhất trong bảng.                                                         |
+| 11  | Cân nhắc **Batch API (giảm 50%)** nếu chấp nhận feedback trả về sau vài phút                               | 50% phần chấm điểm — nhưng đánh đổi UX, chỉ làm nếu đo thấy chi phí thật sự đau                                                     |
 
 ### 4.3. Quyết định còn để ngỏ — cần chọn (xem §7)
 
@@ -255,20 +255,20 @@ Chọn provider nào trong phương án (a). Chênh lệch tới **~7×** giữa
 
 ### 5.1. Frontend (`Frontend-Native`)
 
-| Thư mục | File dự kiến | Ghi chú |
-|---|---|---|
-| `src/types/` | `roleplay.ts` (mới) + export trong `index.ts` | `RoleplaySession`, `RoleplayTurn`, `RoleplayCharacter`, `RoleplayFeedback` |
-| `src/types/` | `lesson.ts` (sửa nhỏ) | Thêm `"roleplay"` vào `LearningPathNode["nodeType"]` |
-| `src/types/` | `api.ts` (thêm DTO) | `StartRoleplayResponse`, `RoleplayTurnRequest/Response`, `FinishRoleplayResponse` |
-| `src/services/api/` | `roleplay.ts` (mới) | Theo đúng pattern của `lessons.ts` / `roadmap.ts` |
-| `src/services/api/` | `endpoints.ts` (thêm khối `ROLEPLAY`) | `START` / `TURN` / `FINISH` |
-| `src/hooks/` | `use-roleplay-session.ts` (mới) | Quản lý state lượt, optimistic UI, retry, hoàn energy khi lỗi |
-| `src/components/roleplay/` | `chat-bubble.tsx`, `character-header.tsx`, `typing-indicator.tsx`, `suggested-replies.tsx`, `turn-counter.tsx`, `vocab-warning.tsx`, `feedback-card.tsx`, `index.ts` | Mỗi component 1 file, theo quy tắc dự án |
-| `src/components/lessons/` | sửa component render node roadmap | Thêm nhánh cho `lessonType === "ROLEPLAY"` |
-| `src/app/lesson/roleplay/` | `[id].tsx`, `_layout.tsx` | **Screen mỏng** — chỉ compose component + điều hướng |
-| `src/data/` | `roleplay.ts` (mock) | Để dev FE song song trước khi BE xong |
-| `src/locales/` | thêm chuỗi i18n | |
-| `src/app/lesson/roleplay/__tests__/` | test tích hợp | **Bắt buộc theo AGENTS.md**: `@testing-library/react-native`, mock API, `fireEvent.changeText` + `fireEvent.press`, assert bong bóng chat và card kết quả |
+| Thư mục                              | File dự kiến                                                                                                                                                         | Ghi chú                                                                                                                                                   |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/types/`                         | `roleplay.ts` (mới) + export trong `index.ts`                                                                                                                        | `RoleplaySession`, `RoleplayTurn`, `RoleplayCharacter`, `RoleplayFeedback`                                                                                |
+| `src/types/`                         | `lesson.ts` (sửa nhỏ)                                                                                                                                                | Thêm `"roleplay"` vào `LearningPathNode["nodeType"]`                                                                                                      |
+| `src/types/`                         | `api.ts` (thêm DTO)                                                                                                                                                  | `StartRoleplayResponse`, `RoleplayTurnRequest/Response`, `FinishRoleplayResponse`                                                                         |
+| `src/services/api/`                  | `roleplay.ts` (mới)                                                                                                                                                  | Theo đúng pattern của `lessons.ts` / `roadmap.ts`                                                                                                         |
+| `src/services/api/`                  | `endpoints.ts` (thêm khối `ROLEPLAY`)                                                                                                                                | `START` / `TURN` / `FINISH`                                                                                                                               |
+| `src/hooks/`                         | `use-roleplay-session.ts` (mới)                                                                                                                                      | Quản lý state lượt, optimistic UI, retry, hoàn energy khi lỗi                                                                                             |
+| `src/components/roleplay/`           | `chat-bubble.tsx`, `character-header.tsx`, `typing-indicator.tsx`, `suggested-replies.tsx`, `turn-counter.tsx`, `vocab-warning.tsx`, `feedback-card.tsx`, `index.ts` | Mỗi component 1 file, theo quy tắc dự án                                                                                                                  |
+| `src/components/lessons/`            | sửa component render node roadmap                                                                                                                                    | Thêm nhánh cho `lessonType === "ROLEPLAY"`                                                                                                                |
+| `src/app/lesson/roleplay/`           | `[id].tsx`, `_layout.tsx`                                                                                                                                            | **Screen mỏng** — chỉ compose component + điều hướng                                                                                                      |
+| `src/data/`                          | `roleplay.ts` (mock)                                                                                                                                                 | Để dev FE song song trước khi BE xong                                                                                                                     |
+| `src/locales/`                       | thêm chuỗi i18n                                                                                                                                                      |                                                                                                                                                           |
+| `src/app/lesson/roleplay/__tests__/` | test tích hợp                                                                                                                                                        | **Bắt buộc theo AGENTS.md**: `@testing-library/react-native`, mock API, `fireEvent.changeText` + `fireEvent.press`, assert bong bóng chat và card kết quả |
 
 **Không cần dependency mới** cho MVP text-only — `axios` đã có, `FlatList` đủ để render chat.
 **Lưu ý kỹ thuật:** MVP nên dùng **response thường, không streaming**. Câu trả lời chỉ ~80 token (dưới 1 giây), còn streaming SSE trên React Native cần thêm thư viện và xử lý phức tạp. Không đáng ở giai đoạn này.

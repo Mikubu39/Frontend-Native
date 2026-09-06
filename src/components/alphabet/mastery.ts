@@ -28,13 +28,13 @@ const MASTERY_PALETTES: MasteryPalette[] = [
   },
   {
     border: Colors.accentLight,
-    fill: "rgba(255, 202, 40, 0.22)",
+    fill: "rgba(217, 172, 92, 0.22)",
     accent: Colors.accentLight,
     label: "Đang nhớ",
   },
   {
     border: Colors.accent,
-    fill: "rgba(255, 184, 0, 0.28)",
+    fill: "rgba(196, 146, 46, 0.28)",
     accent: Colors.accent,
     label: "Thành thạo",
   },

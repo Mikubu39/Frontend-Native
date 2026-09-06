@@ -36,6 +36,7 @@ interface GradientButtonProps {
   customColors?: [string, string];
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  testID?: string;
 }
 
 export function GradientButton({
@@ -49,15 +50,18 @@ export function GradientButton({
   customColors,
   accessibilityLabel,
   accessibilityHint,
+  testID,
 }: GradientButtonProps) {
   if (variant === "outline") {
     return (
       <AnimatedPressable
+        testID={testID}
         style={[styles.outlineButton, disabled && styles.disabled, style]}
         onPress={onPress}
         disabled={disabled || loading}
         pressScale={0.96}
         accessibilityRole="button"
+
         accessibilityLabel={accessibilityLabel || title}
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled: disabled || loading, busy: loading }}
@@ -81,12 +85,14 @@ export function GradientButton({
 
   return (
     <AnimatedPressable
+      testID={testID}
       onPress={onPress}
       disabled={disabled || loading}
       pressScale={0.96}
       style={[disabled && styles.disabled, style]}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || title}
+
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
     >
@@ -94,9 +100,12 @@ export function GradientButton({
         colors={gradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.gradient, Shadows.glow(gradientColors[0])]}
+        style={[
+          styles.gradient,
+          !disabled && Shadows.glow(gradientColors[0]),
+        ]}
       >
-        <View style={styles.glassmorphismSheen} />
+        <View style={styles.topHighlight} />
         {loading ? (
           <ActivityIndicator color={Colors.textOnDark} />
         ) : (
@@ -117,14 +126,16 @@ const styles = StyleSheet.create({
     minHeight: 54,
     overflow: "hidden",
   },
-  glassmorphismSheen: {
-    ...StyleSheet.absoluteFillObject,
+  // A single soft highlight along the top edge — reads as lacquered
+  // material catching light, not a diagonal glass-panel overlay.
+  topHighlight: {
+    position: "absolute",
+    top: 0,
+    left: Spacing.four,
+    right: Spacing.four,
+    height: 1.5,
     borderRadius: BorderRadius.full,
-    borderWidth: 1.5,
-    borderTopColor: "rgba(255, 255, 255, 0.6)",
-    borderLeftColor: "rgba(255, 255, 255, 0.3)",
-    borderRightColor: "rgba(255, 255, 255, 0.1)",
-    borderBottomColor: "rgba(0, 0, 0, 0.15)",
+    backgroundColor: "rgba(255, 255, 255, 0.35)",
   },
   gradientText: {
     color: Colors.textOnDark,

@@ -1,13 +1,9 @@
-/**
- * LeaderboardPodium - Elevated top-3 display shown above the ranked list.
- */
-
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import { LeaderboardUserDto } from "@/types/api";
 import { LeaderboardAvatar } from "./leaderboard-avatar";
+import { LeaderboardTrophy } from "./leaderboard-trophy";
 import {
   BorderRadius,
   FontSizes,
@@ -21,26 +17,34 @@ interface TierStyle {
   ring: string;
   platformHeight: number;
   avatarSize: number;
+  trophySize: number;
+  badgeColor: string;
 }
 
 const TIER_STYLES: Record<1 | 2 | 3, TierStyle> = {
   1: {
-    gradient: ["#FFD966", "#F5A623"],
-    ring: "#F5A623",
-    platformHeight: 92,
-    avatarSize: 76,
+    gradient: ["#FBBF24", "#D97706"],
+    ring: "#F59E0B",
+    platformHeight: 64,
+    avatarSize: 68,
+    trophySize: 28,
+    badgeColor: "#F59E0B",
   },
   2: {
-    gradient: ["#E3E8F0", "#B7C0D1"],
-    ring: "#AEB8C9",
-    platformHeight: 66,
-    avatarSize: 60,
+    gradient: ["#CBD5E1", "#64748B"],
+    ring: "#94A3B8",
+    platformHeight: 46,
+    avatarSize: 56,
+    trophySize: 24,
+    badgeColor: "#94A3B8",
   },
   3: {
-    gradient: ["#F0BE94", "#D89159"],
-    ring: "#CC8A57",
-    platformHeight: 52,
-    avatarSize: 60,
+    gradient: ["#FDBA74", "#C2410C"],
+    ring: "#CD7F32",
+    platformHeight: 36,
+    avatarSize: 56,
+    trophySize: 24,
+    badgeColor: "#CD7F32",
   },
 };
 
@@ -69,28 +73,45 @@ function PodiumSlot({
 
   return (
     <View style={styles.slot}>
-      {place === 1 && (
-        <Ionicons
-          name="trophy"
-          size={22}
-          color="#F5A623"
-          style={styles.crown}
+      {/* Avatar with attached trophy medal */}
+      <View style={styles.avatarWrap}>
+        <LeaderboardAvatar
+          displayName={user.displayName}
+          avatarUrl={user.avatarUrl}
+          userId={user.userId}
+          size={tier.avatarSize}
+          ringColor={tier.ring}
+          ringWidth={2.5}
         />
-      )}
-      <LeaderboardAvatar
-        displayName={user.displayName}
-        avatarUrl={user.avatarUrl}
-        userId={user.userId}
-        size={tier.avatarSize}
-        ringColor={tier.ring}
-        ringWidth={3}
-      />
-      <Text style={[styles.slotName, { color: textOnCard }]} numberOfLines={1}>
+        <View style={[styles.trophyBadge, { top: -6, right: -6 }]}>
+          <LeaderboardTrophy podiumPlace={place} size={tier.trophySize} />
+        </View>
+      </View>
+
+      {/* User Name */}
+      <Text
+        style={[
+          styles.slotName,
+          {
+            color: isCurrentUser ? tier.badgeColor : textOnCard,
+            fontWeight: isCurrentUser
+              ? FontWeights.extrabold
+              : FontWeights.bold,
+          },
+        ]}
+        numberOfLines={1}
+      >
         {isCurrentUser ? "Bạn" : user.displayName}
       </Text>
-      <Text style={[styles.slotExp, { color: textOnCardSecondary }]}>
-        {formatExp(displayExp)} EXP
-      </Text>
+
+      {/* EXP */}
+      <View style={styles.expPill}>
+        <Text style={[styles.slotExp, { color: textOnCardSecondary }]}>
+          {formatExp(displayExp)} EXP
+        </Text>
+      </View>
+
+      {/* Slim 3D Platform */}
       <LinearGradient
         colors={tier.gradient}
         start={{ x: 0, y: 0 }}
@@ -166,39 +187,49 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "center",
     gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: Spacing.two,
   },
   slot: {
     flex: 1,
-    maxWidth: 120,
+    maxWidth: 110,
     alignItems: "center",
   },
-  crown: {
-    marginBottom: Spacing.one,
+  avatarWrap: {
+    position: "relative",
+    marginBottom: 4,
+  },
+  trophyBadge: {
+    position: "absolute",
+    ...Shadows.sm,
   },
   slotName: {
-    marginTop: Spacing.two,
+    marginTop: 4,
     fontSize: FontSizes.sm,
-    fontWeight: FontWeights.bold,
+    textAlign: "center",
     maxWidth: "100%",
   },
-  slotExp: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.semibold,
+  expPill: {
     marginTop: 2,
-    marginBottom: Spacing.three,
+    marginBottom: 8,
+  },
+  slotExp: {
+    fontSize: 11,
+    fontWeight: FontWeights.bold,
   },
   platform: {
     width: "100%",
-    borderTopLeftRadius: BorderRadius.md,
-    borderTopRightRadius: BorderRadius.md,
+    borderTopLeftRadius: BorderRadius.lg,
+    borderTopRightRadius: BorderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
     ...Shadows.sm,
   },
   platformRank: {
-    fontSize: FontSizes.xxl,
+    fontSize: FontSizes.lg,
     fontWeight: FontWeights.extrabold,
-    color: "rgba(0,0,0,0.35)",
+    color: "#FFFFFF",
+    textShadowColor: "rgba(0, 0, 0, 0.25)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });

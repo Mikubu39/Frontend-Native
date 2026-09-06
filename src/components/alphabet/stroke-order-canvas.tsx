@@ -148,13 +148,17 @@ export function StrokeOrderCanvas({
     }
   };
 
+  const hasDrawn = freePaths.length > 0 || drawing.length > 0;
+
   const finishFreeDrawing = () => {
-    if (completedRef.current) return;
+    if (completedRef.current || !hasDrawn) return;
     completedRef.current = true;
     onComplete(true);
   };
 
-  const strokeWidth = viewBoxSize * 0.07;
+  const isCompound = symbol.length > 1;
+  const strokeWidth = viewBoxSize * (isCompound ? 0.045 : 0.07);
+  const ghostFontSize = Math.round(size * (isCompound ? 0.36 : 0.55));
   const target = sampledStrokes[strokeIndex];
   const canvasBackground = isDark ? "#232338" : Colors.cream;
 
@@ -300,7 +304,12 @@ export function StrokeOrderCanvas({
         </Svg>
 
         {!hasGuide && (
-          <Text style={styles.ghostSymbol} pointerEvents="none">
+          <Text
+            style={[styles.ghostSymbol, { fontSize: ghostFontSize }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            pointerEvents="none"
+          >
             {symbol}
           </Text>
         )}
@@ -337,11 +346,19 @@ export function StrokeOrderCanvas({
         {!hasGuide && (
           <AnimatedPressable
             onPress={finishFreeDrawing}
+            disabled={!hasDrawn}
             pressScale={0.94}
-            style={styles.primaryAction}
+            style={[styles.primaryAction, !hasDrawn && styles.actionDisabled]}
             accessibilityLabel="Xác nhận đã viết xong"
           >
-            <Text style={styles.primaryText}>Tôi đã viết xong</Text>
+            <Text
+              style={[
+                styles.primaryText,
+                !hasDrawn && styles.actionDisabledText,
+              ]}
+            >
+              Tôi đã viết xong
+            </Text>
           </AnimatedPressable>
         )}
       </View>
@@ -385,9 +402,9 @@ const styles = StyleSheet.create({
   },
   ghostSymbol: {
     position: "absolute",
-    fontSize: 160,
-    color: "rgba(139, 92, 246, 0.12)",
+    color: "rgba(59, 76, 130, 0.12)",
     fontWeight: FontWeights.extrabold,
+    textAlign: "center",
   },
   feedbackBox: {
     flexDirection: "row",
@@ -432,5 +449,11 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.extrabold,
+  },
+  actionDisabled: {
+    opacity: 0.45,
+  },
+  actionDisabledText: {
+    opacity: 0.8,
   },
 });

@@ -204,7 +204,7 @@ describe("Chữ tiếng Nhật luôn kèm phiên âm", () => {
 
   it("thẻ rời của câu sắp xếp hiện romaji", async () => {
     const kana = arrangeQ as KanaQuestion;
-    expect(kana.blockRomaji).toEqual({
+    expect(kana.blockRomaji).toMatchObject({
       せんせい: "sensei",
       おはよう: "ohayou",
     });

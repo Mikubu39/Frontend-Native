@@ -154,22 +154,22 @@ Không test nào gọi Gemini thật: `llm.generate_json` bị thay bằng `monk
 Tất cả đều phi trạng thái. `topicId` là một trong `restaurant`, `directions`,
 `shopping`, `self_intro`, hoặc `custom` (kèm `customTopic`).
 
-| Method | Đường dẫn | Việc |
-|---|---|---|
-| `GET` | `/health` | trạng thái + model đang dùng |
-| `GET` | `/api/v1/conversation/topics` | danh mục chủ đề dựng sẵn |
-| `POST` | `/api/v1/conversation/start` | câu chào mở màn + gợi ý + độ dài phiên |
-| `POST` | `/api/v1/conversation/respond` | một lượt: lời đáp + gợi ý + góp ý lỗi |
-| `POST` | `/api/v1/conversation/summary` | bản tổng kết cuối phiên |
+| Method | Đường dẫn                      | Việc                                   |
+| ------ | ------------------------------ | -------------------------------------- |
+| `GET`  | `/health`                      | trạng thái + model đang dùng           |
+| `GET`  | `/api/v1/conversation/topics`  | danh mục chủ đề dựng sẵn               |
+| `POST` | `/api/v1/conversation/start`   | câu chào mở màn + gợi ý + độ dài phiên |
+| `POST` | `/api/v1/conversation/respond` | một lượt: lời đáp + gợi ý + góp ý lỗi  |
+| `POST` | `/api/v1/conversation/summary` | bản tổng kết cuối phiên                |
 
 Mã lỗi:
 
-| Mã | Nghĩa |
-|---|---|
+| Mã    | Nghĩa                                                                                  |
+| ----- | -------------------------------------------------------------------------------------- |
 | `400` | đầu vào không hợp lệ (câu rỗng, chủ đề tự nhập bỏ trống, chưa có lượt nào để tổng kết) |
-| `404` | không có chủ đề đó |
-| `502` | Gemini lỗi / quá tải / hết quota — `detail` đã là câu tiếng Việt hiển thị được |
-| `503` | server chưa cấu hình `GEMINI_API_KEY` |
+| `404` | không có chủ đề đó                                                                     |
+| `502` | Gemini lỗi / quá tải / hết quota — `detail` đã là câu tiếng Việt hiển thị được         |
+| `503` | server chưa cấu hình `GEMINI_API_KEY`                                                  |
 
 ---
 

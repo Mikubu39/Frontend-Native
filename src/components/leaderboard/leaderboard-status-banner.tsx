@@ -1,20 +1,19 @@
-/**
- * LeaderboardStatusBanner - Header card showing the active rank and the
- * current user's standing within it.
- */
-
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import {
   BorderRadius,
-  Colors,
   FontSizes,
   FontWeights,
   Shadows,
   Spacing,
 } from "@/constants/theme";
+import {
+  LeaderboardTrophy,
+  LEAGUE_THEMES,
+  normalizeRankKey,
+} from "./leaderboard-trophy";
 
 interface LeaderboardStatusBannerProps {
   rankName: string;
@@ -35,29 +34,39 @@ export function LeaderboardStatusBanner({
   exp,
   message,
 }: LeaderboardStatusBannerProps) {
+  const leagueKey = normalizeRankKey(rankName);
+  const theme = LEAGUE_THEMES[leagueKey];
+
   return (
     <LinearGradient
-      colors={[Colors.primary, Colors.primaryDark]}
+      colors={theme.gradient}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.banner}
     >
-      <View style={styles.badge}>
-        <Ionicons name="trophy" size={30} color="#FFFFFF" />
-      </View>
-      <Text style={styles.rankName}>Hạng {rankName}</Text>
+      <View style={styles.contentRow}>
+        {/* Cartoon Trophy */}
+        <View style={styles.trophyWrapper}>
+          <LeaderboardTrophy rankName={rankName} size={64} />
+        </View>
 
-      <View style={styles.statusPill}>
-        <Ionicons
-          name={isCurrentRank ? "flame" : "rocket-outline"}
-          size={16}
-          color="#FFFFFF"
-        />
-        <Text style={styles.statusText}>
-          {isCurrentRank
-            ? `Đang đứng thứ ${position} · ${formatExp(exp)} EXP`
-            : message}
-        </Text>
+        {/* Info Column */}
+        <View style={styles.infoCol}>
+          <Text style={styles.rankTitle}>Hạng {rankName}</Text>
+
+          <View style={styles.statusPill}>
+            <Ionicons
+              name={isCurrentRank ? "flame" : "rocket-outline"}
+              size={15}
+              color="#FFFFFF"
+            />
+            <Text style={styles.statusText} numberOfLines={2}>
+              {isCurrentRank && position
+                ? `Đang đứng thứ ${position} · ${formatExp(exp)} EXP`
+                : message || "Giải đấu đang diễn ra"}
+            </Text>
+          </View>
+        </View>
       </View>
     </LinearGradient>
   );
@@ -65,42 +74,53 @@ export function LeaderboardStatusBanner({
 
 const styles = StyleSheet.create({
   banner: {
-    alignItems: "center",
     borderRadius: BorderRadius.xxl,
-    paddingVertical: Spacing.six,
-    paddingHorizontal: Spacing.six,
-    marginBottom: Spacing.six,
-    ...Shadows.lg,
+    paddingVertical: Spacing.four,
+    paddingHorizontal: Spacing.five,
+    marginBottom: Spacing.five,
+    ...Shadows.md,
   },
-  badge: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "rgba(255,255,255,0.18)",
+  contentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.four,
+  },
+  trophyWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.three,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.45)",
+    ...Shadows.sm,
   },
-  rankName: {
-    fontSize: FontSizes.xxl,
+  infoCol: {
+    flex: 1,
+  },
+  rankTitle: {
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: "#FFFFFF",
+    letterSpacing: 0.3,
   },
   statusPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "rgba(0, 0, 0, 0.18)",
+    borderColor: "rgba(255, 255, 255, 0.3)",
     borderWidth: 1,
     borderRadius: BorderRadius.full,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
-    marginTop: Spacing.four,
+    paddingVertical: 4,
+    paddingHorizontal: Spacing.three,
+    marginTop: Spacing.two,
+    alignSelf: "flex-start",
     maxWidth: "100%",
   },
   statusText: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.xs,
     color: "#FFFFFF",
     fontWeight: FontWeights.bold,
     flexShrink: 1,

@@ -201,7 +201,8 @@ describe("Lộ trình — thanh chủ đề dính", () => {
   });
 
   it("đổi nội dung thanh khi cuộn sang chủ đề kế tiếp", async () => {
-    const { findByText, getByTestId, queryByText } = await setup();
+    const { findByText, getByTestId, queryByText, queryAllByText } =
+      await setup();
 
     await findByText("Chào hỏi cơ bản");
 
@@ -212,7 +213,7 @@ describe("Lộ trình — thanh chủ đề dính", () => {
     await waitFor(() => {
       expect(queryByText("PHẦN 2")).toBeTruthy();
     });
-    expect(queryByText("Số đếm")).toBeTruthy();
+    expect(queryAllByText("Số đếm").length).toBeGreaterThan(0);
     expect(queryByText("PHẦN 1")).toBeNull();
   });
 

@@ -49,7 +49,7 @@ export function StyledTextInput({
     focusAnim.value = withTiming(isFocused ? 1 : 0, {
       duration: AnimationPresets.duration.fast,
     });
-  }, [isFocused]);
+  }, [isFocused, focusAnim]);
 
   const borderAnimStyle = useAnimatedStyle(() => {
     const borderColor = interpolateColor(
@@ -104,6 +104,10 @@ export function StyledTextInput({
             <TouchableOpacity
               style={styles.eyeIcon}
               onPress={() => setShowPassword(!showPassword)}
+              accessibilityRole="button"
+              accessibilityLabel={
+                showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"
+              }
             >
               <Ionicons
                 name={showPassword ? "eye-off" : "eye"}

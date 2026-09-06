@@ -29,7 +29,7 @@ interface ItemTileProps {
   onPress: (entry: ShelfEntry) => void;
 }
 
-export function ItemTile({
+export const ItemTile = React.memo(function ItemTile({
   entry,
   surface,
   textColor,
@@ -37,7 +37,7 @@ export function ItemTile({
   coins,
   onPress,
 }: ItemTileProps) {
-  const { item, rarity, owned, equipped } = entry;
+  const { item, rarity, owned } = entry;
   const tier = RARITY_STYLES[rarity];
   const affordable = coins >= item.priceCoins;
   const stat = describeEffect(item);
@@ -67,11 +67,8 @@ export function ItemTile({
                 { borderColor: tier.accent, backgroundColor: tier.wash },
               ]}
             >
-              {equipped ? (
-                <Ionicons name="checkmark" size={11} color={tier.accent} />
-              ) : null}
               <Text style={[styles.sealText, { color: tier.accent }]}>
-                {equipped ? "Đang dùng" : `×${owned}`}
+                {`×${owned}`}
               </Text>
             </View>
           ) : null}
@@ -113,7 +110,7 @@ export function ItemTile({
       </RarityFrame>
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   slot: {

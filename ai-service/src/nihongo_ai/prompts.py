@@ -25,12 +25,11 @@ from __future__ import annotations
 
 from .topics import Topic
 
-#: Mỗi phiên là 5 phút (khớp `SESSION_DURATION_SECONDS` phía client). AI cần
-#: biết con số này để tự chia nhịp câu chuyện chứ không sa đà.
-SESSION_MINUTES = 5
+#: Mỗi phiên là 1.5 phút (90 giây, khớp `SESSION_DURATION_SECONDS` phía client).
+SESSION_MINUTES = 1.5
 
 #: Còn dưới ngần này giây thì AI được yêu cầu lái hội thoại về phần kết.
-WRAP_UP_SECONDS = 60
+WRAP_UP_SECONDS = 20
 
 
 # ---------------------------------------------------------------------------
@@ -107,9 +106,13 @@ TURN_SCHEMA = {
                 "tình huống"
             ),
         },
+        "userVi": {
+            "type": "STRING",
+            "description": "Bản dịch tiếng Việt tự nhiên và chính xác của câu người học vừa nói",
+        },
     },
-    "required": ["reply", "hints", "corrections", "understood"],
-    "propertyOrdering": ["reply", "hints", "corrections", "understood"],
+    "required": ["reply", "hints", "corrections", "understood", "userVi"],
+    "propertyOrdering": ["reply", "hints", "corrections", "understood", "userVi"],
 }
 
 _MISTAKE = {
@@ -273,12 +276,15 @@ Góp ý cho câu VỪA RỒI của người học. Quy tắc bắt buộc:
 - Thỉnh thoảng (khi người học dùng đúng một mẫu khó) hãy dùng severity "praise".
 - "explanationVi" viết bằng tiếng Việt, ngắn gọn, nói rõ VÌ SAO chứ không chỉ nêu bản sửa.
 
+# Trường "userVi"
+Dịch câu VỪA RỒI của người học sang tiếng Việt chuẩn xác, tự nhiên và dễ hiểu. Nếu người học gõ sai ngữ pháp hay từ vựng, dịch theo ý họ muốn diễn đạt.
+
 # Trường "understood"
 false chỉ khi câu của người học thật sự không hiểu được hoặc lạc hẳn khỏi tình huống.
 Kể cả lúc đó bạn vẫn phải đáp trong vai và kéo họ về lại mạch chuyện.
 
 # Nhịp phiên
-Cả phiên chỉ kéo dài {SESSION_MINUTES} phút. Hãy chia nhịp để đi hết mục tiêu trong khoảng đó."""
+Cả phiên chỉ kéo dài 90 giây (1.5 phút). Hãy chia nhịp nhanh gọn để đi hết mục tiêu trong khoảng đó."""
 
 
 def opening_user_message(topic: Topic) -> str:

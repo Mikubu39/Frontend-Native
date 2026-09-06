@@ -15,8 +15,8 @@ const RANK_TIERS: RankTierStyle[] = [
   { gradient: ["#D7DEEA", "#9CA7BA"], solid: "#9CA7BA" }, // Bạc
   { gradient: ["#FFD966", "#F5A623"], solid: "#F5A623" }, // Vàng
   { gradient: ["#7DE0FF", "#38BDF8"], solid: "#38BDF8" }, // Bạch Kim
-  { gradient: ["#C4A6FF", "#8B5CF6"], solid: "#8B5CF6" }, // Kim Cương
-  { gradient: ["#FF8CD9", "#E91E8E"], solid: "#E91E8E" }, // Cao thủ
+  { gradient: ["#8E9BC9", "#3B4C82"], solid: "#3B4C82" }, // Kim Cương
+  { gradient: ["#E08268", "#BE4A34"], solid: "#BE4A34" }, // Cao thủ
 ];
 
 /** `orderIndex` (or `rankId`) is 1-based from the backend. */

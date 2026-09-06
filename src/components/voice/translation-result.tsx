@@ -14,6 +14,7 @@ import {
 } from "@/constants/theme";
 import { AudioButton } from "../ui/audio-button";
 import { useAudio } from "@/hooks/use-audio";
+import { useTheme } from "@/contexts/theme-context";
 
 interface TranslationResultProps {
   sourceText: string;
@@ -31,26 +32,56 @@ export function TranslationResult({
   targetLangName = "Japanese",
 }: TranslationResultProps) {
   const { isPlaying, play } = useAudio();
+  const { colors, isDark } = useTheme();
 
   return (
     <View style={styles.container}>
       {/* Source Language Card */}
-      <View style={styles.card}>
-        <Text style={styles.langLabel}>{sourceLangName}</Text>
-        <Text style={styles.mainText}>{sourceText}</Text>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.borderSubtle },
+        ]}
+      >
+        <Text style={[styles.langLabel, { color: colors.textSecondary }]}>
+          {sourceLangName}
+        </Text>
+        <Text style={[styles.mainText, { color: colors.text }]}>
+          {sourceText}
+        </Text>
       </View>
 
       {/* Target Language Card */}
-      <View style={[styles.card, styles.targetCard]}>
+      <View
+        style={[
+          styles.card,
+          styles.targetCard,
+          {
+            backgroundColor: isDark
+              ? Colors.primary + "22"
+              : Colors.primary + "11",
+          },
+        ]}
+      >
         <View style={styles.targetHeader}>
-          <Text style={styles.langLabel}>{targetLangName}</Text>
+          <Text style={[styles.langLabel, { color: colors.textSecondary }]}>
+            {targetLangName}
+          </Text>
           <AudioButton isPlaying={isPlaying} onPress={play} size="small" />
         </View>
-        <Text style={[styles.mainText, styles.targetText]}>
+        <Text
+          style={[
+            styles.mainText,
+            styles.targetText,
+            { color: isDark ? Colors.primaryLight : Colors.primaryDark },
+          ]}
+        >
           {translatedText}
         </Text>
         {translatedRomaji && (
-          <Text style={styles.romajiText}>{translatedRomaji}</Text>
+          <Text style={[styles.romajiText, { color: colors.textSecondary }]}>
+            {translatedRomaji}
+          </Text>
         )}
       </View>
     </View>
@@ -76,7 +107,6 @@ const styles = StyleSheet.create({
   },
   targetCard: {
     borderColor: Colors.primaryLight,
-    backgroundColor: "#FAF5FF", // slight violet tint
   },
   targetHeader: {
     flexDirection: "row",

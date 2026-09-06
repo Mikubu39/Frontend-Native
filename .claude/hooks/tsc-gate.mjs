@@ -19,7 +19,10 @@ try {
 } catch {
   /* no stdin, treat as empty */
 }
-const session = String(payload.session_id || "nosession").replace(/[^\w-]/g, "");
+const session = String(payload.session_id || "nosession").replace(
+  /[^\w-]/g,
+  "",
+);
 
 let root;
 try {
@@ -33,10 +36,14 @@ try {
 // Only gate turns that actually touched TypeScript.
 let dirty = "";
 try {
-  dirty = execFileSync("git", ["status", "--porcelain", "--", "*.ts", "*.tsx"], {
-    cwd: root,
-    encoding: "utf8",
-  });
+  dirty = execFileSync(
+    "git",
+    ["status", "--porcelain", "--", "*.ts", "*.tsx"],
+    {
+      cwd: root,
+      encoding: "utf8",
+    },
+  );
 } catch {
   process.exit(0);
 }
@@ -50,7 +57,8 @@ try {
     stdio: ["ignore", "pipe", "pipe"],
   });
 } catch (e) {
-  failure = `${e.stdout || ""}${e.stderr || ""}`.trim() || "tsc exited non-zero";
+  failure =
+    `${e.stdout || ""}${e.stderr || ""}`.trim() || "tsc exited non-zero";
 }
 
 const counterFile = join(tmpdir(), `claude-tsc-gate-${session}.count`);
@@ -93,7 +101,9 @@ if (attempt > MAX_BLOCKS) {
 const lines = failure.split(/\r?\n/).filter(Boolean);
 const shown = lines.slice(0, MAX_LINES).join("\n");
 const more =
-  lines.length > MAX_LINES ? `\n… +${lines.length - MAX_LINES} more line(s)` : "";
+  lines.length > MAX_LINES
+    ? `\n… +${lines.length - MAX_LINES} more line(s)`
+    : "";
 
 emit({
   decision: "block",

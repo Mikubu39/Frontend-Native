@@ -1,6 +1,6 @@
-# Tổng quan Dự án Kotodama
+# Tổng quan Dự án Nihongo
 
-Kotodama là một ứng dụng di động học tiếng Nhật tự nhiên, được xây dựng trên nền tảng **React Native** sử dụng **Expo** (phiên bản SDK 56.0.0) và định tuyến bằng **Expo Router**. Ứng dụng cung cấp các tính năng học qua bài học (lessons), câu đố (quizzes), luyện giọng/dịch (voice actions), tìm kiếm từ vựng, bảng xếp hạng (leaderboard), và lưu trữ tiến trình cá nhân.
+Nihongo là một ứng dụng di động học tiếng Nhật tự nhiên, được xây dựng trên nền tảng **React Native** sử dụng **Expo** (phiên bản SDK 56.0.0) và định tuyến bằng **Expo Router**. Ứng dụng cung cấp các tính năng học qua bài học (lessons), câu đố (quizzes), luyện giọng/dịch (voice actions), tìm kiếm từ vựng, bảng xếp hạng (leaderboard), và lưu trữ tiến trình cá nhân.
 
 ---
 

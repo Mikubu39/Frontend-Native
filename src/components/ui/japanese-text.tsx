@@ -66,32 +66,71 @@ export function JapaneseText({ text, style, glossary }: JapaneseTextProps) {
     return merged;
   }, [glossary, globalGlossary, locked]);
 
-  // Tách câu thành các mẩu tra được và các mẩu không tra được. Khớp từ DÀI
-  // TRƯỚC để 「おはようございます」 không bị cắt nhầm thành 「おはよう」 + phần thừa.
+  // Tách câu thành các mẩu tra được và mẩu không tra được bằng Quy Hoạch Động (DP).
+  // Đánh trọng số bậc 2 (wLen * wLen) để ưu tiên phân đoạn các từ hoàn chỉnh dài hơn,
+  // triệt tiêu tận gốc các bẫy nuốt ký tự (như nuốt "は" + "いくら" thành "はい" + "くら").
   const chunks = useMemo(() => {
-    const sortedWords = Object.keys(dictionary).sort(
-      (a, b) => b.length - a.length,
-    );
-    const out: { text: string; lookup?: Lookup }[] = [];
-    let rest = text || "";
+    const rawText = text || "";
+    if (!rawText) return [];
 
-    while (rest.length > 0) {
-      const word = sortedWords.find((w) => rest.startsWith(w));
-      if (word) {
-        out.push({ text: word, lookup: dictionary[word] });
-        rest = rest.substring(word.length);
+    const n = rawText.length;
+    const dp: { score: number; tokens: { text: string; lookup?: Lookup }[] }[] =
+      Array.from({ length: n + 1 }, () => ({ score: 0, tokens: [] }));
+
+    const PUNCT_REGEX = /[。、！？?!\s.,「」『』()\[\]:：]/;
+
+    for (let i = 0; i < n; i++) {
+      const cur = dp[i];
+      const char = rawText[i];
+
+      // 1. Ký tự dấu câu: giữ nguyên, gộp vào đoạn text thường nếu trước đó là text thường
+      if (PUNCT_REGEX.test(char)) {
+        const candScore = cur.score + 1;
+        if (candScore > dp[i + 1].score) {
+          const last = cur.tokens[cur.tokens.length - 1];
+          let nextTokens: { text: string; lookup?: Lookup }[];
+          if (last && !last.lookup) {
+            nextTokens = [
+              ...cur.tokens.slice(0, -1),
+              { text: last.text + char },
+            ];
+          } else {
+            nextTokens = [...cur.tokens, { text: char }];
+          }
+          dp[i + 1] = { score: candScore, tokens: nextTokens };
+        }
         continue;
       }
-      // Gộp các ký tự không tra được lại thành một mẩu cho đỡ số phần tử
-      const last = out[out.length - 1];
-      if (last && !last.lookup) {
-        last.text += rest[0];
-      } else {
-        out.push({ text: rest[0] });
+
+      // 2. Ký tự đơn không tra được (unmatched)
+      if (cur.score >= dp[i + 1].score) {
+        const last = cur.tokens[cur.tokens.length - 1];
+        let nextTokens: { text: string; lookup?: Lookup }[];
+        if (last && !last.lookup) {
+          nextTokens = [...cur.tokens.slice(0, -1), { text: last.text + char }];
+        } else {
+          nextTokens = [...cur.tokens, { text: char }];
+        }
+        dp[i + 1] = { score: cur.score, tokens: nextTokens };
       }
-      rest = rest.substring(1);
+
+      // 3. Khớp từ vựng trong từ điển: ưu tiên các từ hoàn chỉnh dài hơn
+      const rest = rawText.slice(i);
+      for (const word in dictionary) {
+        if (rest.startsWith(word)) {
+          const wLen = word.length;
+          const candScore = cur.score + wLen * wLen;
+          if (candScore > dp[i + wLen].score) {
+            dp[i + wLen] = {
+              score: candScore,
+              tokens: [...cur.tokens, { text: word, lookup: dictionary[word] }],
+            };
+          }
+        }
+      }
     }
-    return out;
+
+    return dp[n].tokens;
   }, [text, dictionary]);
 
   const handleLongPress = (word: string, lookup: Lookup) => {
@@ -103,17 +142,26 @@ export function JapaneseText({ text, style, glossary }: JapaneseTextProps) {
     <>
       <Text style={style}>
         {chunks.map((chunk, index) => {
-          if (chunk.lookup) {
+          const isCurrentClickable = !!chunk.lookup;
+          const nextChunk = chunks[index + 1];
+          const isNextClickable = !!nextChunk?.lookup;
+          const shouldInsertSeparator = isCurrentClickable && isNextClickable;
+
+          if (isCurrentClickable) {
             return (
-              <Text
-                key={index}
-                style={styles.clickableWord}
-                onLongPress={() => handleLongPress(chunk.text, chunk.lookup!)}
-                onPress={() => handleLongPress(chunk.text, chunk.lookup!)} // Also allow tap for discovery
-                suppressHighlighting={true}
-              >
-                {chunk.text}
-              </Text>
+              <React.Fragment key={index}>
+                <Text
+                  style={styles.clickableWord}
+                  onLongPress={() => handleLongPress(chunk.text, chunk.lookup!)}
+                  onPress={() => handleLongPress(chunk.text, chunk.lookup!)} // Also allow tap for discovery
+                  suppressHighlighting={true}
+                >
+                  {chunk.text}
+                </Text>
+                {shouldInsertSeparator && (
+                  <Text style={styles.wordSeparator}>{"\u2009"}</Text>
+                )}
+              </React.Fragment>
             );
           }
           return <Text key={index}>{chunk.text}</Text>;
@@ -136,49 +184,27 @@ export function JapaneseText({ text, style, glossary }: JapaneseTextProps) {
             style={[
               styles.tooltipContainer,
               {
-                backgroundColor: isDark ? "#1F2430" : "#FFFFFF",
+                backgroundColor: colors.card,
                 borderWidth: isDark ? 1 : 0,
-                borderColor: "rgba(255,255,255,0.12)",
+                borderColor: colors.border,
               },
             ]}
           >
-            <Text
-              style={[
-                styles.tooltipWord,
-                { color: isDark ? "#F9FAFB" : Colors.textPrimary },
-              ]}
-            >
+            <Text style={[styles.tooltipWord, { color: colors.text }]}>
               {selectedWord?.word}
             </Text>
             {selectedWord?.romaji ? (
               <Text
-                style={[
-                  styles.tooltipRomaji,
-                  {
-                    color: isDark
-                      ? "rgba(255,255,255,0.55)"
-                      : Colors.textSecondary,
-                  },
-                ]}
+                style={[styles.tooltipRomaji, { color: colors.textSecondary }]}
               >
                 {selectedWord.romaji}
               </Text>
             ) : null}
             <View
-              style={[
-                styles.divider,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(255,255,255,0.12)"
-                    : colors.border,
-                },
-              ]}
+              style={[styles.divider, { backgroundColor: colors.border }]}
             />
             <Text
-              style={[
-                styles.tooltipMeaning,
-                { color: isDark ? "#E5E7EB" : Colors.textSecondary },
-              ]}
+              style={[styles.tooltipMeaning, { color: colors.textSecondary }]}
             >
               {selectedWord?.meaning}
             </Text>
@@ -195,6 +221,9 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     textDecorationStyle: "dashed",
     textDecorationColor: Colors.accent,
+  },
+  wordSeparator: {
+    textDecorationLine: "none",
   },
   modalOverlay: {
     flex: 1,

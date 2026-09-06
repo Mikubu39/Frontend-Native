@@ -136,4 +136,173 @@ describe("quiz-mapper — tách yêu cầu khỏi đề bài", () => {
     expect(q.prompt).toBe("あ");
     expect(q.instruction).toBe("Từ này nghĩa là gì?");
   });
+
+  describe("LISTEN_AND_ARRANGE — lọc dấu câu & sinh thẻ ma", () => {
+    it("lọc sạch các thẻ chỉ chứa dấu câu (。, 、, ., ,) và trim dấu câu ở đuôi từ", () => {
+      const [q] = mapApiQuestionsToQuizQuestions([
+        apiQuestion({
+          questionType: "LISTEN_AND_ARRANGE",
+          content: "Nghe và sắp xếp thành câu: Chào buổi sáng ạ, thưa thầy.",
+          metadataJson: {
+            jp: "せんせい、おはようございます。",
+            vn: "Chào buổi sáng ạ, thưa thầy.",
+            romaji: "Sensei, ohayou gozaimasu.",
+          },
+          options: [
+            {
+              optionId: 1,
+              content: "せんせい",
+              isCorrect: true,
+              order: 1,
+              metadataJson: { romaji: "sensei" },
+            },
+            { optionId: 2, content: "、", isCorrect: true, order: 2 },
+            {
+              optionId: 3,
+              content: "おはよう",
+              isCorrect: true,
+              order: 3,
+              metadataJson: { romaji: "ohayou" },
+            },
+            {
+              optionId: 4,
+              content: "ございます。",
+              isCorrect: true,
+              order: 4,
+              metadataJson: { romaji: "gozaimasu" },
+            },
+          ],
+        } as Partial<StartLessonQuestion> & { questionType: string }),
+      ]) as [import("@/types/quiz").KanaQuestion];
+
+      // Thẻ dấu "、" phải bị loại bỏ; "ございます。" phải được cắt sạch dấu "。"
+      expect(q.correctOrder).toEqual(["せんせい", "おはよう", "ございます"]);
+      expect(q.correctOrder).not.toContain("、");
+      expect(q.correctOrder).not.toContain("。");
+
+      // Ngân hàng thẻ (characters) không được chứa thẻ dấu câu nào
+      for (const char of q.characters) {
+        expect(char).not.toBe("、");
+        expect(char).not.toBe("。");
+      }
+    });
+
+    it("tự động bổ sung 2 thẻ ma cho câu ngắn (< 5 tokens) và map romaji", () => {
+      const [q] = mapApiQuestionsToQuizQuestions([
+        apiQuestion({
+          questionType: "LISTEN_AND_ARRANGE",
+          content: "Nghe và sắp xếp thành câu: Tôi là sinh viên.",
+          metadataJson: {
+            jp: "わたしはがくせいです。",
+            vn: "Tôi là sinh viên.",
+          },
+          options: [
+            {
+              optionId: 1,
+              content: "わたし",
+              isCorrect: true,
+              order: 1,
+              metadataJson: { romaji: "watashi" },
+            },
+            {
+              optionId: 2,
+              content: "は",
+              isCorrect: true,
+              order: 2,
+              metadataJson: { romaji: "wa" },
+            },
+            {
+              optionId: 3,
+              content: "がくせい",
+              isCorrect: true,
+              order: 3,
+              metadataJson: { romaji: "gakusei" },
+            },
+            {
+              optionId: 4,
+              content: "です",
+              isCorrect: true,
+              order: 4,
+              metadataJson: { romaji: "desu" },
+            },
+          ],
+        } as Partial<StartLessonQuestion> & { questionType: string }),
+      ]) as [import("@/types/quiz").KanaQuestion];
+
+      // correctOrder có 4 tokens (< 5) -> thêm 2 thẻ ma -> characters có 6 tokens
+      expect(q.correctOrder).toHaveLength(4);
+      expect(q.characters).toHaveLength(6);
+
+      // Thẻ ma không được trùng với các từ trong correctOrder
+      const distractors = q.characters.filter(
+        (c) => !q.correctOrder.includes(c),
+      );
+      expect(distractors).toHaveLength(2);
+
+      // Tất cả các thẻ (cả correct và distractor) đều có romaji trong blockRomaji
+      for (const char of q.characters) {
+        expect(q.blockRomaji?.[char]).toBeDefined();
+      }
+    });
+
+    it("tự động bổ sung 3 thẻ ma cho câu dài (>= 5 tokens)", () => {
+      const [q] = mapApiQuestionsToQuizQuestions([
+        apiQuestion({
+          questionType: "LISTEN_AND_ARRANGE",
+          content: "Nghe và sắp xếp: Tên tôi là Linh, rất hân hạnh.",
+          metadataJson: {
+            jp: "わたし の なまえ は リン です",
+            vn: "Tên tôi là Linh.",
+          },
+          options: [
+            { optionId: 1, content: "わたし", isCorrect: true, order: 1 },
+            { optionId: 2, content: "の", isCorrect: true, order: 2 },
+            { optionId: 3, content: "なまえ", isCorrect: true, order: 3 },
+            { optionId: 4, content: "は", isCorrect: true, order: 4 },
+            { optionId: 5, content: "リン", isCorrect: true, order: 5 },
+            { optionId: 6, content: "です", isCorrect: true, order: 6 },
+          ],
+        } as Partial<StartLessonQuestion> & { questionType: string }),
+      ]) as [import("@/types/quiz").KanaQuestion];
+
+      // correctOrder có 6 tokens (>= 5) -> thêm 3 thẻ ma -> characters có 9 tokens
+      expect(q.correctOrder).toHaveLength(6);
+      expect(q.characters).toHaveLength(9);
+    });
+
+    it("ưu tiên sử dụng thẻ ma từ backend (isCorrect === false) nếu có", () => {
+      const [q] = mapApiQuestionsToQuizQuestions([
+        apiQuestion({
+          questionType: "LISTEN_AND_ARRANGE",
+          content: "Nghe và sắp xếp câu",
+          options: [
+            {
+              optionId: 1,
+              content: "ねこ",
+              isCorrect: true,
+              order: 1,
+              metadataJson: { romaji: "neko" },
+            },
+            {
+              optionId: 2,
+              content: "です",
+              isCorrect: true,
+              order: 2,
+              metadataJson: { romaji: "desu" },
+            },
+            {
+              optionId: 3,
+              content: "いぬ",
+              isCorrect: false,
+              metadataJson: { romaji: "inu" },
+            },
+          ],
+        } as Partial<StartLessonQuestion> & { questionType: string }),
+      ]) as [import("@/types/quiz").KanaQuestion];
+
+      expect(q.correctOrder).toEqual(["ねこ", "です"]);
+      expect(q.characters).toContain("いぬ");
+      expect(q.blockRomaji?.["いぬ"]).toBe("inu");
+    });
+  });
 });

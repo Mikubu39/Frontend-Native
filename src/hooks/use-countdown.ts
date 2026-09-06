@@ -17,15 +17,24 @@ export function useCountdown(
 
   useEffect(() => {
     if (!expiresAt) {
-      setLabel(null);
+      setLabel((prev) => (prev === null ? prev : null));
       return;
     }
 
     const target = new Date(expiresAt).getTime();
+    if (Number.isNaN(target)) {
+      setLabel((prev) => (prev === null ? prev : null));
+      return;
+    }
 
     const tick = () => {
-      const next = formatCountdown(target - Date.now());
-      setLabel(next);
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        setLabel((prev) => (prev === null ? prev : null));
+        return null;
+      }
+      const next = formatCountdown(diff);
+      setLabel((prev) => (prev === next ? prev : next));
       return next;
     };
 

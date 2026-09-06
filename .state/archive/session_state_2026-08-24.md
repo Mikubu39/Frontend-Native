@@ -66,7 +66,6 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
   - [x] `wrong_time` nêu thẳng câu đang chờ thay vì bỏ lửng.
   - [x] 12 test mới (quét toàn bộ state, không kiểm ca lẻ). `pytest` 53/53 xanh.
 
-
 - [x] **Thanh chủ đề kiểu Duolingo trên bản đồ lộ trình.**
   - [x] `src/components/lessons/topic-header-bar.tsx`: MỘT thanh dính duy nhất dưới header, đổi tên/màu/tiến độ theo chủ đề đang cuộn tới.
   - [x] `src/components/lessons/topic-divider.tsx`: vạch ngăn giữa hai chủ đề, chỉ mang tên chủ đề SẮP TỚI (chiều cao cố định `TOPIC_DIVIDER_HEIGHT`).
@@ -138,7 +137,7 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
 - Done: **Set up real on-device E2E testing with Maestro** (`.maestro/`).
   - `flows/leaderboard.yaml` (+ `subflows/login.yaml`), `npm run e2e`, `.maestro/README.md`.
   - While verifying it, found and **fixed a real app bug**: the session was never restored after the app's process was killed and relaunched. Root cause in `src/contexts/auth-context.tsx` — `isLoading` started `false` instead of `true`, so `src/app/index.tsx`'s redirect-based-on-auth-state logic ran (and redirected to `/welcome`) before the async `storage.get()` session check had finished. Fixed by starting `isLoading` at `true` and clearing it in a `finally` after `loadSession()` completes. Verified with two consecutive force-stop+relaunch cycles on the emulator, and confirmed `flows/leaderboard.yaml` runs fully green end-to-end via `maestro test` now that `launchApp` correctly resumes the session.
-  - One remaining known issue (not fixed, documented): Maestro's `inputText` hangs/times out in this Windows+emulator+Gboard environment, so flows can't drive the login *form* itself unattended — a manual login is needed once per device session. See `.maestro/README.md` Known Issues.
+  - One remaining known issue (not fixed, documented): Maestro's `inputText` hangs/times out in this Windows+emulator+Gboard environment, so flows can't drive the login _form_ itself unattended — a manual login is needed once per device session. See `.maestro/README.md` Known Issues.
 
 - Done: **Kết nối tính năng Bảng chữ cái (Alphabet / "chữ viết") của backend vào app**.
   - Types: `src/types/alphabet.ts` (AlphabetType, AlphabetGroup/Character, PracticeQuestion/Start/Submit, CreateAlphabetRequest, StrokeDefinition) + barrel.
@@ -156,7 +155,7 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
   - Output: `scripts/seed/alphabet-{hiragana,katakana,all}.json`, đúng payload của `POST /api/v1/admin/alphabets/bulk`. `scripts/seed/README.md` có lệnh curl + ghi công KanjiVG (CC BY-SA 3.0, bắt buộc attribution khi phát hành).
   - `audioUrl` mặc định null (không bịa URL); có cờ `--audio-base=` cho CDN riêng và `--audio=wikimedia` (chỉ để test, .oga không chạy trên iOS).
   - Test `src/utils/__tests__/stroke-order.seed.test.ts` (tự skip nếu chưa sinh seed): toàn bộ 419 nét parse đúng lưới 109, nằm trong khung, tô trùng khít -> PASS, và tô lệch ±8 đơn vị (~7% lưới) vẫn PASS.
-  - Đo thêm (không commit): sai số ±10 vẫn đúng 100%; tỉ lệ chấm nhầm khi vẽ nhầm sang nét khác *của cùng chữ* là 7.6% và không giảm khi siết ngưỡng -> đó là các nét gần trùng nhau (ví dụ 2 dấu dakuten), nên giữ nguyên ngưỡng 0.16 cho dễ thở với người dùng.
+  - Đo thêm (không commit): sai số ±10 vẫn đúng 100%; tỉ lệ chấm nhầm khi vẽ nhầm sang nét khác _của cùng chữ_ là 7.6% và không giảm khi siết ngưỡng -> đó là các nét gần trùng nhau (ví dụ 2 dấu dakuten), nên giữ nguyên ngưỡng 0.16 cho dễ thở với người dùng.
 
 - Done: **Sửa 2 lỗi HTTP 500 của backend + nạp dữ liệu bảng chữ cái vào DB** (được user cho phép sửa BE).
   - `/api/v1/topics` 500: DB có lesson id=10 `lesson_type='CONVERSATION'` (migration V33 của nhánh khác đã chạy vào DB dev) nhưng enum `Lesson.LessonType` trong code không có giá trị này -> Hibernate ném lỗi khi map. User chọn **bỏ hẳn conversation**: thêm `V35__remove_conversation_feature.sql` (drop 2 bảng conversation, xoá lesson + topic rỗng, thu enum `lesson_type` về NORMAL/TIMED_REVIEW/JUMP_TEST).
@@ -173,7 +172,7 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
   - Dòng tổng kết đổi thành "Đã học X/N · Thành thạo Y/N" — trước đó chỉ đếm mức 3 nên hiện "0/104" trong khi vài chữ đã sáng viền, gây hiểu nhầm.
 
 - Done: **Thiết kế lại toàn bộ màn Cửa hàng theo hướng game shop** (`src/app/(tabs)/search.tsx`).
-  - Hướng thiết kế "quầy sơn mài": quầy hàng (`ShopCounter`) giữ nền sơn mài tím-đen + vàng lá ở CẢ light lẫn dark mode, để cửa hàng đọc ra như một *nơi chốn* chứ không phải thêm một panel cài đặt. Dấu hiệu nhận diện: vành đồng tiền mon (đồng xu lỗ vuông) phóng to mờ sau quầy, lặp lại ở mọi chỗ hiện giá.
+  - Hướng thiết kế "quầy sơn mài": quầy hàng (`ShopCounter`) giữ nền sơn mài tím-đen + vàng lá ở CẢ light lẫn dark mode, để cửa hàng đọc ra như một _nơi chốn_ chứ không phải thêm một panel cài đặt. Dấu hiệu nhận diện: vành đồng tiền mon (đồng xu lỗ vuông) phóng to mờ sau quầy, lặp lại ở mọi chỗ hiện giá.
   - **Hệ độ hiếm là điểm nhấn chính**: `getItemRarity()` suy ra tier từ `priceCoins` (<200 Thường / <400 Hiếm / <800 Sử thi / ≥800 Huyền thoại; item `limitedTime` được nâng 1 bậc). Tier quyết định màu khung, viền vát, quầng nền và tem. Chỉ tier Huyền thoại có hiệu ứng quét vàng (`RarityFrame` + `FoilSweep`), tôn trọng `useReducedMotion`.
   - Kệ hàng sắp theo giá tăng dần nên cuộn xuống là thấy nấc thang độ hiếm xanh → tím → vàng.
   - Bố cục mới: quầy (giá tiền + `FeaturedCase` món nổi bật + `BuffTicker` đếm ngược buff đang chạy) → 4 kệ cố định (`ShelfTabs`: Vật phẩm / Tăng lực / Trang trí / Túi đồ, có badge số lượng) → lưới 2 cột (`ItemTile`) → `ItemSheet` để mua/dùng/trang bị.
@@ -229,7 +228,6 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
   - `advanced` (528) và `completed` (262) KHÔNG đổi một lượt nào — bằng chứng các luồng kịch bản soạn tay không bị đụng tới.
   - `evaluate_system.py` giữ nguyên 12.9% harmful / 84.1% chặn lạc đề: thay đổi này thuần tầng hội thoại, không chạm bộ phân loại.
 
-
 - Done: **Lỗ hổng dataset 「〜に行きたいです」** — người dùng gõ `コンビニに行きたい。` bị trả "lạc chủ đề".
   - Nguyên nhân: `out_of_scope.yaml` có sẵn `日本に行きたいです`. Với n-gram KÝ TỰ thì `に行きたいです` trùng khít, nên thứ DUY NHẤT phân biệt được là DANH TỪ.
   - Thêm 12 ví dụ vào `directions_ask_how_to_get`, toàn dùng địa điểm đi bộ tới được (駅・コンビニ・トイレ・銀行…) vốn đã xuất hiện dày trong các ý định hỏi đường khác.
@@ -238,7 +236,6 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
   - Đánh đổi ĐO ĐƯỢC: tỉ lệ lỗi gây hại đứng yên 12.9%, nhưng cơ cấu dịch — trả lời sai giảm 1.0 điểm, lạc đề lọt tăng 2.0 điểm. Kiểm riêng 132 câu OOS CŨ cũng giảm (84.1% → 82.2%), tức đánh đổi thật chứ không phải do 8 câu mới làm khó bài đo.
   - 750 câu / 30 ý định, fingerprint `f90ac95ecc929c15`, CV acc 0.6699 → 0.6640, macro-F1 0.6612 → 0.6628, mô hình 930 → 959 KB. `pytest` 62/62.
   - Đã restart uvicorn: mô hình `.joblib` nạp MỘT LẦN trong `lifespan`, và `--reload` của uvicorn (StatReload, chưa cài `watchfiles`) chỉ theo dõi `.py` — sửa YAML hay train lại đều KHÔNG tự nạp.
-
 
 - Done: **Tăng cường dữ liệu bằng LLM (offline, không đụng runtime)** — người dùng hỏi có nên đổi sang LLM không.
   - Chốt: KHÔNG thay runtime. Dùng LLM ở khâu SINH DỮ LIỆU TRAIN. Mô hình xuất xưởng vẫn là TF-IDF + Hồi quy Logistic, vẫn giải thích được, vẫn 0 đồng lúc chạy.
@@ -250,7 +247,6 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
   - Đo sạch (test chỉ câu viết tay): trả lời đúng 68.7→76.2, chặn lạc đề 82.0→86.8, lạc đề lọt 17.5→13.0, **lỗi gây hại 12.9→10.4**, macro-F1 74.3→81.8. Tất cả 8 chỉ số đều tốt lên.
   - Dò ranh giới 「〜に行きたいです」: 13/15 → **15/15**. `タイ` và `北海道` (hai ca hỏng cũ) nay đúng.
   - `pytest` 62/62. Mô hình 959 KB → 1829 KB.
-
 
 ## Next Steps
 

@@ -18,7 +18,6 @@ import {
 const EMPTY_CATALOGUE: Record<ItemType, ShopItemDto[]> = {
   CONSUMABLE: [],
   POWERUP: [],
-  COSMETIC: [],
 };
 
 export function useShop() {
@@ -45,7 +44,6 @@ export function useShop() {
       setCatalogue({
         CONSUMABLE: items.CONSUMABLE ?? [],
         POWERUP: items.POWERUP ?? [],
-        COSMETIC: items.COSMETIC ?? [],
       });
       setInventory(owned ?? []);
       setLoadFailed(false);
@@ -118,32 +116,6 @@ export function useShop() {
     [fetchGamificationData, load, showError, showSuccess],
   );
 
-  const toggleEquip = useCallback(
-    async (entry: ShelfEntry) => {
-      if (entry.inventoryId === null) return false;
-
-      setPendingItemId(entry.item.id);
-      try {
-        await shopApi.equipItem(entry.inventoryId);
-        showSuccess(
-          entry.equipped ? "Đã tháo" : "Đã trang bị",
-          entry.item.name,
-        );
-        await load();
-        return true;
-      } catch (error: any) {
-        showError(
-          "Không trang bị được",
-          error?.response?.data?.message ?? "Thử lại sau ít phút.",
-        );
-        return false;
-      } finally {
-        setPendingItemId(null);
-      }
-    },
-    [load, showError, showSuccess],
-  );
-
   // Cheapest first, so browsing a shelf walks up the rarity ladder.
   const shelves = useMemo(() => {
     const byPrice = (items: ShopItemDto[]) =>
@@ -154,12 +126,11 @@ export function useShop() {
     return {
       CONSUMABLE: byPrice(catalogue.CONSUMABLE),
       POWERUP: byPrice(catalogue.POWERUP),
-      COSMETIC: byPrice(catalogue.COSMETIC),
     };
   }, [catalogue, inventory]);
 
   const allEntries = useMemo(
-    () => [...shelves.CONSUMABLE, ...shelves.POWERUP, ...shelves.COSMETIC],
+    () => [...shelves.CONSUMABLE, ...shelves.POWERUP],
     [shelves],
   );
 
@@ -173,7 +144,6 @@ export function useShop() {
     const item = pickFeaturedItem([
       ...catalogue.CONSUMABLE,
       ...catalogue.POWERUP,
-      ...catalogue.COSMETIC,
     ]);
     if (!item) return null;
     return (
@@ -181,7 +151,6 @@ export function useShop() {
         item,
         rarity: getItemRarity(item),
         owned: 0,
-        equipped: false,
         inventoryId: null,
       }
     );
@@ -201,22 +170,42 @@ export function useShop() {
     [shelves, vault],
   );
 
-  return {
-    coins,
-    activeEffects,
-    isLoading,
-    isRefreshing,
-    loadFailed,
-    pendingItemId,
-    shortfall,
-    clearShortfall: () => setShortfall(null),
-    vaultCount: vault.length,
-    featured,
-    entriesFor,
-    findEntry,
-    refresh,
-    buy,
-    use,
-    toggleEquip,
-  };
+  const clearShortfall = useCallback(() => setShortfall(null), []);
+
+  return useMemo(
+    () => ({
+      coins,
+      activeEffects,
+      isLoading,
+      isRefreshing,
+      loadFailed,
+      pendingItemId,
+      shortfall,
+      clearShortfall,
+      vaultCount: vault.length,
+      featured,
+      entriesFor,
+      findEntry,
+      refresh,
+      buy,
+      use,
+    }),
+    [
+      coins,
+      activeEffects,
+      isLoading,
+      isRefreshing,
+      loadFailed,
+      pendingItemId,
+      shortfall,
+      clearShortfall,
+      vault.length,
+      featured,
+      entriesFor,
+      findEntry,
+      refresh,
+      buy,
+      use,
+    ],
+  );
 }

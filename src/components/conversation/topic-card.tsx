@@ -58,10 +58,6 @@ export function TopicCard({ topic, onPress }: TopicCardProps) {
             {topic.titleJa} · {topic.personaName}
           </Text>
         </View>
-
-        <View style={[styles.levelPill, { backgroundColor: topic.color }]}>
-          <Text style={styles.levelText}>{topic.level}</Text>
-        </View>
       </View>
 
       <Text style={[styles.description, { color: colors.textSecondary }]}>
@@ -112,16 +108,6 @@ const styles = StyleSheet.create({
   titleJa: {
     fontSize: FontSizes.xs,
     marginTop: 1,
-  },
-  levelPill: {
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-  },
-  levelText: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.bold,
-    color: "#FFFFFF",
   },
   description: {
     fontSize: FontSizes.sm,

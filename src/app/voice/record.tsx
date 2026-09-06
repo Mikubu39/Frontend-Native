@@ -1,252 +1,271 @@
 /**
- * Pronunciation Recording Screen
- * Figma screen 29 & 30
+ * Pronunciation Practice Screen
+ * Đồng bộ với giao diện Bài học (Quiz Layout).
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  Colors,
-  FontSizes,
-  FontWeights,
-  BorderRadius,
-  Spacing,
-} from "@/constants/theme";
-import { RecordButton, ScoreRing } from "@/components/voice";
+import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { useTheme } from "@/contexts/theme-context";
+import { pronunciationApi } from "@/services/api/pronunciation";
+import { useSoundEffect } from "@/hooks/use-sound-effect";
+
+import {
+  QuizBottomBar,
+  QuizHeader,
+  SpeakingQuestionCard,
+  QuestionMascot,
+} from "@/components/quiz";
+
+const MOCK_QUEUE = [
+  {
+    id: 1000,
+    surface: "おはようございます",
+    romaji: "Ohayou gozaimasu",
+    meaningVn: "Chào buổi sáng",
+  },
+  {
+    id: 1001,
+    surface: "ありがとうございます",
+    romaji: "Arigatou gozaimasu",
+    meaningVn: "Cảm ơn",
+  },
+  {
+    id: 1002,
+    surface: "すみません",
+    romaji: "Sumimasen",
+    meaningVn: "Xin lỗi",
+  },
+];
 
 export default function RecordScreen() {
   const router = useRouter();
-  const [state, setState] = useState<"idle" | "recording" | "scored">("idle");
-  const [score, setScore] = useState<number>(0);
+  const { colors, isDark } = useTheme();
+  const { playCorrect, playIncorrect } = useSoundEffect();
 
-  const phrase = {
-    japanese: "おはようございます",
-    romaji: "Ohayou gozaimasu",
-    english: "Good morning",
+  const [queue, setQueue] = useState<any[]>([]);
+  const [index, setIndex] = useState(0);
+  const [results, setResults] = useState<
+    { vocabularyId: number; correct: boolean }[]
+  >([]);
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  // Current question state
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [currentIsCorrect, setCurrentIsCorrect] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    pronunciationApi
+      .getDue(20)
+      .then((res) => {
+        if (cancelled) return;
+        if (res.items.length > 0) {
+          setQueue(res.items);
+        } else {
+          setQueue(MOCK_QUEUE);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setQueue(MOCK_QUEUE);
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleNext = async () => {
+    const phrase = queue[index];
+    if (!phrase) return;
+
+    const newResults = [
+      ...results,
+      { vocabularyId: phrase.id, correct: currentIsCorrect },
+    ];
+    setResults(newResults);
+
+    if (index + 1 < queue.length) {
+      setIndex(index + 1);
+      setHasInteracted(false);
+      setHasSubmitted(false);
+      setCurrentIsCorrect(false);
+    } else {
+      setSubmitting(true);
+      try {
+        await pronunciationApi.submitReview(newResults);
+      } catch (e) {
+        setApiError("Đã luyện xong nhưng chưa lưu được lên máy chủ.");
+      } finally {
+        setSubmitting(false);
+        setFinished(true);
+      }
+    }
   };
 
-  const startRecording = () => {
-    setState("recording");
-
-    // Simulate recording for 2 seconds, then generate a random high score
-    setTimeout(() => {
-      const randomScore = Math.floor(Math.random() * 30) + 70; // score between 70 and 99
-      setScore(randomScore);
-      setState("scored");
-    }, 2000);
+  const checkAnswer = () => {
+    setHasSubmitted(true);
+    if (currentIsCorrect) {
+      playCorrect();
+    } else {
+      playIncorrect();
+    }
   };
 
-  const handleTryAgain = () => {
-    setState("idle");
-    setScore(0);
-  };
+  useEffect(() => {
+    if (finished) {
+      const correctCount = results.filter((r) => r.correct).length;
+      router.replace({
+        pathname: "/quiz/result",
+        params: {
+          correctCount,
+          wrongCount: results.length - correctCount,
+          lessonType: "REVIEW_VOICE",
+          status: "COMPLETED",
+        },
+      });
+    }
+  }, [finished, results, router]);
+
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={[styles.center, { backgroundColor: colors.background }]}
+      >
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!finished && queue.length === 0) {
+    return (
+      <SafeAreaView
+        style={[styles.center, { backgroundColor: colors.background }]}
+      >
+        <Ionicons
+          name="checkmark-circle-outline"
+          size={72}
+          color={Colors.success}
+        />
+        <Text style={[styles.emptyTitle, { color: colors.text }]}>
+          Chưa có câu nào tới hạn
+        </Text>
+        <Text style={[styles.emptyBody, { color: colors.textSecondary }]}>
+          {apiError ?? "Bạn đang phát âm chuẩn xác mọi câu!"}
+        </Text>
+        <GradientButton title="Quay lại" onPress={() => router.back()} />
+      </SafeAreaView>
+    );
+  }
+
+  if (finished) return null;
+
+  const phrase = queue[index];
+  if (!phrase) return null;
+
+  const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const progress =
+    queue.length > 0 ? Math.min((index + 1) / queue.length, 1) : 0;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.closeText}>✕ Close</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pronunciation Practice</Text>
-        <View style={styles.placeholder} />
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+      <QuizHeader
+        progress={progress}
+        onClose={() => router.back()}
+        lessonType="REVIEW"
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.phraseCard}>
-          <Text style={styles.japaneseText}>{phrase.japanese}</Text>
-          <Text style={styles.romajiText}>{phrase.romaji}</Text>
-          <Text style={styles.englishText}>{phrase.english}</Text>
-        </View>
-
-        <View style={styles.centerContainer}>
-          {state === "scored" ? (
-            <View style={styles.scoreContainer}>
-              <ScoreRing score={score} />
-              <Text style={styles.scoreText}>
-                {score >= 85
-                  ? "Excellent Pronunciation!"
-                  : "Good effort! Keep practicing."}
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.micContainer}>
-              <RecordButton
-                isRecording={state === "recording"}
-                onPress={state === "idle" ? startRecording : () => {}}
-              />
-              <Text style={styles.instruction}>
-                {state === "recording"
-                  ? "Speak clearly into your microphone..."
-                  : "Tap the microphone to start speaking"}
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-
-      <View style={styles.footer}>
-        {state === "scored" ? (
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={handleTryAgain}
-            >
-              <Text style={styles.retryText}>TRY AGAIN</Text>
-            </TouchableOpacity>
-            <GradientButton
-              title="CONTINUE"
-              onPress={() => router.back()}
-              style={styles.continueButton}
+        <Animated.View
+          key={index}
+          entering={FadeInRight.duration(300).springify()}
+          exiting={FadeOutLeft.duration(200)}
+          style={{ width: "100%", maxWidth: 480, alignSelf: "center" }}
+        >
+          <View pointerEvents={hasSubmitted ? "none" : "auto"}>
+            <QuestionMascot seed={index} />
+            <SpeakingQuestionCard
+              question={
+                {
+                  id: phrase.id,
+                  type: "speaking",
+                  textToSpeak: phrase.surface,
+                  translation: phrase.meaningVn,
+                  romaji: phrase.romaji,
+                  instruction: "Phát âm câu sau",
+                  glossary: {},
+                } as any
+              }
+              onAnswerChange={(isCorrect) => {
+                setCurrentIsCorrect(isCorrect);
+                setHasInteracted(true);
+              }}
             />
           </View>
-        ) : (
-          <GradientButton
-            title="SKIP"
-            variant="outline"
-            onPress={() => router.back()}
-            style={styles.skipButton}
-          />
-        )}
+        </Animated.View>
+      </ScrollView>
+
+      <View style={[styles.bottomBar, { backgroundColor: bg }]}>
+        <QuizBottomBar
+          hasInteracted={hasInteracted}
+          hasSubmitted={hasSubmitted}
+          isSubmitting={submitting}
+          isCorrect={currentIsCorrect}
+          correctAnswerText={phrase.surface}
+          onCheck={checkAnswer}
+          onNext={handleNext}
+          isLastQuestion={index + 1 >= queue.length}
+        />
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1 },
+  center: {
     flex: 1,
-    backgroundColor: Colors.cream,
-  },
-  header: {
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.four,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.creamDark,
-    backgroundColor: Colors.surface,
+    justifyContent: "center",
+    gap: Spacing.four,
+    padding: Spacing.six,
   },
-  closeButton: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.two,
+  emptyTitle: {
+    fontSize: FontSizes.xxl,
+    fontWeight: FontWeights.extrabold,
+    textAlign: "center",
   },
-  closeText: {
+  emptyBody: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
-    fontWeight: FontWeights.bold,
-  },
-  headerTitle: {
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-  },
-  placeholder: {
-    width: 60,
+    textAlign: "center",
+    lineHeight: 22,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: Spacing.six,
-    justifyContent: "space-between",
-    gap: Spacing.six,
-  },
-  phraseCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.five,
-    alignItems: "center",
-    width: "100%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  japaneseText: {
-    fontSize: FontSizes.xxl,
-    fontWeight: FontWeights.extrabold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.one,
-  },
-  romajiText: {
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.bold,
-    color: Colors.primary,
-    marginBottom: Spacing.one,
-  },
-  englishText: {
-    fontSize: FontSizes.md,
-    color: Colors.textSecondary,
-    fontStyle: "italic",
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.six,
   },
-  micContainer: {
-    alignItems: "center",
-    gap: Spacing.four,
-  },
-  instruction: {
-    fontSize: FontSizes.md,
-    color: Colors.textSecondary,
-    textAlign: "center",
-    maxWidth: 240,
-  },
-  scoreContainer: {
-    alignItems: "center",
-    gap: Spacing.four,
-  },
-  scoreText: {
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-    textAlign: "center",
-  },
-  footer: {
+  bottomBar: {
     paddingHorizontal: Spacing.six,
     paddingBottom: Spacing.six,
-    backgroundColor: Colors.cream,
-  },
-  buttonRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.four,
-  },
-  retryButton: {
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.six,
-    borderRadius: BorderRadius.xl,
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    backgroundColor: Colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 52,
-  },
-  retryText: {
-    color: Colors.primary,
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.bold,
-  },
-  continueButton: {
-    flex: 1,
-  },
-  skipButton: {
-    width: "100%",
   },
 });

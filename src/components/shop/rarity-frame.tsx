@@ -13,7 +13,6 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withDelay,
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
@@ -45,16 +44,13 @@ function FoilSweep({ accent }: { accent: string }) {
     if (width === 0 || reduceMotion) return;
 
     offset.value = -SWEEP_WIDTH;
-    offset.value = withDelay(
-      600,
-      withRepeat(
-        withTiming(width + SWEEP_WIDTH, {
-          duration: 1400,
-          easing: Easing.inOut(Easing.quad),
-        }),
-        -1,
-        false,
-      ),
+    offset.value = withRepeat(
+      withTiming(width + SWEEP_WIDTH, {
+        duration: 1800,
+        easing: Easing.inOut(Easing.quad),
+      }),
+      -1,
+      false,
     );
 
     return () => cancelAnimation(offset);
@@ -72,7 +68,7 @@ function FoilSweep({ accent }: { accent: string }) {
     >
       <Animated.View style={[styles.sweep, sweepStyle]}>
         <LinearGradient
-          colors={["transparent", accent + "55", "transparent"]}
+          colors={["transparent", accent + "44", "transparent"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={StyleSheet.absoluteFill}
@@ -82,7 +78,7 @@ function FoilSweep({ accent }: { accent: string }) {
   );
 }
 
-export function RarityFrame({
+export const RarityFrame = React.memo(function RarityFrame({
   rarity,
   surface,
   children,
@@ -125,7 +121,7 @@ export function RarityFrame({
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   bevel: {

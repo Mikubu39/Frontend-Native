@@ -31,7 +31,7 @@ interface QuestionPromptProps {
 }
 
 export function QuestionPrompt({ instruction, isNew }: QuestionPromptProps) {
-  const { isDark } = useTheme();
+  const { colors, isDark } = useTheme();
 
   return (
     <View style={styles.container}>
@@ -55,10 +55,7 @@ export function QuestionPrompt({ instruction, isNew }: QuestionPromptProps) {
 
       <Text
         accessibilityRole="header"
-        style={[
-          styles.instruction,
-          { color: isDark ? "#F9FAFB" : Colors.textPrimary },
-        ]}
+        style={[styles.instruction, { color: colors.text }]}
       >
         {instruction}
       </Text>

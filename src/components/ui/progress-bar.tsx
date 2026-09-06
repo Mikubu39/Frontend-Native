@@ -33,11 +33,13 @@ export function ProgressBar({
       duration: 600,
       easing: Easing.out(Easing.cubic),
     });
-  }, [progress]);
+  }, [progress, animatedProgress]);
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${animatedProgress.value * 100}%` as any,
   }));
+
+  const percentage = Math.round(Math.min(Math.max(progress, 0), 1) * 100);
 
   return (
     <View
@@ -45,6 +47,8 @@ export function ProgressBar({
         styles.track,
         { backgroundColor: trackColor, height, borderRadius: height / 2 },
       ]}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: percentage }}
     >
       <Animated.View
         style={[

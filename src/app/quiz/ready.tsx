@@ -4,23 +4,11 @@
  */
 
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, {
-  FadeInDown,
-  FadeIn,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
@@ -45,7 +33,7 @@ function ExampleRow({
   delay: number;
 }) {
   const [revealed, setRevealed] = useState(false);
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
 
   return (
     <Animated.View entering={FadeInDown.delay(delay).duration(350)}>
@@ -129,7 +117,7 @@ export default function QuizReadyScreen() {
     title?: string;
     lessonType?: string;
   }>();
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
 
   const node = LEARNING_PATH.find((n) => n.id === lessonId);
 
@@ -233,8 +221,6 @@ export default function QuizReadyScreen() {
           >
             <Ionicons name={nodeTypeIcon as any} size={30} color="#FFF" />
           </LinearGradient>
-          {/* Glow ring */}
-          {isDark && <View style={styles.iconGlow} pointerEvents="none" />}
         </Animated.View>
 
         {/* Labels */}
@@ -296,7 +282,7 @@ export default function QuizReadyScreen() {
                     styles.formulaBox,
                     {
                       backgroundColor: isDark
-                        ? "rgba(139,92,246,0.15)"
+                        ? "rgba(59, 76, 130,0.15)"
                         : Colors.primary + "0F",
                       borderColor: Colors.primary + "44",
                     },
@@ -426,15 +412,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-  },
-  iconGlow: {
-    position: "absolute",
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.primary,
-    opacity: 0.2,
-    zIndex: -1,
   },
   labelGroup: {
     alignItems: "center",

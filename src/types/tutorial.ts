@@ -13,10 +13,11 @@ export type TutorialTargetId =
   | "tab-quests"
   | "tab-friends"
   | "tab-more"
+  | "review-vocab"
   | "review-mistakes"
   | "review-conversation"
   | "review-dictionary"
-  | "review-extra";
+  | "review-pronunciation";
 
 /** Toạ độ tuyệt đối trong cửa sổ (kết quả của `measureInWindow`). */
 export interface TutorialTargetRect {
@@ -78,6 +79,8 @@ export interface TutorialContextValue {
   startTutorial: () => void;
   /** Chỉ chạy nếu người dùng chưa từng xem. */
   maybeAutoStart: () => void;
+  /** Đánh dấu đã xem tour vào storage và cập nhật state (dùng khi bỏ qua tour cho tài khoản cũ). */
+  markAsSeen: () => void;
   goNext: () => void;
   goBack: () => void;
   skipTutorial: () => void;

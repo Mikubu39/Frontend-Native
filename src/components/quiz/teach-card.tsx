@@ -46,7 +46,7 @@ function getJapaneseFontSize(card: TeachCard): number {
 
 export function TeachCardView({ card, index, total }: TeachCardViewProps) {
   const { colors, isDark } = useTheme();
-  const { isPlaying, play } = useAudio(card.audioUrl);
+  const { isPlaying, play } = useAudio(card.audioUrl, card.japanese);
 
   // Nghe mặt chữ ngay khi nhìn thấy nó là cách ghi nhớ hiệu quả nhất, nên
   // audio tự phát mỗi khi chuyển sang thẻ mới.
@@ -58,10 +58,10 @@ export function TeachCardView({ card, index, total }: TeachCardViewProps) {
     card.imageUrl,
   );
 
-  const cardBg = isDark ? "rgba(255,255,255,0.06)" : colors.card;
-  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : colors.border;
-  const primaryText = isDark ? "#F9FAFB" : Colors.textPrimary;
-  const mutedText = isDark ? "rgba(255,255,255,0.45)" : Colors.textSecondary;
+  const cardBg = colors.cardQuiz;
+  const cardBorder = colors.cardQuizBorder;
+  const primaryText = colors.text;
+  const mutedText = colors.textSecondary;
 
   return (
     <View style={styles.container}>
@@ -114,7 +114,7 @@ export function TeachCardView({ card, index, total }: TeachCardViewProps) {
               styles.romajiPill,
               {
                 backgroundColor: isDark
-                  ? "rgba(139,92,246,0.15)"
+                  ? "rgba(94,111,168,0.18)"
                   : Colors.primary + "0F",
                 borderColor: Colors.primary + "44",
               },
@@ -140,11 +140,7 @@ export function TeachCardView({ card, index, total }: TeachCardViewProps) {
             onPress={() => play()}
           />
           <Text style={[styles.audioHint, { color: mutedText }]}>
-            {card.audioUrl
-              ? isPlaying
-                ? "Đang phát…"
-                : "Chạm để nghe lại"
-              : "Bài này chưa có phát âm"}
+            {isPlaying ? "Đang phát…" : "Chạm để nghe lại"}
           </Text>
         </View>
       </Animated.View>

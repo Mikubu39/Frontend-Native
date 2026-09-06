@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Frontend",
+    "name": "Nihongo",
     "slug": "Frontend",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "nihongo",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
@@ -19,7 +19,8 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.tungdzai123.Frontend",
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "permissions": ["android.permission.CAMERA"]
     },
     "web": {
       "output": "static",
@@ -40,10 +41,16 @@
       "@react-native-google-signin/google-signin",
       "expo-secure-store",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Cho phép Nihongo dùng Camera để quét mã QR kết bạn."
+        }
+      ],
+      [
         "expo-speech-recognition",
         {
-          "microphonePermission": "Cho phép Kotodama dùng micro để nghe bạn nói tiếng Nhật khi luyện hội thoại.",
-          "speechRecognitionPermission": "Cho phép Kotodama nhận diện giọng nói để chuyển câu tiếng Nhật bạn nói thành chữ.",
+          "microphonePermission": "Cho phép Nihongo dùng micro để nghe bạn nói tiếng Nhật khi luyện hội thoại.",
+          "speechRecognitionPermission": "Cho phép Nihongo nhận diện giọng nói để chuyển câu tiếng Nhật bạn nói thành chữ.",
           "androidSpeechServicePackages": [
             "com.google.android.googlequicksearchbox"
           ]
@@ -58,11 +65,12 @@
           "scheme": "fb1776382180172619"
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      "./plugins/withAndroidMaxRefreshRate.js"
     ],
     "experiments": {
       "typedRoutes": false,
-      "reactCompiler": true
+      "reactCompiler": false
     },
     "extra": {
       "router": {},

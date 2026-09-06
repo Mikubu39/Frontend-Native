@@ -32,7 +32,6 @@ export function formatCoins(amount: number): string {
 
 /**
  * The one-line stat a player compares items by ("30 phút", "Hồi đầy 25").
- * Cosmetics have no stat, so they return null and the row is skipped.
  */
 export function describeEffect(item: ShopItemDto): string | null {
   const meta = EFFECT_META[item.effectType];
@@ -89,7 +88,6 @@ export function buildShelfEntries(
       item,
       rarity: getItemRarity(item),
       owned: owned?.quantity ?? 0,
-      equipped: owned?.equipped ?? false,
       inventoryId: owned?.inventoryId ?? null,
     };
   });
