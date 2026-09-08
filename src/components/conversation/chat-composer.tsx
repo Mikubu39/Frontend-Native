@@ -21,6 +21,7 @@ import { useTheme } from "@/contexts/theme-context";
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -177,6 +178,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    fontFamily: Fonts.rounded,
     borderWidth: 1,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.four,
@@ -206,6 +208,7 @@ const styles = StyleSheet.create({
   },
   listeningText: {
     flex: 1,
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     fontStyle: "italic",
   },
@@ -217,6 +220,7 @@ const styles = StyleSheet.create({
   },
   warningText: {
     flex: 1,
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     fontWeight: FontWeights.medium,
     color: Colors.warning,

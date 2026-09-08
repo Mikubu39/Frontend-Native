@@ -27,7 +27,13 @@ import { useTheme } from "@/contexts/theme-context";
 import { useGlossary } from "@/contexts/glossary-context";
 import { useSoundEffect } from "@/hooks/use-sound-effect";
 import type { VocabularyItem } from "@/types";
-import { Colors, Spacing, FontSizes, FontWeights } from "@/constants/theme";
+import {
+  Colors,
+  Fonts,
+  Spacing,
+  FontSizes,
+  FontWeights,
+} from "@/constants/theme";
 
 const QUESTION_MASCOTS = [
   require("@/assets/animations/character1.json"),
@@ -284,6 +290,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   counter: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
     textAlign: "center",
@@ -295,11 +302,13 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.three,
   },
   emptyTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.extrabold,
     textAlign: "center",
   },
   emptyBody: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.md,
     textAlign: "center",
     lineHeight: 22,

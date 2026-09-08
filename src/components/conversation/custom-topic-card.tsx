@@ -22,6 +22,7 @@ import { MAX_CUSTOM_TOPIC_LENGTH } from "@/constants/conversation";
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -206,14 +207,17 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   title: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
   },
   subtitle: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     marginTop: 2,
   },
   input: {
+    fontFamily: Fonts.sans,
     borderWidth: 1,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.four,
@@ -232,6 +236,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
   },
   exampleText: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
   },
   actions: {
@@ -245,6 +250,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   cancelText: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.semibold,
   },
@@ -254,6 +260,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   startText: {
+    fontFamily: Fonts.rounded,
     color: "#FFFFFF",
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,

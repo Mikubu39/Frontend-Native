@@ -1,11 +1,12 @@
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   FadeInDown,
   withSpring,
+  withDelay,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -55,15 +56,20 @@ export default function StreakExtendedScreen() {
   }, [streak, frozenToday]);
 
   useEffect(() => {
-    scale.value = withSpring(1, { damping: 12, stiffness: 90 });
-    rotation.value = withRepeat(
-      withSequence(
-        withTiming(-5, { duration: 150, easing: Easing.linear }),
-        withTiming(5, { duration: 150, easing: Easing.linear }),
-        withTiming(0, { duration: 150, easing: Easing.linear }),
+    // Delayed past the screen's own reveal transition so the flame visibly
+    // pops in once the user is already looking at the screen, not mid-slide.
+    scale.value = withDelay(250, withSpring(1, { damping: 12, stiffness: 90 }));
+    rotation.value = withDelay(
+      250,
+      withRepeat(
+        withSequence(
+          withTiming(-5, { duration: 150, easing: Easing.linear }),
+          withTiming(5, { duration: 150, easing: Easing.linear }),
+          withTiming(0, { duration: 150, easing: Easing.linear }),
+        ),
+        -1, // infinite
+        true,
       ),
-      -1, // infinite
-      true,
     );
   }, [rotation, scale]);
 
@@ -80,6 +86,11 @@ export default function StreakExtendedScreen() {
       end={{ x: 0.8, y: 1 }}
       style={styles.container}
     >
+      {/* Reveal like a celebration, not a lateral page push */}
+      <Stack.Screen
+        options={{ animation: "fade_from_bottom", animationDuration: 350 }}
+      />
+
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
           <Animated.View style={[styles.fireContainer, animatedFireStyle]}>
@@ -87,7 +98,7 @@ export default function StreakExtendedScreen() {
           </Animated.View>
 
           <Animated.View
-            entering={FadeInDown.delay(300).springify()}
+            entering={FadeInDown.delay(550).springify()}
             style={styles.textContainer}
           >
             <Text style={styles.title}>{celebrationInfo.title}</Text>
@@ -100,7 +111,7 @@ export default function StreakExtendedScreen() {
         </View>
 
         <Animated.View
-          entering={FadeInDown.delay(600).springify()}
+          entering={FadeInDown.delay(850).springify()}
           style={styles.buttonContainer}
         >
           <GradientButton

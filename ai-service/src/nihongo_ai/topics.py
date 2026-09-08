@@ -52,9 +52,11 @@ class Topic:
 def load_topics() -> dict[str, Topic]:
     """Nạp `data/topics.yaml`. Kết quả được cache theo vòng đời tiến trình."""
     raw = yaml.safe_load(_DATA_FILE.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        return {}
     topics: dict[str, Topic] = {}
 
-    for entry in raw["topics"]:
+    for entry in raw.get("topics", []):
         persona = entry.get("persona", {})
         topic = Topic(
             id=entry["id"],

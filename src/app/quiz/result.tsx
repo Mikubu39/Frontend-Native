@@ -5,7 +5,7 @@
 
 import React, { useEffect } from "react";
 import { View, StyleSheet } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -101,6 +101,11 @@ export default function QuizResultScreen() {
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
+      {/* Reveal like a celebration, not a lateral page push */}
+      <Stack.Screen
+        options={{ animation: "fade_from_bottom", animationDuration: 350 }}
+      />
+
       {/* Subtle ambient orbs */}
       <View
         style={[

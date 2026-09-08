@@ -13,6 +13,7 @@ import { useTutorial } from "@/contexts/tutorial-context";
 import { StaggeredList } from "@/components/ui/staggered-list";
 import {
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -282,6 +283,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
@@ -313,17 +315,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   introTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.extrabold,
     color: Colors.textPrimary,
   },
   introDesc: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     marginTop: 4,
     lineHeight: 20,
   },
   sectionTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
     color: Colors.textSecondary,
@@ -360,6 +365,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   itemTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
@@ -370,12 +376,14 @@ const styles = StyleSheet.create({
     borderRadius: 22,
   },
   badgeText: {
+    fontFamily: Fonts.rounded,
     color: "#FFFFFF",
     fontSize: 10,
     fontWeight: FontWeights.extrabold,
     letterSpacing: 0.3,
   },
   itemDesc: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     color: Colors.textSecondary,
     marginTop: 4,

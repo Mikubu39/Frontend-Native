@@ -15,6 +15,7 @@ import { useTheme } from "@/contexts/theme-context";
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -177,6 +178,7 @@ const styles = StyleSheet.create({
   },
   japanese: {
     flex: 1,
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     lineHeight: 28,
     fontWeight: FontWeights.medium,
@@ -191,17 +193,20 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   vietnamese: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     lineHeight: 20,
     marginTop: Spacing.two,
   },
   userText: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     lineHeight: 28,
     color: "#FFFFFF",
     fontWeight: FontWeights.medium,
   },
   userVietnamese: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     lineHeight: 20,
     color: "rgba(255, 255, 255, 0.85)",
@@ -211,12 +216,14 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.one,
   },
   tapToRevealLight: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     fontStyle: "italic",
     color: "rgba(255, 255, 255, 0.7)",
     marginTop: Spacing.two,
   },
   tapToRevealDark: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     fontStyle: "italic",
     marginTop: Spacing.two,

@@ -14,7 +14,7 @@ import Animated, {
   withSpring,
   Easing,
 } from "react-native-reanimated";
-import { Colors, Spacing } from "@/constants/theme";
+import { Colors, Fonts, Spacing } from "@/constants/theme";
 import { useTheme } from "@/contexts/theme-context";
 
 interface QuizHeaderProps {
@@ -142,15 +142,15 @@ function ComboChip({ count, isDark }: { count: number; isDark: boolean }) {
         animStyle,
         {
           backgroundColor: isDark
-            ? "rgba(255, 150, 0, 0.15)"
-            : "rgba(255, 150, 0, 0.12)",
+            ? `${Colors.streakActive}26`
+            : `${Colors.streakActive}1f`,
           borderColor: isDark
-            ? "rgba(255, 150, 0, 0.45)"
-            : "rgba(255, 150, 0, 0.35)",
+            ? `${Colors.streakActive}73`
+            : `${Colors.streakActive}59`,
         },
       ]}
     >
-      <FontAwesome5 name="fire" size={13} color="#FF9600" solid />
+      <Ionicons name="flame" size={14} color={Colors.streakActive} />
       <Animated.Text style={styles.comboText}>{count}</Animated.Text>
     </Animated.View>
   );
@@ -358,7 +358,8 @@ const styles = StyleSheet.create({
   comboText: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#FF9600",
+    fontFamily: Fonts.rounded,
+    color: Colors.streakActive,
     fontVariant: ["tabular-nums"],
   },
 });

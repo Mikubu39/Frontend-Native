@@ -11,7 +11,9 @@ import { AvatarPickerModal } from "@/components/user/avatar-picker-modal";
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
+  FontWeights,
   Shadows,
   Spacing,
 } from "@/constants/theme";
@@ -474,19 +476,21 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: FontSizes.xl,
-    fontWeight: "800",
+    fontWeight: FontWeights.extrabold,
+    fontFamily: Fonts.rounded,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.sans,
   },
   addFriendBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: Colors.primary,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     paddingVertical: 13,
     width: "100%",
     gap: 8,
@@ -494,12 +498,14 @@ const styles = StyleSheet.create({
   addFriendText: {
     color: "#FFFFFF",
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: FontWeights.extrabold,
+    fontFamily: Fonts.rounded,
     letterSpacing: 0.3,
   },
   sectionTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: FontWeights.extrabold,
+    fontFamily: Fonts.rounded,
     marginBottom: Spacing.three,
     letterSpacing: 0.3,
   },
@@ -521,6 +527,7 @@ const styles = StyleSheet.create({
   achievementLabel: {
     marginTop: 4,
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
 });

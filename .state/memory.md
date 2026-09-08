@@ -300,15 +300,26 @@ Ghi chu them khi lai emulator bang adb:
   - Cấu hình trong `ai-service/.env`: `GEMINI_MODEL=gemini-2.5-flash`.
   - Triển khai cơ chế **Automatic Fallback** trong `llm.py` cho cả 2 mã lỗi: `if exc.code in (429, 503) and primary_model != FALLBACK_MODEL: raw = _execute(FALLBACK_MODEL)`.
 
-## AI Conversation Redesign & UI/UX Gotchas
+## Impeccable Design, Typography & Motion Accessibility Patterns (Goal 30)
 
-- **Lỗi co rúm thẻ góp ý & Ký hiệu lạ `✨` (CorrectionCard Flexbox & Praise Bug)**:
-  - Khi `CorrectionCard` nhận dạng `praise` từ Gemini bên dưới bong bóng của user (`alignSelf: 'flex-end'`), cấu trúc flexbox không có `minWidth` khiến phần text bị co về 0px, chỉ chừa lại icon `✨` (sparkles) trơ trọi trong ô vuông xanh lá nhỏ.
-  - *Giải pháp*: Lọc bỏ hoàn toàn loại `praise` khỏi danh sách góp ý thời gian thực trong chat (chỉ giữ `error` và `suggestion` cần sửa); đặt `minWidth: 220`, `width: '100%'`, `flexShrink: 1` cho `CorrectionCard`.
-- **Lỗi dính sát đáy màn hình (SafeAreaView Edges Bug)**:
-  - Khai báo `<SafeAreaView edges={["top"]}>` sẽ bỏ qua insets đáy khiến `ChatComposer` và nút kết thúc bị thanh điều hướng hệ thống (Android Gesture Navigation bar / iOS Home Indicator) đè lên.
-  - *Giải pháp*: Luôn dùng `edges={["top", "bottom"]}`, kết hợp `paddingBottom: Spacing.eight` cho FlatList tin nhắn để bong bóng cuối cùng không bao giờ bị che khuất.
-- **Bản dịch tiếng Việt hai chiều & Chế độ chạm để lật mở (Two-way Translation & Reveal)**:
-  - Phía backend AI: Bổ sung trường `userVi` vào schema JSON của LLM để dịch tự nhiên câu tiếng Nhật của người dùng sang tiếng Việt; hook `use-conversation.ts` tự động cập nhật trường `vi` cho tin nhắn người dùng.
-  - Phía frontend: Công tắc cấu hình lưu vào `AsyncStorage` (`@nihongo_conversation_show_translation`) và nút toggle nhanh trên Header chat; khi tắt, bong bóng hỗ trợ chạm (tap) hoặc nhấn giữ (long-press) để mở/đóng bản dịch từng câu.
+- **Trợ năng Giảm chuyển động (`useReducedMotion`) với Reanimated:**
+  - Với các animation chạy lặp vô hạn (vòng breathing glow `ActiveNodeGlow`, nhún nhảy `ActiveFloatingWrapper`, xoay ngọn lửa `StreakModal`), bắt buộc kiểm tra hook `useReducedMotion()`.
+  - Khi `reducedMotion === true`, đưa giá trị về trạng thái cân bằng tĩnh (ví dụ `translateY: 0`, `rotation: 0`, `opacity: 0.35`) thay vì chạy `withRepeat(withSequence(...))`. Điều này vừa tôn trọng tiêu chuẩn tiếp cận tiếp nhận thị giác của người dùng, vừa tiết kiệm xung nhịp CPU/GPU khi chạy trên thiết bị cấu hình thấp.
+- **Quy hoạch mã màu về Design Tokens ngữ nghĩa:**
+  - Không hardcode các mã màu thô như `#FF9600` hay `#00C8FF` rải rác trong component.
+  - Luôn sử dụng token từ `@/constants/theme`: `Colors.streakActive` (`#D9762E` - cam đất nung ấm áp của Washi) và `Colors.streakFrozen` (`#7C93C4` - lam băng tuyết Ai-zome), đảm bảo đồng bộ hoàn hảo với Dark/Light theme.
+- **Thống nhất hệ icon đơn nhất (`Ionicons`):**
+  - Tránh nhập khẩu nhiều họ icon khác nhau (`FontAwesome5`, `MaterialCommunityIcons`) trên cùng một màn hình hoặc luồng chức năng. Chuẩn hóa về họ `Ionicons` mang lại sự đồng nhất về nét vẽ, độ dày (stroke weight) và tối ưu dung lượng bundle.
+- **Onboarding Visual Assets (Bespoke vs Generic Stock):**
+  - Không dựa vào các URL Unsplash stock photo bên ngoài cho các màn hình trải nghiệm cốt lõi (như Onboarding Interests: Du lịch, Nghệ thuật, Ẩm thực, Manga).
+  - Tích hợp asset hình ảnh nghệ thuật vector phẳng đặc trưng văn hóa Nhật Bản trực tiếp trong `assets/images/onboarding/`, nạp qua `imageSource: require(...)` để ứng dụng hoạt động mượt mà offline 100% ngay lần đầu mở app mà không phụ thuộc vào kết nối mạng.
+
+## Pyright / Python Language Server in Multi-Project Root
+- **Triệu chứng**: IDE báo lỗi "Cannot find module `pytest`", "`fastapi`", "`nihongo_ai`" trong `ai-service/tests/test_api.py` mỗi khi mở lại IDE.
+- **Nguyên nhân**: Root workspace mở ở `Frontend-Native`, trong khi môi trường Python nằm ở `ai-service/.venv`. Khi IDE khởi động, VS Code Python Extension / Language Server ghi đè `venvPath`/`venv` của `pyrightconfig.json` bằng Python toàn cục của hệ thống (`Python312`). Do Python hệ thống không có `pytest`/`fastapi`, Pyright báo thiếu module.
+- **Khắc phục triệt để**:
+  1. Thêm trực tiếp `ai-service/.venv/Lib/site-packages` vào `extraPaths` trong `pyrightconfig.json` và `.vscode/settings.json` (Pyright luôn nạp `extraPaths` bất kể dùng interpreter nào).
+  2. Guard kiểu dữ liệu `yaml.safe_load(...)` trong `topics.py`.
+  3. Khi cần, ghim interpreter trong VS Code: `Ctrl+Shift+P` -> `Python: Select Interpreter` -> chọn `ai-service/.venv/Scripts/python.exe`. Chạy `npx pyright` đạt 0 errors.
+
 

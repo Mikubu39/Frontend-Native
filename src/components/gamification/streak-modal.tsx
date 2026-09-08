@@ -8,6 +8,7 @@ import { Modal, View, Text, StyleSheet, Pressable } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useReducedMotion,
   withSpring,
   withRepeat,
   withSequence,
@@ -59,6 +60,7 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
     studyDates = [],
   } = useGamification();
 
+  const reduceMotion = useReducedMotion();
   const flameScale = useSharedValue(0.7);
   const flameRotation = useSharedValue(0);
 
@@ -71,19 +73,19 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
           shadowColor: Colors.streakActive,
           streakNumberColor: Colors.streakActive,
           badgeText: "ĐÃ GIỮ LỬA HÔM NAY",
-          badgeBg: "rgba(255, 150, 0, 0.15)",
+          badgeBg: `${Colors.streakActive}26`,
           badgeColor: Colors.streakActive,
           description:
             "Bạn đã thắp sáng ngọn lửa thành công hôm nay! Hãy tiếp tục duy trì ngày mai nhé.",
         };
       case "FROZEN":
         return {
-          gradient: [Colors.streakFrozen, "#0284C7"] as [string, string],
+          gradient: [Colors.streakFrozen, Colors.primaryLight] as [string, string],
           icon: "snowflake" as const,
           shadowColor: Colors.streakFrozen,
           streakNumberColor: Colors.streakFrozen,
           badgeText: "ĐANG ĐÓNG BĂNG",
-          badgeBg: "rgba(0, 200, 255, 0.15)",
+          badgeBg: `${Colors.streakFrozen}26`,
           badgeColor: Colors.streakFrozen,
           description:
             "Chuỗi ngày học đang được bảo vệ an toàn bằng khiên băng Streak Freeze. Hãy học hôm nay để ngọn lửa bùng cháy trở lại!",
@@ -110,16 +112,20 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
 
   useEffect(() => {
     if (visible) {
-      flameScale.value = withSpring(1, { damping: 10, stiffness: 100 });
-      flameRotation.value = withRepeat(
-        withSequence(
-          withTiming(-4, { duration: 180, easing: Easing.linear }),
-          withTiming(4, { duration: 180, easing: Easing.linear }),
-          withTiming(0, { duration: 180, easing: Easing.linear }),
-        ),
-        -1,
-        true,
-      );
+      flameScale.value = reduceMotion ? 1 : withSpring(1, { damping: 10, stiffness: 100 });
+      if (reduceMotion) {
+        flameRotation.value = 0;
+      } else {
+        flameRotation.value = withRepeat(
+          withSequence(
+            withTiming(-4, { duration: 180, easing: Easing.linear }),
+            withTiming(4, { duration: 180, easing: Easing.linear }),
+            withTiming(0, { duration: 180, easing: Easing.linear }),
+          ),
+          -1,
+          true,
+        );
+      }
     } else {
       cancelAnimation(flameRotation);
       cancelAnimation(flameScale);
@@ -130,7 +136,7 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
       cancelAnimation(flameRotation);
       cancelAnimation(flameScale);
     };
-  }, [visible, flameScale, flameRotation]);
+  }, [visible, flameScale, flameRotation, reduceMotion]);
 
   const flameAnimStyle = useAnimatedStyle(() => ({
     transform: [

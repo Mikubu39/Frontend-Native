@@ -2,6 +2,8 @@
  * Onboarding flow type definitions.
  */
 
+import type { ImageSourcePropType } from "react-native";
+
 export type OnboardingGoal = "jlpt" | "hobby" | "traveling" | "talk" | "work";
 
 export interface OnboardingGoalOption {
@@ -12,7 +14,8 @@ export interface OnboardingGoalOption {
 export interface OnboardingInterest {
   id: string;
   label: string;
-  imageUrl: string;
+  imageUrl?: string;
+  imageSource?: ImageSourcePropType;
 }
 
 export type OnboardingLevelId = "starter" | "beginner" | "jlpt";

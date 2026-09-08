@@ -120,7 +120,7 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
         >
           <HankoStamp
             size={108}
-            delay={150}
+            delay={420}
             color={sealColor}
           />
           <View

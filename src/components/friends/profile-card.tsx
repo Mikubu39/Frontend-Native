@@ -13,6 +13,7 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -153,10 +154,12 @@ const styles = StyleSheet.create({
     fontSize: 40,
     color: Colors.primary,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   fullName: {
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
     color: Colors.textPrimary,
     marginBottom: Spacing.one,
   },
@@ -165,6 +168,7 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: FontSizes.md,
+    fontFamily: Fonts.sans,
     color: Colors.textSecondary,
     marginBottom: Spacing.four,
   },
@@ -182,16 +186,19 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
     color: Colors.textPrimary,
   },
   statLabel: {
     fontSize: FontSizes.sm,
+    fontFamily: Fonts.sans,
     color: Colors.textSecondary,
     marginTop: Spacing.one,
   },
   rankBadge: {
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.rounded,
     marginBottom: Spacing.four,
     textAlign: "center",
   },

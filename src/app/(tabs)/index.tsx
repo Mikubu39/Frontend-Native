@@ -51,7 +51,7 @@ import { useTheme } from "@/contexts/theme-context";
 import { useTutorial } from "@/contexts/tutorial-context";
 import { roadmapApi } from "@/services/api/roadmap";
 import type { RoadmapLessonResponse, RoadmapTopicResponse } from "@/types";
-import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
 import { useFocusEffect, useRouter } from "expo-router";
@@ -78,6 +78,7 @@ import Animated, {
   Easing,
   FadeInDown,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -210,15 +211,20 @@ const HEX_POINTS_SHIMMER = hexPoints(
 // ─── ActiveFloatingWrapper ───────────────────────────────────────────────────
 /** Chỉ bọc duy nhất node đang hoạt động (isActive) để không tạo SharedValue cho 95 node tĩnh. */
 function ActiveFloatingWrapper({ children }: { children: React.ReactNode }) {
+  const reduceMotion = useReducedMotion();
   const floatY = useSharedValue(0);
 
   useEffect(() => {
+    if (reduceMotion) {
+      floatY.value = 0;
+      return;
+    }
     floatY.value = withRepeat(
       withTiming(-7, { duration: 1600, easing: Easing.inOut(Easing.ease) }),
       -1,
       true,
     );
-  }, [floatY]);
+  }, [floatY, reduceMotion]);
 
   const floatStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: floatY.value }],
@@ -229,10 +235,16 @@ function ActiveFloatingWrapper({ children }: { children: React.ReactNode }) {
 
 // ─── ActiveNodeGlow ──────────────────────────────────────────────────────────
 function ActiveNodeGlow({ size }: { size: number }) {
+  const reduceMotion = useReducedMotion();
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.55);
 
   useEffect(() => {
+    if (reduceMotion) {
+      scale.value = 1.1;
+      opacity.value = 0.35;
+      return;
+    }
     scale.value = withRepeat(
       withTiming(1.45, { duration: 1600, easing: Easing.inOut(Easing.ease) }),
       -1,
@@ -243,7 +255,7 @@ function ActiveNodeGlow({ size }: { size: number }) {
       -1,
       true,
     );
-  }, [opacity, scale]);
+  }, [opacity, scale, reduceMotion]);
 
   const glowStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -364,10 +376,10 @@ const HexNode = React.memo(function HexNode({
         }}
       >
         {isLocked ? (
-          <FontAwesome5 name="lock" size={18} color="rgba(255,255,255,0.3)" />
+          <Ionicons name="lock-closed" size={18} color="rgba(255,255,255,0.4)" />
         ) : isCompleted ? (
           <View style={{ alignItems: "center" }}>
-            <FontAwesome5 name="check" size={16} color="#FFFFFF" solid />
+            <Ionicons name="checkmark" size={18} color="#FFFFFF" />
             <Ionicons
               name={lessonIconName}
               size={16}
@@ -435,7 +447,7 @@ const HexNode = React.memo(function HexNode({
               <View
                 style={[
                   styles.popoverBadge,
-                  isJumpTest && { backgroundColor: "#FF9600" },
+                  isJumpTest && { backgroundColor: Colors.streakActive },
                 ]}
               >
                 <Text style={styles.popoverBadgeText}>
@@ -567,7 +579,7 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
         </Pressable>
         <View style={styles.timedReviewStars}>
           {[1, 2, 3].map((position) => (
-            <FontAwesome5
+            <Ionicons
               key={position}
               name="star"
               size={8}
@@ -578,7 +590,6 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
                     ? "rgba(255,255,255,0.2)"
                     : "rgba(0,0,0,0.18)"
               }
-              solid
               style={{ marginHorizontal: 1 }}
             />
           ))}
@@ -614,7 +625,7 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
               </View>
               <View style={styles.popoverStars}>
                 {[1, 2, 3].map((position) => (
-                  <FontAwesome5
+                  <Ionicons
                     key={position}
                     name="star"
                     size={11}
@@ -625,7 +636,6 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
                           ? "rgba(255,255,255,0.18)"
                           : "rgba(0,0,0,0.15)"
                     }
-                    solid
                     style={{ marginLeft: 2 }}
                   />
                 ))}
@@ -675,7 +685,7 @@ function StatPill({
   color,
   onPress,
 }: {
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
   value: string | number;
   color: string;
   onPress?: () => void;
@@ -687,7 +697,7 @@ function StatPill({
       style={[styles.statPill, { borderColor: `${color}40` }]}
       accessibilityRole={onPress ? "button" : "text"}
     >
-      <FontAwesome5 name={icon} size={13} color={color} solid />
+      <Ionicons name={icon} size={14} color={color} />
       <Text style={[styles.statPillText, { color }]}>{value}</Text>
     </AnimatedPressable>
   );
@@ -770,6 +780,16 @@ const TopicSection = React.memo(
       [pathLessons, centerX],
     );
     const accent = TOPIC_ACCENTS[topicIndex % TOPIC_ACCENTS.length];
+    // Phần lớn topic trên một lộ trình dài là "khoá hoàn toàn" (chưa học
+    // tới) — mọi hex node của nó dùng màu đặc (isLocked), không node nào
+    // tham chiếu tới 4 gradient bên dưới. Vẫn khai báo <Defs> vô điều kiện
+    // buộc Skia dựng shader cho gradient không dùng tới trên MỌI section
+    // khi raster — bỏ qua hẳn <Defs> (và nhánh active-track) khi topic
+    // không có tiến độ giúp giảm việc raster này cho phần lớn section.
+    const hasAnyUnlocked = React.useMemo(
+      () => pathLessons.some((l) => l.status !== "LOCKED"),
+      [pathLessons],
+    );
 
     return (
       <>
@@ -786,56 +806,77 @@ const TopicSection = React.memo(
           />
         )}
 
-        {/* ── Map Section ── */}
+        {/* ── Map Section ──
+          renderToHardwareTextureAndroid: nội dung của một section (SVG track +
+          hexagon + orb) không đổi giữa các khung hình cuộn — không có nó,
+          Android vẽ lại và upload bitmap của toàn bộ SVG trên MỌI khung hình
+          cuộn (đo được "Slow bitmap uploads" ở gần 100% số khung). Với cờ
+          này, section được raster một lần vào 1 texture phần cứng và các
+          khung sau chỉ dịch chuyển texture đó. */}
         <View
           key={`map-${topic.topicId}`}
           style={[styles.mapContainer, { height: totalMapHeight }]}
+          renderToHardwareTextureAndroid
         >
           {/* SVG Track + Hexagon Backgrounds (Unified into single hardware draw pass) */}
           <Svg style={StyleSheet.absoluteFillObject}>
-            <Defs>
-              <SvgGradient
-                id={`activeGrad-${topicIndex}`}
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <Stop offset="0" stopColor={accent.from} stopOpacity="1" />
-                <Stop offset="1" stopColor={accent.to} stopOpacity="1" />
-              </SvgGradient>
-              <SvgGradient id="hexGrad-active" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0" stopColor={Colors.primary} />
-                <Stop offset="1" stopColor={Colors.secondary} />
-              </SvgGradient>
-              <SvgGradient id="ringGrad-active" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0" stopColor={Colors.primary} stopOpacity="0.9" />
-                <Stop
-                  offset="1"
-                  stopColor={Colors.secondary}
-                  stopOpacity="0.9"
-                />
-              </SvgGradient>
-              <SvgGradient id="ringGrad-completed" x1="0" y1="0" x2="1" y2="1">
-                <Stop
-                  offset="0"
-                  stopColor={Colors.primaryLight}
-                  stopOpacity="0.9"
-                />
-                <Stop
-                  offset="1"
-                  stopColor={Colors.secondary}
-                  stopOpacity="0.9"
-                />
-              </SvgGradient>
-            </Defs>
+            {hasAnyUnlocked && (
+              <Defs>
+                <SvgGradient
+                  id={`activeGrad-${topicIndex}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <Stop offset="0" stopColor={accent.from} stopOpacity="1" />
+                  <Stop offset="1" stopColor={accent.to} stopOpacity="1" />
+                </SvgGradient>
+                <SvgGradient id="hexGrad-active" x1="0" y1="0" x2="1" y2="1">
+                  <Stop offset="0" stopColor={Colors.primary} />
+                  <Stop offset="1" stopColor={Colors.secondary} />
+                </SvgGradient>
+                <SvgGradient id="ringGrad-active" x1="0" y1="0" x2="1" y2="1">
+                  <Stop
+                    offset="0"
+                    stopColor={Colors.primary}
+                    stopOpacity="0.9"
+                  />
+                  <Stop
+                    offset="1"
+                    stopColor={Colors.secondary}
+                    stopOpacity="0.9"
+                  />
+                </SvgGradient>
+                <SvgGradient
+                  id="ringGrad-completed"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="1"
+                >
+                  <Stop
+                    offset="0"
+                    stopColor={Colors.primaryLight}
+                    stopOpacity="0.9"
+                  />
+                  <Stop
+                    offset="1"
+                    stopColor={Colors.secondary}
+                    stopOpacity="0.9"
+                  />
+                </SvgGradient>
+              </Defs>
+            )}
 
-            {/* Outer rail shadow */}
-            <G y={5} opacity={0.3}>
+            {/* Outer rail shadow — stroke color carries the alpha directly
+              (not a <G opacity>) so this pass doesn't force an offscreen
+              composite layer during the section's one-time raster. */}
+            <G y={5}>
               <Path
                 d={paths.fullPath}
                 fill="none"
-                stroke="#000000"
+                stroke="rgba(0,0,0,0.3)"
                 strokeWidth={20}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -1141,23 +1182,26 @@ export default function LearnScreen() {
   } = useGamification();
   const { maybeAutoStart, markAsSeen } = useTutorial();
 
-  const streakPillConfig = useMemo(() => {
+  const streakPillConfig = useMemo<{
+    color: string;
+    icon: keyof typeof Ionicons.glyphMap;
+  }>(() => {
     switch (streakStatus) {
       case "ACTIVE":
         return {
           color: Colors.streakActive,
-          icon: "fire",
+          icon: "flame",
         };
       case "FROZEN":
         return {
           color: Colors.streakFrozen,
-          icon: "fire",
+          icon: "snow",
         };
       case "UNLIT":
       default:
         return {
           color: isDark ? "#9CA3AF" : "#64748B",
-          icon: "fire",
+          icon: "flame-outline",
         };
     }
   }, [streakStatus, isDark]);
@@ -1398,9 +1442,9 @@ export default function LearnScreen() {
                   color={streakPillConfig.color}
                   onPress={() => setIsStreakModalVisible(true)}
                 />
-                <StatPill icon="coins" value={coins} color={Colors.accent} />
+                <StatPill icon="sparkles" value={coins} color={Colors.accent} />
                 <StatPill
-                  icon="bolt"
+                  icon="flash"
                   value={`${energy}/${maxEnergy}`}
                   color="#4ADE80"
                   onPress={() => {
@@ -1447,9 +1491,9 @@ export default function LearnScreen() {
                   color={streakPillConfig.color}
                   onPress={() => setIsStreakModalVisible(true)}
                 />
-                <StatPill icon="coins" value={coins} color={Colors.accent} />
+                <StatPill icon="sparkles" value={coins} color={Colors.accent} />
                 <StatPill
-                  icon="bolt"
+                  icon="flash"
                   value={`${energy}/${maxEnergy}`}
                   color="#4ADE80"
                   onPress={() => {

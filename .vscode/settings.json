@@ -3,5 +3,23 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  }
+  },
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.expo/**"
+  ],
+  "java.project.resourceFilters": [
+    "node_modules",
+    ".expo",
+    ".git"
+  ],
+  "python.defaultInterpreterPath": "${workspaceFolder}/ai-service/.venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/ai-service/src",
+    "${workspaceFolder}/ai-service/.venv/Lib/site-packages"
+  ],
+  "python.autoComplete.extraPaths": [
+    "${workspaceFolder}/ai-service/src",
+    "${workspaceFolder}/ai-service/.venv/Lib/site-packages"
+  ]
 }

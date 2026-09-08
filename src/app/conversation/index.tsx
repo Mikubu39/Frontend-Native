@@ -27,6 +27,7 @@ import { CUSTOM_TOPIC_ID } from "@/constants/conversation";
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -235,6 +236,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     textAlign: "center",
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
   },
@@ -269,10 +271,12 @@ const styles = StyleSheet.create({
   },
   optionBody: { flex: 1 },
   optionTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
   },
   optionDesc: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     lineHeight: 16,
     marginTop: 2,
@@ -287,10 +291,12 @@ const styles = StyleSheet.create({
   },
   introBody: { flex: 1 },
   introTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
   },
   introDesc: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     lineHeight: 19,
     marginTop: 2,
@@ -301,6 +307,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.twelve,
   },
   centerText: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     textAlign: "center",
     paddingHorizontal: Spacing.six,
@@ -311,6 +318,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   retryText: {
+    fontFamily: Fonts.rounded,
     color: "#FFFFFF",
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,

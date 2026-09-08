@@ -20,6 +20,7 @@ import { useSoundEffect } from "@/hooks/use-sound-effect";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import {
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -600,6 +601,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   placeholder: {
     width: 40,
@@ -614,6 +616,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
     textTransform: "uppercase",
     marginBottom: Spacing.three,
     marginLeft: Spacing.two,
@@ -651,6 +654,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: FontSizes.xs,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   itemIcon: {
     marginRight: Spacing.four,
@@ -658,6 +662,7 @@ const styles = StyleSheet.create({
   itemLabel: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.sans,
   },
   itemLabelDestructive: {
     color: Colors.error,
@@ -686,6 +691,7 @@ const styles = StyleSheet.create({
   themeModalTitle: {
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
+    fontFamily: Fonts.rounded,
   },
   closeButton: {
     padding: Spacing.one,
@@ -717,9 +723,11 @@ const styles = StyleSheet.create({
   themeOptionLabel: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   themeOptionDesc: {
     fontSize: FontSizes.xs,
+    fontFamily: Fonts.sans,
   },
   radioCircle: {
     width: 22,
@@ -747,14 +755,17 @@ const styles = StyleSheet.create({
   soundSettingLabel: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   soundSettingDesc: {
     fontSize: FontSizes.xs,
+    fontFamily: Fonts.sans,
     lineHeight: 18,
   },
   soundPreviewTitle: {
     fontSize: FontSizes.xs,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
     letterSpacing: 0.5,
     marginTop: Spacing.one,
   },
@@ -776,6 +787,7 @@ const styles = StyleSheet.create({
   soundPreviewButtonText: {
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   soundInfoBox: {
     flexDirection: "row",
@@ -788,6 +800,7 @@ const styles = StyleSheet.create({
   soundInfoText: {
     flex: 1,
     fontSize: FontSizes.xs,
+    fontFamily: Fonts.sans,
     lineHeight: 16,
   },
 });

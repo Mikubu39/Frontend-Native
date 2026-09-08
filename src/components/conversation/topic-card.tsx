@@ -13,6 +13,7 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useTheme } from "@/contexts/theme-context";
 import {
   BorderRadius,
+  Fonts,
   FontSizes,
   FontWeights,
   Shadows,
@@ -102,14 +103,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
   },
   titleJa: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     marginTop: 1,
   },
   description: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     lineHeight: 19,
     marginTop: Spacing.three,
@@ -124,6 +128,7 @@ const styles = StyleSheet.create({
   },
   goalText: {
     flex: 1,
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.semibold,
   },

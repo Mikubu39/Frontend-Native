@@ -21,6 +21,7 @@ import { useTheme } from "@/contexts/theme-context";
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -128,6 +129,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   header: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.xs,
     fontWeight: FontWeights.bold,
     textTransform: "uppercase",
@@ -147,10 +149,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   chipJa: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
   },
   chipVi: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     marginTop: 2,
   },

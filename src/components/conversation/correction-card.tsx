@@ -19,6 +19,7 @@ import {
 } from "@/constants/conversation";
 import {
   BorderRadius,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -135,15 +136,18 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   title: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.xs,
     fontWeight: FontWeights.bold,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
   category: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
   },
   message: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     lineHeight: 19,
   },
@@ -155,10 +159,12 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   wrong: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.md,
     textDecorationLine: "line-through",
   },
   right: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
   },

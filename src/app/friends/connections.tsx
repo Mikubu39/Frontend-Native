@@ -1,6 +1,7 @@
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -232,6 +233,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   loader: {
     marginTop: Spacing.eight,
@@ -265,11 +267,13 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.primary,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   fullName: {
     flex: 1,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   followBtn: {
     backgroundColor: Colors.primary,
@@ -283,11 +287,15 @@ const styles = StyleSheet.create({
   followBtnText: {
     color: "white",
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.sm,
   },
-  followingBtnText: {},
+  followingBtnText: {
+    fontFamily: Fonts.rounded,
+  },
   emptyText: {
     textAlign: "center",
+    fontFamily: Fonts.sans,
     marginTop: Spacing.eight,
   },
 });

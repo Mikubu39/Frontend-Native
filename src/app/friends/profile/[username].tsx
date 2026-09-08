@@ -9,13 +9,22 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
+import {
+  Colors,
+  Fonts,
+  FontSizes,
+  FontWeights,
+  Spacing,
+} from "@/constants/theme";
 import { useTheme } from "@/contexts/theme-context";
 import { userService } from "@/services/api/user";
 import { UserProfileResponse } from "@/types/user-api";
 import { resolveAvatarUri } from "@/utils/media";
 import { BackButton } from "@/components/ui/back-button";
-import { ProfileCard, ProfileCardStat } from "@/components/friends/profile-card";
+import {
+  ProfileCard,
+  ProfileCardStat,
+} from "@/components/friends/profile-card";
 
 export default function UserProfileScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
@@ -151,6 +160,7 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     textAlign: "center",
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
@@ -159,6 +169,7 @@ const styles = StyleSheet.create({
     padding: Spacing.six,
   },
   errorText: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.lg,
     color: Colors.textSecondary,
   },

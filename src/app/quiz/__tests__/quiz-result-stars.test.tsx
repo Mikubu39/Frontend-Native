@@ -14,6 +14,7 @@ jest.mock("@/contexts/gamification-context", () => ({
 jest.mock("expo-router", () => ({
   useRouter: jest.fn(),
   useLocalSearchParams: jest.fn(),
+  Stack: { Screen: () => null },
 }));
 
 const mockedUseTheme = useTheme as jest.Mock;

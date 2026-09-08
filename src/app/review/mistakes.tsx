@@ -17,7 +17,12 @@ import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 import { mistakesApi } from "@/services/api/mistakes";
 import { mapApiQuestionsToQuizQuestions } from "@/utils/quiz-mapper";
 import { QuizQuestion } from "@/types/quiz";
-import { Colors, Spacing, FontSizes, FontWeights } from "@/constants/theme";
+import {
+  Colors,
+  Fonts,
+  Spacing,
+  FontSizes,
+} from "@/constants/theme";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useGamification } from "@/contexts/gamification-context";
 import { useToast } from "@/contexts/toast-context";
@@ -384,6 +389,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { justifyContent: "center", alignItems: "center", padding: 20 },
   messageText: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     textAlign: "center",
     fontWeight: "bold",

@@ -19,6 +19,7 @@ import { AvatarDisplay } from "@/components/user/avatar-display";
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   Shadows,
   Spacing,
@@ -172,6 +173,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 12.5,
     fontWeight: "800",
+    fontFamily: Fonts.rounded,
     letterSpacing: 0.2,
   },
   topActions: {
@@ -212,6 +214,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: FontSizes.xl,
     fontWeight: "800",
+    fontFamily: Fonts.rounded,
     marginTop: Spacing.three,
     maxWidth: "100%",
   },
@@ -226,6 +229,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.9)",
     fontSize: 12.5,
     fontWeight: "700",
+    fontFamily: Fonts.sans,
     letterSpacing: 0.3,
   },
 });

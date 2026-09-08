@@ -28,6 +28,7 @@ import {
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -296,23 +297,28 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   scoreValue: {
+    fontFamily: Fonts.rounded,
     fontSize: 30,
     fontWeight: FontWeights.extrabold,
     fontVariant: ["tabular-nums"],
   },
   scoreUnit: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     marginTop: 10,
     marginLeft: 1,
   },
   heroTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.extrabold,
   },
   heroMeta: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
   },
   heroText: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     lineHeight: 21,
     textAlign: "center",
@@ -330,6 +336,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   sectionTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
   },
@@ -343,6 +350,7 @@ const styles = StyleSheet.create({
   },
   bulletText: {
     flex: 1,
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     lineHeight: 20,
   },
@@ -352,12 +360,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   itemCategory: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.xs,
     textTransform: "uppercase",
     letterSpacing: 0.4,
     fontWeight: FontWeights.bold,
   },
   wrong: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.md,
     textDecorationLine: "line-through",
   },
@@ -368,16 +378,19 @@ const styles = StyleSheet.create({
   },
   corrected: {
     flex: 1,
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     lineHeight: 24,
   },
   explanation: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     lineHeight: 19,
     marginTop: 2,
   },
   pattern: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
   },
@@ -387,10 +400,12 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   exampleJa: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     lineHeight: 24,
   },
   exampleVi: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     marginTop: 2,
   },

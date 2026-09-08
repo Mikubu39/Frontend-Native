@@ -37,8 +37,17 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
 27. **Tối Ưu Trải Nghiệm Hội Thoại AI (1:30s, Ẩn/Hiện Tiếng Việt Hai Chiều, Khắc Phục Lỗi Ký Hiệu Lạ & Layout Dính Sát Đáy)** — Rút ngắn thời lượng phiên còn 90s; sửa lỗi co rúm thẻ góp ý biến thành icon lạ `✨`; khắc phục layout đè mép đáy qua `SafeAreaView`; bỏ badge N5/N4 ngoài chủ đề; thêm tùy chọn ẩn/hiển thị tiếng Việt hai chiều kèm cử chỉ chạm/giữ lật mở bản dịch.
 28. **Khắc Phục Dứt Điểm Chặn Thoát Bài Học (BackHandler) & Đưa Con Dấu Hanko Lên Làm Hero Màn Kết Quả** — Bắt cử chỉ vuốt và nút Back phần cứng Android (`BackHandler`), bỏ chặn `hasAnsweredAtLeastOnce` để luôn cảnh báo mất tiến trình/năng lượng khi thoát; đưa con dấu triện tay HankoStamp khổ lớn (104px) ra làm Hero tâm điểm màn kết quả quiz thay thế mascot Lottie generic.
 29. **Khắc Phục 3 Điểm Trải Nghiệm Quiz: Modal Thoát Theme-Aware, Triệt Tiêu Feedback Kẹt & Chuẩn Hóa Phân Tầng Kết Quả Thực Tế** — Thay thế hộp thoại `Alert.alert` Android mặc định bằng `ModalCard` tuỳ biến chuẩn phong cách Nhật Bản; xóa bỏ `exiting` animation trên `QuizBottomBar` triệt tiêu lỗi kẹt thanh feedback "Tuyệt vời!" khi sang câu mới; phân tầng kết quả chính xác, nghiêm cấm trao nhãn "Xuất sắc" khi làm sai từ 2 câu trở lên.
+30. **Hoàn Thiện 5 Tiêu Chí Thiết Kế UI/UX & Chuẩn Hóa Thủ Công Mỹ Thuật (Impeccable & Frontend Design)** — Bổ sung hỗ trợ Reduce Motion (triệt tiêu animation vô hạn khi bật giảm chuyển động), phủ typography chuẩn thương hiệu (ZenMaruGothic/Nunito) lên 5 phân hệ, quét sạch mã màu `#FF9600` sót, đồng nhất hệ icon Ionicons và thay thế stock ảnh Onboarding.
 
 ## Plan
+
+- [x] **Hoàn Thiện 5 Tiêu Chí Thiết Kế UI/UX & Chuẩn Hóa Thủ Công Mỹ Thuật (Impeccable & Frontend Design) (HOÀN TẤT 2026-09-06):**
+  - [x] 1. **Reduce Motion**: Thêm `useReducedMotion()` vào `ActiveFloatingWrapper`, `ActiveNodeGlow` (`(tabs)/index.tsx`) và `StreakModal` (`streak-modal.tsx`), tôn trọng trợ năng tiếp cận.
+  - [x] 2. **Typeset & Typography**: Khai báo `fontFamily: Fonts.rounded` / `Fonts.sans` đồng bộ cho toàn bộ màn hình `profile`, `friends`, `settings`, `conversation`, `review`.
+  - [x] 3. **Color Tokens**: Quét dọn triệt để `#FF9600` và `#00C8FF` thành `Colors.streakActive` và `Colors.streakFrozen` trong `streak-calendar-strip.tsx`, `index.tsx`, `quiz-header.tsx`, `achievement-icon.ts`.
+  - [x] 4. **Icon Consistency**: Chuẩn hóa toàn bộ icon trên `(tabs)/index.tsx` từ `FontAwesome5` sang `Ionicons`, gỡ bỏ import `FontAwesome5`.
+  - [x] 5. **Assets Onboarding**: Thay thế 4 link Unsplash stock trong `onboarding.ts` bằng các minh họa theo phong cách visual identity riêng đậm chất văn hoá Nhật Bản.
+  - [x] 6. **Kiểm thử toàn diện**: Chạy `npx tsc --noEmit` (0 lỗi), `npm test` (43/43 suites / 231/231 tests PASS 100%), và `npm run lint`.
 
 - [x] **Khắc Phục 3 Điểm Trải Nghiệm Quiz: Modal Thoát Theme-Aware, Triệt Tiêu Feedback Kẹt & Chuẩn Hóa Phân Tầng Kết Quả Thực Tế (HOÀN TẤT 2026-09-06):**
   - [x] 1. Cập nhật `src/app/quiz/[id].tsx`: Thay thế `Alert.alert` bằng state `showExitModal` và `ModalCard` tuỳ biến theo theme (backdrop blur, icon cảnh báo, font bo tròn, nút GradientButton "TIẾP TỤC HỌC" và nút đỏ "RỜI KHỎI BÀI"), hỗ trợ cả nút ✕, vuốt mép và phím cứng Back.
@@ -250,7 +259,42 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
 
 ## Progress
  
-- **2026-09-06 — Khắc Phục 3 Điểm Trải Nghiệm Quiz: Modal Thoát Theme-Aware, Triệt Tiêu Feedback Kẹt & Chuẩn Hóa Phân Tầng Kết Quả Thực Tế (HOÀN TẤT).**
+- **2026-09-06 — Hoàn Thiện 5 Tiêu Chí Thiết Kế UI/UX & Chuẩn Hóa Thủ Công Mỹ Thuật (Impeccable & Frontend Design) (HOÀN TẤT).**
+  - **1. Trợ Năng Giảm Chuyển Động (Reduce Motion)**:
+    - Bổ sung hook `useReducedMotion()` từ `react-native-reanimated` vào `ActiveFloatingWrapper` và `ActiveNodeGlow` tại `src/app/(tabs)/index.tsx`. Khi thiết bị bật chế độ giảm chuyển động trong cài đặt Trợ năng, hiệu ứng nhảy nhót vô hạn (`withRepeat(withSequence(...))`) và vòng sáng breathing glow tự động dừng lại ở vị trí cân bằng tĩnh (`translateY: 0`, `scale: 1.1`, `opacity: 0.35`).
+    - Bổ sung `useReducedMotion()` vào `StreakModal` (`src/components/gamification/streak-modal.tsx`), tắt animation xoay vô hạn của ngọn lửa (`flameRotation: 0`), bảo vệ người dùng nhạy cảm với chuyển động.
+  - **2. Đồng Bộ Hệ Typography & Typeset Chuẩn Thương Hiệu**:
+    - Quét sạch các style text dùng font mặc định trần, phủ đồng bộ hệ font ZenMaruGothic (`Fonts.rounded`) cho headers, titles, metrics, badges, buttons và Nunito (`Fonts.sans`) cho subtitles, descriptions, labels xuyên suốt 5 phân hệ lớn:
+      - `profile`: `profile.tsx`, `profile-hero-card.tsx`, `streak-calendar-strip.tsx`.
+      - `settings`: `settings/index.tsx`.
+      - `friends`: `profile-card.tsx`, `friends/search.tsx`, `friends/connections.tsx`, `friends/view-search-profile.tsx`, `friends/profile/[username].tsx`, `friends/index.tsx`, `friends/scan.tsx`.
+      - `conversation`: `conversation/index.tsx`, `conversation/[id].tsx`, `chat-bubble.tsx`, `chat-composer.tsx`, `topic-card.tsx`, `custom-topic-card.tsx`, `correction-card.tsx`, `hint-chips.tsx`, `session-summary.tsx`, `session-timer.tsx`.
+      - `review`: `(tabs)/review.tsx`, `review/vocabulary.tsx`, `review/mistakes.tsx`.
+  - **3. Dọn Dẹp Triệt Để Mã Màu Hardcode Thô (Color Tokens)**:
+    - Quét dọn toàn bộ các mã màu cứng `#FF9600` và `#00C8FF` còn sót trong active code.
+    - Quy hoạch về token ngữ nghĩa chuẩn từ `theme.ts`: `Colors.streakActive` (`#D9762E` - sắc cam lửa ấm áp Washi) và `Colors.streakFrozen` (`#7C93C4` - lam băng tuyết).
+    - Áp dụng triệt để tại `(tabs)/index.tsx`, `streak-calendar-strip.tsx`, `streak-modal.tsx`, `quiz-header.tsx`, `achievement-icon.ts`.
+  - **4. Thống Nhất Hệ Icon Toàn Bản Đồ Lộ Trình (Icon Consistency)**:
+    - Chuẩn hóa toàn bộ icon trên bản đồ bài học `(tabs)/index.tsx` về bộ thư viện đồng nhất `Ionicons`:
+      - `lock` -> `lock-closed`
+      - `check` -> `checkmark`
+      - `star` -> `star`
+      - `fire` -> `flame`
+      - `coins` -> `sparkles`
+      - `bolt` -> `flash`
+    - Gỡ bỏ hoàn toàn việc import thư viện ngoài luồng `FontAwesome5`.
+  - **5. Visual Identity Nghệ Thuật Cho Khảo Sát Sở Thích (Onboarding Assets)**:
+    - Xóa bỏ hoàn toàn 4 đường link ảnh Unsplash stock generic trong `src/data/onboarding.ts`.
+    - Thiết kế bộ 4 hình ảnh minh họa vector phẳng đậm chất văn hóa và mỹ học Nhật Bản:
+      - `travel.jpg`: Cổng Torii đỏ rực bên núi Phú Sĩ tuyết phủ và hoa anh đào Sakura.
+      - `art.jpg`: Thư pháp Shodō truyền thống, bút lông, con dấu triện Hanko đỏ và quạt xếp sóng nước Seigaiha.
+      - `food.jpg`: Bát mì Ramen bốc khói nghi ngút, sushi cá hồi tươi rói và xiên dango 3 màu.
+      - `manga.jpg`: Bàn vẽ truyện tranh Manga / Anime sống động, sách truyện và các nét vẽ hành động lôi cuốn.
+    - Lưu trữ cục bộ tại `assets/images/onboarding/`, render trực tiếp offline qua `imageSource` trong `InterestGrid`.
+  - **6. Kiểm Thử Toàn Diện**:
+    - `npx tsc --noEmit`: 0 lỗi.
+    - `npm test`: 43/43 suites / 231/231 tests PASS 100%.
+    - `eslint`: 0 lỗi.
   - **Hộp thoại xác nhận thoát bài học thô trên Android**:
     - Bóc tách nguyên nhân: `handleClose` gọi trực tiếp `Alert.alert` của React Native, làm hệ điều hành Android dựng popup `AlertDialog` mặc định nền trắng, nút xanh mòng két, font chữ hệ thống không đồng bộ với Dark Theme và mỹ học Washi / Ai-zome của app.
     - Xử lý triệt để: Xây dựng modal in-app `showExitModal` lồng trong `ModalCard` chuẩn thiết kế: kính mờ BlurView, badge icon cảnh báo `log-out-outline`, typography bo tròn `Fonts.rounded`, nút chính GradientButton "TIẾP TỤC HỌC" nổi bật và nút phụ viền "RỜI KHỎI BÀI" màu đỏ tinh tế.

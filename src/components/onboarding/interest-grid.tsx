@@ -32,6 +32,9 @@ export function InterestGrid({
     <View style={styles.grid}>
       {ONBOARDING_INTERESTS.map((interest) => {
         const isSelected = selectedInterests.includes(interest.id);
+        const imageSource =
+          interest.imageSource ??
+          (interest.imageUrl ? { uri: interest.imageUrl } : undefined);
         return (
           <AnimatedPressable
             key={interest.id}
@@ -49,7 +52,9 @@ export function InterestGrid({
             accessibilityState={{ checked: isSelected }}
             accessibilityLabel={interest.label}
           >
-            <Image source={{ uri: interest.imageUrl }} style={styles.image} />
+            {imageSource ? (
+              <Image source={imageSource} style={styles.image} />
+            ) : null}
             {isSelected && (
               <View style={styles.overlay}>
                 <Animated.View

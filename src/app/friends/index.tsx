@@ -1,6 +1,7 @@
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -375,6 +376,7 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
@@ -408,11 +410,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   optionTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
   },
   optionSubtitle: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     color: Colors.textSecondary,
     marginTop: 2,
@@ -447,6 +451,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   modalTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
@@ -487,6 +492,7 @@ const styles = StyleSheet.create({
     marginRight: Spacing.four,
   },
   avatarText: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     color: Colors.primary,
     fontWeight: FontWeights.bold,
@@ -495,11 +501,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fullName: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,
   },
   userLevel: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.sm,
     color: Colors.primary,
     marginTop: 2,
@@ -511,6 +519,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.sixteen,
   },
   emptyText: {
+    fontFamily: Fonts.sans,
     textAlign: "center",
     color: Colors.textSecondary,
     fontSize: FontSizes.sm,

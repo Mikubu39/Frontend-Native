@@ -24,6 +24,7 @@ import { parseUsernameFromQR } from "@/utils/qr";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -307,6 +308,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
+    fontFamily: Fonts.sans,
     color: "#FFFFFF",
     fontSize: FontSizes.md,
   },
@@ -322,6 +324,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
   },
   screenTitle: {
+    fontFamily: Fonts.rounded,
     color: "#FFFFFF",
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
@@ -397,6 +400,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   guideHint: {
+    fontFamily: Fonts.sans,
     color: "#FFFFFF",
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.medium,
@@ -422,6 +426,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   myQrShortcutText: {
+    fontFamily: Fonts.rounded,
     color: "#FFFFFF",
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
@@ -459,12 +464,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.four,
   },
   permissionTitle: {
+    fontFamily: Fonts.rounded,
     color: "#FFFFFF",
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.bold,
     textAlign: "center",
   },
   permissionDesc: {
+    fontFamily: Fonts.sans,
     color: "rgba(255, 255, 255, 0.7)",
     fontSize: FontSizes.md,
     textAlign: "center",

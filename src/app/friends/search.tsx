@@ -1,6 +1,7 @@
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -244,6 +245,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     borderWidth: 1,
     borderColor: Colors.inputBorder,
+    fontFamily: Fonts.sans,
   },
   searchBtn: {
     padding: Spacing.three,
@@ -251,6 +253,7 @@ const styles = StyleSheet.create({
   searchBtnText: {
     color: Colors.primary,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   loader: {
     marginTop: Spacing.eight,
@@ -289,6 +292,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xl,
     color: Colors.primary,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
   },
   userInfo: {
     flex: 1,
@@ -296,10 +300,12 @@ const styles = StyleSheet.create({
   fullName: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
     color: Colors.textPrimary,
   },
   username: {
     fontSize: FontSizes.sm,
+    fontFamily: Fonts.sans,
     color: Colors.textSecondary,
   },
   followBtn: {
@@ -316,14 +322,17 @@ const styles = StyleSheet.create({
   followBtnText: {
     color: "white",
     fontWeight: FontWeights.bold,
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.sm,
   },
   followingBtnText: {
     color: Colors.textPrimary,
+    fontFamily: Fonts.rounded,
   },
   emptyText: {
     textAlign: "center",
     color: Colors.textSecondary,
+    fontFamily: Fonts.sans,
     marginTop: Spacing.eight,
   },
 });

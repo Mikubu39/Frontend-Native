@@ -37,6 +37,7 @@ import { WRAP_UP_WARNING_SECONDS } from "@/constants/conversation";
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -153,18 +154,14 @@ export default function ConversationChatScreen() {
       router.back();
       return;
     }
-    Alert.alert(
-      "Thoát hội thoại?",
-      "Cuộc hội thoại đang diễn ra sẽ bị huỷ.",
-      [
-        { text: "Huỷ", style: "cancel" },
-        {
-          text: "Thoát",
-          style: "destructive",
-          onPress: () => router.back(),
-        },
-      ],
-    );
+    Alert.alert("Thoát hội thoại?", "Cuộc hội thoại đang diễn ra sẽ bị huỷ.", [
+      { text: "Huỷ", style: "cancel" },
+      {
+        text: "Thoát",
+        style: "destructive",
+        onPress: () => router.back(),
+      },
+    ]);
   }, [sessionOver, router]);
 
   // Phiên kết thúc thì im ngay - để bot đọc nốt câu dở trong khi bản tổng kết
@@ -530,10 +527,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.extrabold,
   },
   headerSubtitle: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     marginTop: 1,
   },
@@ -549,6 +548,7 @@ const styles = StyleSheet.create({
     padding: Spacing.six,
   },
   centerText: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.sm,
     textAlign: "center",
   },
@@ -585,6 +585,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   secondaryText: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
   },
@@ -594,6 +595,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   retryText: {
+    fontFamily: Fonts.rounded,
     color: "#FFFFFF",
     fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
@@ -608,6 +610,7 @@ const styles = StyleSheet.create({
   },
   errorBannerText: {
     flex: 1,
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     color: Colors.error,
   },
@@ -620,6 +623,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.one,
   },
   finishEarlyText: {
+    fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     fontWeight: FontWeights.semibold,
   },

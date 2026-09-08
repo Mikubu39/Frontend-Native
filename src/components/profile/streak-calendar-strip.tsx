@@ -7,7 +7,7 @@
 
 import React, { useEffect, useMemo, useRef } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { BorderRadius, Spacing } from "@/constants/theme";
+import { BorderRadius, Colors, Fonts, Spacing } from "@/constants/theme";
 
 export interface StreakCalendarStripProps {
   studyDates: string[];
@@ -34,7 +34,7 @@ export function toIsoDate(date: Date): string {
 export function StreakCalendarStrip({
   studyDates,
   days = 30,
-  activeColor = "#FF9600",
+  activeColor = Colors.streakActive,
   inactiveColor = "rgba(150, 150, 150, 0.15)",
   textColor = "#1F2937",
   textSecondaryColor = "#6B7280",
@@ -268,6 +268,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 13,
     fontWeight: "600",
+    fontFamily: Fonts.rounded,
   },
   streakBadge: {
     flexDirection: "row",
@@ -280,7 +281,8 @@ const styles = StyleSheet.create({
   streakBadgeText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#EA580C",
+    fontFamily: Fonts.rounded,
+    color: Colors.streakActive,
   },
   scrollContent: {
     flexDirection: "row",
@@ -300,6 +302,7 @@ const styles = StyleSheet.create({
   weekdayText: {
     fontSize: 10,
     letterSpacing: 0.1,
+    fontFamily: Fonts.sans,
   },
   cellDot: {
     width: 18,
@@ -311,6 +314,7 @@ const styles = StyleSheet.create({
   },
   dayNumberText: {
     fontSize: 11,
+    fontFamily: Fonts.rounded,
   },
   todayIndicator: {
     width: 4,
@@ -337,5 +341,6 @@ const styles = StyleSheet.create({
   monthLabelText: {
     fontSize: 9,
     fontWeight: "700",
+    fontFamily: Fonts.rounded,
   },
 });

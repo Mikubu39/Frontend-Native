@@ -1,10 +1,11 @@
 import React, { useEffect, useCallback, useRef } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, {
   FadeInDown,
   withSpring,
+  withDelay,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -41,15 +42,20 @@ export default function AchievementUnlockedScreen() {
   const rotation = useSharedValue(0);
 
   useEffect(() => {
-    scale.value = withSpring(1, AnimationPresets.springBouncy);
-    rotation.value = withRepeat(
-      withSequence(
-        withTiming(-3, { duration: 120, easing: Easing.linear }),
-        withTiming(3, { duration: 120, easing: Easing.linear }),
-        withTiming(0, { duration: 120, easing: Easing.linear }),
+    // Delayed past the screen's own reveal transition so the medal visibly
+    // pops in once the user is already looking at the screen, not mid-slide.
+    scale.value = withDelay(250, withSpring(1, AnimationPresets.springBouncy));
+    rotation.value = withDelay(
+      250,
+      withRepeat(
+        withSequence(
+          withTiming(-3, { duration: 120, easing: Easing.linear }),
+          withTiming(3, { duration: 120, easing: Easing.linear }),
+          withTiming(0, { duration: 120, easing: Easing.linear }),
+        ),
+        -1, // infinite
+        true,
       ),
-      -1, // infinite
-      true,
     );
   }, [rotation, scale]);
 
@@ -106,6 +112,11 @@ export default function AchievementUnlockedScreen() {
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
+      {/* Reveal like a celebration, not a lateral page push */}
+      <Stack.Screen
+        options={{ animation: "fade_from_bottom", animationDuration: 350 }}
+      />
+
       <View style={styles.content}>
         <Animated.View style={[styles.medalContainer, animatedMedalStyle]}>
           <AchievementMedal
@@ -117,12 +128,12 @@ export default function AchievementUnlockedScreen() {
             lockedRing={colors.border}
           />
           <View style={styles.stampBadge}>
-            <HankoStamp size={56} delay={350} />
+            <HankoStamp size={56} delay={620} />
           </View>
         </Animated.View>
 
         <Animated.View
-          entering={FadeInDown.delay(300).springify()}
+          entering={FadeInDown.delay(350).springify()}
           style={styles.textContainer}
         >
           <Text style={styles.title}>Thành tựu mới!</Text>
@@ -131,7 +142,7 @@ export default function AchievementUnlockedScreen() {
 
           {count > 1 && (
             <Animated.Text
-              entering={FadeIn.delay(800)}
+              entering={FadeIn.delay(850)}
               style={styles.extraCount}
             >
               và {count - 1} thành tựu khác!
@@ -141,7 +152,7 @@ export default function AchievementUnlockedScreen() {
       </View>
 
       <Animated.View
-        entering={FadeInDown.delay(600).springify()}
+        entering={FadeInDown.delay(650).springify()}
         style={styles.buttonContainer}
       >
         <GradientButton title="TUYỆT VỜI" onPress={handleContinue} />

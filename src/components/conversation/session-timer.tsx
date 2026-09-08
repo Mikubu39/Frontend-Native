@@ -22,6 +22,7 @@ import {
 import {
   BorderRadius,
   Colors,
+  Fonts,
   FontSizes,
   FontWeights,
   Spacing,
@@ -82,6 +83,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
   },
   text: {
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.bold,
     // Chữ số đơn cách để đồng hồ không co giãn khi số thay đổi.

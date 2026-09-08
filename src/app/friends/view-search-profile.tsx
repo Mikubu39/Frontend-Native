@@ -2,13 +2,22 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
+import {
+  Colors,
+  Fonts,
+  FontSizes,
+  FontWeights,
+  Spacing,
+} from "@/constants/theme";
 import { userService } from "@/services/api/user";
 import { useTheme } from "@/contexts/theme-context";
 import { resolveAvatarUri } from "@/utils/media";
 import { PublicProfileResponse } from "@/types/api";
 import { BackButton } from "@/components/ui/back-button";
-import { ProfileCard, ProfileCardStat } from "@/components/friends/profile-card";
+import {
+  ProfileCard,
+  ProfileCardStat,
+} from "@/components/friends/profile-card";
 
 export default function ViewSearchProfileScreen() {
   const router = useRouter();
@@ -119,7 +128,9 @@ export default function ViewSearchProfileScreen() {
           avatarUrl={avatarUrl}
           stats={stats}
           rankLabel={
-            publicProfile?.rankName ? `Hạng ${publicProfile.rankName}` : undefined
+            publicProfile?.rankName
+              ? `Hạng ${publicProfile.rankName}`
+              : undefined
           }
           isFollowing={isFollowing}
           onToggleFollow={handleToggleFollow}
@@ -148,6 +159,7 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     textAlign: "center",
+    fontFamily: Fonts.rounded,
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
     color: Colors.textPrimary,

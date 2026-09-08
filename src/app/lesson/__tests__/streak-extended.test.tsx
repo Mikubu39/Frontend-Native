@@ -10,6 +10,7 @@ jest.mock("@/contexts/gamification-context", () => ({
 
 jest.mock("expo-router", () => ({
   useRouter: jest.fn(),
+  Stack: { Screen: () => null },
 }));
 
 const mockedUseGamification = useGamification as jest.Mock;
