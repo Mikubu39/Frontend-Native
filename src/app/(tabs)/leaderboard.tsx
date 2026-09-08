@@ -35,6 +35,27 @@ import {
 import { useGamification } from "@/contexts/gamification-context";
 import { useTheme } from "@/contexts/theme-context";
 
+/**
+ * Hàm hỗ trợ dịch tên Rank từ Tiếng Anh sang Tiếng Việt
+ */
+function translateRank(rankName: string | null | undefined): string {
+  if (!rankName) return "Chưa xếp hạng";
+  const rankMap: Record<string, string> = {
+    bronze: "Đồng",
+    silver: "Bạc",
+    gold: "Vàng",
+    platinum: "Bạch Kim", // Đã bổ sung Platinum
+    sapphire: "Ngọc Bích",
+    ruby: "Hồng Ngọc",
+    emerald: "Lục Bảo",
+    amethyst: "Thạch Anh Tím",
+    pearl: "Ngọc Trai",
+    obsidian: "Hắc Diện Thạch",
+    diamond: "Kim Cương",
+  };
+  return rankMap[rankName.toLowerCase()] || rankName;
+}
+
 export default function LeaderboardScreen() {
   const { rankId: currentUserRankId, exp: currentFreshExp } = useGamification();
   const { colors, isDark } = useTheme();
@@ -139,7 +160,7 @@ export default function LeaderboardScreen() {
     return (
       <View>
         <LeaderboardStatusBanner
-          rankName={currentRankInfo.name}
+          rankName={translateRank(currentRankInfo.name)}
           isCurrentRank={isCurrentRank}
           position={currentUserStanding?.position ?? null}
           exp={Math.max(currentUserStanding?.exp ?? 0, currentFreshExp)}
@@ -222,8 +243,9 @@ export default function LeaderboardScreen() {
           </Text>
         </View>
 
+        {/* Đã thêm map() để dịch tên ngay khi truyền vào RankTabs */}
         <RankTabs
-          ranks={ranks}
+          ranks={ranks.map((r) => ({ ...r, name: translateRank(r.name) }))}
           activeRankId={activeRankId}
           currentUserRankId={currentUserRankId}
           onSelect={setActiveRankId}

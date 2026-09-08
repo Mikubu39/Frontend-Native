@@ -34,6 +34,27 @@ interface AvatarPickerModalProps {
   onSave: (config: AvatarConfig) => void;
 }
 
+// Bảng dịch các tùy chọn sang tiếng Việt
+const translations: Record<string, string> = {
+  // Kiểu tóc
+  short: "Ngắn",
+  long: "Dài",
+  curly: "Xoăn",
+  bob: "Bob",
+  bun: "Búi",
+  // Râu
+  none: "Không",
+  beard: "Râu quai nón",
+  moustache: "Râu mép",
+  // Phụ kiện
+  glasses: "Kính",
+  hat: "Mũ",
+};
+
+const translateOption = (value: string): string => {
+  return translations[value.toLowerCase()] || value.toUpperCase();
+};
+
 export function AvatarPickerModal({
   visible,
   initialConfig,
@@ -49,9 +70,6 @@ export function AvatarPickerModal({
   useEffect(() => {
     const justOpened = visible && !wasVisibleRef.current;
     if (justOpened) {
-      // Chỉ nạp lại config lúc modal VỪA MỞ, không phải mỗi khi component cha re-render
-      // (nếu để effect này chạy theo initialConfig thì nó sẽ reset lựa chọn của user liên tục,
-      // vì initialConfig là object mới được tạo lại mỗi lần cha render).
       setConfig(initialConfig ?? DEFAULT_AVATAR_CONFIG);
     }
     wasVisibleRef.current = visible;
@@ -182,20 +200,20 @@ export function AvatarPickerModal({
               "Kiểu tóc",
               "hair",
               avatarOptions.hair,
-              (value) => value.toUpperCase(),
+              translateOption
             )}
             {renderOptionGroup(
               "Râu",
               "facialHair",
               avatarOptions.facialHair,
-              (value) => (value === "none" ? "KHÔNG" : value.toUpperCase()),
+              translateOption
             )}
             {renderColorGroup("Màu áo", "outfit", avatarOptions.outfit)}
             {renderOptionGroup(
               "Phụ kiện",
               "accessory",
               avatarOptions.accessory,
-              (value) => value.toUpperCase(),
+              translateOption
             )}
             {renderColorGroup(
               "Màu nền",

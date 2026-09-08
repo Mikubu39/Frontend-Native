@@ -46,13 +46,11 @@ import React, { useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Kích thước avatar chính trên Profile - đổi 1 chỗ này để đồng bộ mọi nơi liên quan.
+// Kích thước avatar chính trên Profile
 const AVATAR_SIZE = 108;
 
 /**
- * Lấy năm tham gia thật từ user.createdAt (backend trả về dạng ISO string,
- * vd "2025-03-14T08:00:00"). Nếu chưa có field này (BE chưa trả), fallback
- * về năm hiện tại thay vì hardcode "2025" như cũ.
+ * Lấy năm tham gia thật từ user.createdAt
  */
 function getJoinYear(createdAt?: string | null): number {
   if (!createdAt) return new Date().getFullYear();
@@ -60,6 +58,26 @@ function getJoinYear(createdAt?: string | null): number {
   return Number.isNaN(parsed.getTime())
     ? new Date().getFullYear()
     : parsed.getFullYear();
+}
+
+/**
+ * Hàm hỗ trợ dịch tên Rank từ Tiếng Anh sang Tiếng Việt
+ */
+function translateRank(rankName: string | null | undefined): string {
+  if (!rankName) return "Chưa xếp hạng";
+  const rankMap: Record<string, string> = {
+    bronze: "Đồng",
+    silver: "Bạc",
+    gold: "Vàng",
+    sapphire: "Ngọc Bích",
+    ruby: "Hồng Ngọc",
+    emerald: "Lục Bảo",
+    amethyst: "Thạch Anh Tím",
+    pearl: "Ngọc Trai",
+    obsidian: "Hắc Diện Thạch",
+    diamond: "Kim Cương",
+  };
+  return rankMap[rankName.toLowerCase()] || rankName;
 }
 
 export default function ProfileTabScreen() {
@@ -206,9 +224,9 @@ export default function ProfileTabScreen() {
         >
           <ProfileHeroCard
             displayName={user?.displayName || "Người học Nihongo"}
-            handle={user?.email?.split("@")[0].toUpperCase() || "USER"}
+            handle={user?.email?.split("@")[0].toUpperCase() || "HOCVIEN"}
             joinYear={joinYear}
-            rankName={rankName}
+            rankName={translateRank(rankName)}
             tier={tier}
             avatarUrl={avatarUrl}
             avatarSize={AVATAR_SIZE}
@@ -241,8 +259,10 @@ export default function ProfileTabScreen() {
 
           {currentRank && (
             <RankProgressBar
-              currentRankName={rankName}
-              nextRankName={nextRank?.name ?? null}
+              currentRankName={translateRank(rankName)}
+              nextRankName={
+                nextRank?.name ? translateRank(nextRank.name) : null
+              }
               currentTier={tier}
               progress={rankProgress}
               expToNext={expToNext}
