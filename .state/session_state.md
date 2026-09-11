@@ -64,8 +64,17 @@ Ship a fast, stable, accessible React Native application aligned with the roadma
 55. **Khôi Phục & Đưa Nút "Không Thể Nói Lúc Này" Lên Thanh Đáy Cố Định (Sticky BottomBar Speaking Skip)** — Giải quyết triệt để vấn đề nút bỏ qua phát âm bị khuất/mất dấu trong bài học thật; ẩn Mascot Lottie khi là câu nói để tránh tràn màn hình; đưa nút "Không thể nói lúc này?" ra thanh cố định `QuizBottomBar` luôn nhìn thấy 100%; hỗ trợ lọc bỏ toàn bộ câu nói trong bài kèm Toast; hỗ trợ modal bỏ qua/thoát trong màn Luyện phát âm (`/voice/record`).
 56. **Khắc Phục Lỗi Nút Bỏ Qua & Gợi Ý Phát Âm Bị Đen Xì Trên Nền Tối (Dark Theme Dynamic Color Fix)** — Thêm fallback an toàn trong `useTheme` khi context null (tránh crash khi render ngoài ThemeProvider); đồng bộ màu động `colors.textSecondary` và `colors.text` cho `skipSpeakingBtn` trong `QuizBottomBar`, các dòng romaji, bản dịch, câu phát mẫu ("Nghe câu mẫu") và dòng gợi ý trong `SpeakingQuestionCard` để chữ và icon luôn sáng rõ, tương phản cao trên mọi giao diện nền tối.
 57. **Kiểm Tra & Khắc Phục Toàn Diện Hệ Thống Âm Thanh (DB + BE + FE): Bổ Sung 77 MP3 Từ Vựng & Kích Hoạt Âm Thanh 1,027 Câu Hỏi Bài Học** — Khảo sát toàn bộ 1,079 file âm thanh, 208 chữ cái, 767 từ vựng, 1,810 câu hỏi; tạo mới 77 file MP3 từ vựng bằng `edge-tts` (ja-JP-NanamiNeural); đồng bộ 2 lớp `audio_url` từ `teachAudio` cho 1,027 câu hỏi (`TRANSLATE_TO_VN`, `SELECT_IMAGE`); hoàn thiện fallback TTS tự động trong `useAudio` và hiển thị nút loa đề bài tiếng Nhật.
+58. **Khắc Phục Lỗi Git Push Bị Từ Chối (GitHub 100MB File Limit) Cho Bản Release APK** — Chẩn đoán lỗi GitHub từ chối `git push origin final` do 5 file APK trong `release/` (~163-164MB/file) vượt trần 100MB; cập nhật `.gitignore` loại trừ `release/` và `*.apk`; loại bỏ APK khỏi git cache và amend commit `V6`; bảo toàn 100% 5 file APK thật trên ổ cứng; kiểm tra tĩnh `tsc` 0 lỗi và đẩy thành công lên nhánh `final` của GitHub.
 
 ## Plan
+
+- [x] **Khắc Phục Lỗi Git Push Bị Từ Chối (GitHub 100MB File Limit) (HOÀN TẤT 2026-09-12):**
+  - [x] 1. Cập nhật `.gitignore`: Bổ sung `release/` và `*.apk` để vĩnh viễn không theo dõi file APK build ra.
+  - [x] 2. Hủy theo dõi các file APK trong git index: Chạy `git rm --cached release/*.apk` bảo toàn nguyên vẹn 5 file APK thật trong ổ đĩa.
+  - [x] 3. Amend commit `V6`: Đóng gói lại commit mà không còn chứa các blob APK vượt ngưỡng.
+  - [x] 4. Thẩm định tĩnh: Chạy `npx tsc --noEmit` đạt 0 lỗi.
+  - [x] 5. Đẩy code lên remote: Chạy `git push origin final` thành công 100% (`c56dbad..365ffd3 final -> final`).
+
 
 - [x] **Kiểm Tra & Khắc Phục Toàn Diện Hệ Thống Âm Thanh (DB + BE + FE) (HOÀN TẤT 2026-09-10):**
   - [x] 1. Sinh 77 file MP3 từ vựng còn thiếu (`uploads/audios/words/`) bằng `edge-tts` với phát âm chuẩn cho trợ từ `は (wa)`, hậu tố `〜さん`, `〜さい`, từ ghép và câu mẫu.

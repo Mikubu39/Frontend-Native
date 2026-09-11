@@ -698,4 +698,24 @@ Tránh đặt callback rỗng `onPress={() => {}}` ở các nút tương tác nh
 4. **Đối với màn hình thuần phát âm (`/voice/record.tsx`)**:
    - Khi bấm "Không thể nói lúc này?", mở hộp thoại `ModalCard` cung cấp 3 lựa chọn trực quan: "BỎ QUA CÂU NÀY", "THOÁT VỀ ÔN TẬP", hoặc "Ở LẠI".
 
+## Git Push Thất Bại Do File APK / Release Vượt Quá Giới Hạn 100MB Của GitHub
 
+### Bản Chất Sự Cố
+- GitHub từ chối mọi file đơn lẻ có kích thước $> 100\text{MB}$ khi push lên remote (`pre-receive hook declined: File release/...apk is >100MB; exceeds GitHub's file size limit`).
+- Khi đóng gói Release APK (thường $160\text{--}172\text{MB}$ do nhúng bundle tĩnh và native runtime), nếu vô tình `git add .` hoặc thư mục `release/` không được khai báo trong `.gitignore`, các file APK sẽ bị đóng băng trong git history của commit.
+- Chỉ thêm `.gitignore` ở commit mới là **KHÔNG ĐỦ**, vì commit cũ trong nhánh push vẫn chứa git blob $> 100\text{MB}$ và GitHub vẫn từ chối nhận toàn bộ lượt push.
+
+### Cách Xử Lý Chuẩn (An Toàn, Bảo Toàn File Thật Trên Ổ Đĩa)
+1. **Cập nhật `.gitignore`**:
+   Thêm `release/` và `*.apk` vào `.gitignore` để vĩnh viễn không theo dõi file APK build ra.
+2. **Hủy theo dõi khỏi Git Index (giữ nguyên file vật lý trên đĩa)**:
+   ```bash
+   git rm --cached release/*.apk
+   git add .gitignore
+   ```
+3. **Gộp vào commit gần nhất (nếu commit chưa push)**:
+   ```bash
+   git commit --amend --no-edit
+   ```
+4. **Kiểm thử trước khi push**:
+   Chạy `git push --dry-run origin final` để kiểm tra remote có chấp nhận commit mới hay không trước khi đẩy thực tế.
