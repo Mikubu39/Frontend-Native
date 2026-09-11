@@ -14,6 +14,7 @@ import type { ShopItemDto } from "@/types/api";
 import type { ItemRarity } from "@/types/shop";
 import { resolveItemArtwork } from "@/utils/shop";
 import { useImageFallback } from "@/hooks/use-image-fallback";
+import { CoinMark } from "@/components/ui/coin-mark";
 
 interface ItemGlyphProps {
   item: ShopItemDto;
@@ -49,6 +50,8 @@ export function ItemGlyph({ item, rarity, size = 56 }: ItemGlyphProps) {
           accessibilityIgnoresInvertColors
           onError={onError}
         />
+      ) : item.effectType === "DOUBLE_COIN" ? (
+        <CoinMark size={size * 0.46} />
       ) : (
         <Ionicons
           name={(meta?.icon ?? "gift") as any}

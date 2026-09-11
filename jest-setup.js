@@ -68,6 +68,9 @@ jest.mock("expo-speech", () => ({
   speak: jest.fn(),
   stop: jest.fn(),
   isSpeakingAsync: jest.fn().mockResolvedValue(false),
+  getAvailableVoicesAsync: jest.fn().mockResolvedValue([
+    { identifier: "ja-JP-default", name: "Japanese", quality: "Default", language: "ja-JP" },
+  ]),
 }));
 
 jest.mock("expo-speech-recognition", () => ({

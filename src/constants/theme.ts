@@ -61,6 +61,15 @@ export const Colors = {
   errorLight: "#FBE4DF",
   warning: "#C4922E",
 
+  /** Score tones for the washi (light) background.
+   *
+   *  The bright pair used on the dark palette (#4ADE80 / #F87171) measures
+   *  1.36:1 and 2.15:1 against the cream surface — far under the 3:1 floor for
+   *  large text, which is why the result numbers were hard to read. These
+   *  reach 4.8:1 and 4.6:1. */
+  successInk: "#3A6B4B",
+  errorInk: "#B8341F",
+
   /** Tab bar */
   tabActive: "#BE4A34",
   tabInactive: "#9C948A",
@@ -80,6 +89,13 @@ export const Colors = {
    *  of this app's own palette rather than an unmodified brand color. */
   streakActive: "#D9762E", // warm ember-gold (kogane/shu lineage)
   streakFrozen: "#7C93C4", // indigo-frost (ai lineage)
+  /** Frost deep enough to carry white label text (4.8:1); the base tone only
+   *  reaches 3.08:1, which is under the floor for the small freeze badges. */
+  streakFrozenDeep: "#617299",
+
+  /** Energy / Stamina */
+  energy: "#4ADE80", // bright vitality green (matching header flash)
+  energyDark: "#22C55E",
 
   /** Theme mode palettes */
   light: {
@@ -172,12 +188,32 @@ export const Spacing = {
   sixteen: 80,
 } as const;
 
+/**
+ * Corner radii, as a hierarchy rather than a set of similar large numbers.
+ *
+ * The previous scale started at 16 — there was no way to draw a small corner
+ * with a token, so a 20px badge and a full-screen sheet were shaped the same
+ * and the interface had no shape hierarchy at all. Everything reading as one
+ * soft blob is a large part of what makes a UI look machine-assembled.
+ *
+ * The steps below widen as the surface grows, which is how physical objects
+ * behave: a small chamfer on a small object, a broad one on a large panel.
+ * Pick by what the element *is*, not by how soft you want it to look.
+ */
 export const BorderRadius = {
-  sm: 16,
-  md: 20,
-  lg: 24,
-  xl: 32,
-  xxl: 40,
+  /** Inputs, dividers, seal marks — nearly square. */
+  xs: 2,
+  /** Chips, badges, small tags. */
+  sm: 6,
+  /** Cards and list rows. */
+  md: 12,
+  /** Buttons and large cards. */
+  lg: 20,
+  /** Modals and bottom sheets. */
+  xl: 28,
+  /** Hero surfaces. */
+  xxl: 36,
+  /** Genuine pills only: counters, avatars, progress tracks. */
   full: 999,
 } as const;
 

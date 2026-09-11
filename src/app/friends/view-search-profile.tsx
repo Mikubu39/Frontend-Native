@@ -12,6 +12,7 @@ import {
 import { userService } from "@/services/api/user";
 import { useTheme } from "@/contexts/theme-context";
 import { resolveAvatarUri } from "@/utils/media";
+import { translateRank } from "@/utils/rank-tier";
 import { PublicProfileResponse } from "@/types/api";
 import { BackButton } from "@/components/ui/back-button";
 import {
@@ -129,7 +130,7 @@ export default function ViewSearchProfileScreen() {
           stats={stats}
           rankLabel={
             publicProfile?.rankName
-              ? `Hạng ${publicProfile.rankName}`
+              ? `Hạng ${translateRank(publicProfile.rankName)}`
               : undefined
           }
           isFollowing={isFollowing}

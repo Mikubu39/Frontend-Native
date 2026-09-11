@@ -55,12 +55,12 @@ describe("StreakExtendedScreen", () => {
     expect(getByText("5")).toBeTruthy();
     expect(
       getByText(
-        "Streak Freeze đã giữ trọn vẹn chuỗi học của bạn. Ngọn lửa đã bùng cháy trở lại!",
+        "Đóng băng chuỗi đã bảo vệ trọn vẹn chuỗi học của bạn. Ngọn lửa đã bùng cháy trở lại!",
       ),
     ).toBeTruthy();
   });
 
-  it("renders 'Streak đã tăng!' when streak > 1 and not frozen", async () => {
+  it("renders 'Chuỗi học đã tăng!' when streak > 1 and not frozen", async () => {
     mockedUseGamification.mockReturnValue({
       streak: 6,
       frozenToday: false,
@@ -68,7 +68,7 @@ describe("StreakExtendedScreen", () => {
 
     const { getByText } = await render(<StreakExtendedScreen />);
 
-    expect(getByText("Streak đã tăng!")).toBeTruthy();
+    expect(getByText("Chuỗi học đã tăng!")).toBeTruthy();
     expect(getByText("6")).toBeTruthy();
     expect(
       getByText(

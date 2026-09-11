@@ -38,7 +38,7 @@ import {
   PublicProfileResponse,
   RankResponse,
 } from "@/types/api";
-import { getRankTierStyle } from "@/utils/rank-tier";
+import { getRankTierStyle, translateRank } from "@/utils/rank-tier";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -60,29 +60,9 @@ function getJoinYear(createdAt?: string | null): number {
     : parsed.getFullYear();
 }
 
-/**
- * Hàm hỗ trợ dịch tên Rank từ Tiếng Anh sang Tiếng Việt
- */
-function translateRank(rankName: string | null | undefined): string {
-  if (!rankName) return "Chưa xếp hạng";
-  const rankMap: Record<string, string> = {
-    bronze: "Đồng",
-    silver: "Bạc",
-    gold: "Vàng",
-    sapphire: "Ngọc Bích",
-    ruby: "Hồng Ngọc",
-    emerald: "Lục Bảo",
-    amethyst: "Thạch Anh Tím",
-    pearl: "Ngọc Trai",
-    obsidian: "Hắc Diện Thạch",
-    diamond: "Kim Cương",
-  };
-  return rankMap[rankName.toLowerCase()] || rankName;
-}
-
 export default function ProfileTabScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const {
     streak,
     exp,
@@ -142,7 +122,12 @@ export default function ProfileTabScreen() {
 
         if (!isMounted) return;
 
-        if (avatarRes) setAvatarUrl(avatarRes);
+        if (avatarRes) {
+          setAvatarUrl(avatarRes);
+          if (user && user.avatarUrl !== avatarRes) {
+            updateUser?.({ avatarUrl: avatarRes });
+          }
+        }
         setIsLoadingAvatar(false);
         if (bannerRes === "true") setIsBannerDismissed(true);
         setRanks(ranksRes);
@@ -156,13 +141,14 @@ export default function ProfileTabScreen() {
       return () => {
         isMounted = false;
       };
-    }, [user?.id]),
+    }, [user, updateUser]),
   );
 
   const handleSaveAvatar = async (config: AvatarConfig) => {
     const nextUrl = buildAvatarUrl(config);
     setAvatarUrl(nextUrl);
     await avatarApi.updateAvatarUrl(nextUrl);
+    await updateUser?.({ avatarUrl: nextUrl });
   };
 
   const joinYear = getJoinYear((user as any)?.createdAt);

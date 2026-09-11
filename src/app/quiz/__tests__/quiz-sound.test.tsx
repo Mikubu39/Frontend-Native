@@ -65,6 +65,36 @@ const QUIZ_RESPONSE: StartLessonResponse = {
   ],
 };
 
+/** Ba câu để kiểm chứng bậc thang combo leo lên rồi rơi lại sau khi sai. */
+const LADDER_RESPONSE: StartLessonResponse = {
+  ...QUIZ_RESPONSE,
+  questions: [
+    QUIZ_RESPONSE.questions[0],
+    {
+      questionId: 102,
+      questionType: "TRANSLATE_TO_VN",
+      content: "Inu nghĩa là gì?",
+      audioUrl: "/uploads/audios/words/inu.mp3",
+      metadataJson: { kana: "いぬ", romaji: "inu" },
+      options: [
+        { optionId: 3, content: "Con chó", isCorrect: true },
+        { optionId: 4, content: "Con mèo", isCorrect: false },
+      ],
+    },
+    {
+      questionId: 103,
+      questionType: "TRANSLATE_TO_VN",
+      content: "Tori nghĩa là gì?",
+      audioUrl: "/uploads/audios/words/tori.mp3",
+      metadataJson: { kana: "とり", romaji: "tori" },
+      options: [
+        { optionId: 5, content: "Con chim", isCorrect: true },
+        { optionId: 6, content: "Con cá", isCorrect: false },
+      ],
+    },
+  ],
+};
+
 async function renderQuiz() {
   return await render(
     <SafeAreaProvider
@@ -147,5 +177,47 @@ describe("QuizScreen Sound Effects Integration", () => {
 
     expect(mockPlayIncorrect).toHaveBeenCalledTimes(1);
     expect(mockPlayCorrect).not.toHaveBeenCalled();
+  });
+
+  it("nâng bậc cao độ theo chuỗi câu đúng liên tiếp", async () => {
+    mockedApi.startLesson.mockResolvedValue(LADDER_RESPONSE);
+    const { findByText, getByText, getByTestId } = await renderQuiz();
+
+    await fireEvent.press(await findByText("TÔI ĐÃ BIẾT — BỎ QUA"));
+
+    await fireEvent.press(getByTestId("answer-1"));
+    await fireEvent.press(getByText("KIỂM TRA"));
+    // Câu đúng đầu tiên phát bậc thấp nhất của thang yo.
+    expect(mockPlayCorrect).toHaveBeenLastCalledWith(0);
+
+    await fireEvent.press(getByText("TIẾP TỤC"));
+    await fireEvent.press(getByTestId("answer-3"));
+    await fireEvent.press(getByText("KIỂM TRA"));
+    // Câu đúng thứ hai leo lên một bậc.
+    expect(mockPlayCorrect).toHaveBeenLastCalledWith(1);
+    expect(mockPlayCorrect).toHaveBeenCalledTimes(2);
+  });
+
+  it("rơi lại bậc thấp nhất sau khi trả lời sai", async () => {
+    mockedApi.startLesson.mockResolvedValue(LADDER_RESPONSE);
+    const { findByText, getByText, getByTestId } = await renderQuiz();
+
+    await fireEvent.press(await findByText("TÔI ĐÃ BIẾT — BỎ QUA"));
+
+    await fireEvent.press(getByTestId("answer-1"));
+    await fireEvent.press(getByText("KIỂM TRA"));
+    expect(mockPlayCorrect).toHaveBeenLastCalledWith(0);
+
+    await fireEvent.press(getByText("TIẾP TỤC"));
+    await fireEvent.press(getByTestId("answer-4"));
+    await fireEvent.press(getByText("KIỂM TRA"));
+    expect(mockPlayIncorrect).toHaveBeenCalledTimes(1);
+
+    // Chuỗi đứt thì bậc phải về 0. Nếu không reset, câu đúng kế tiếp sẽ phát
+    // bậc 1 vì combo cũ vẫn còn.
+    await fireEvent.press(getByText("TIẾP TỤC"));
+    await fireEvent.press(getByTestId("answer-5"));
+    await fireEvent.press(getByText("KIỂM TRA"));
+    expect(mockPlayCorrect).toHaveBeenLastCalledWith(0);
   });
 });

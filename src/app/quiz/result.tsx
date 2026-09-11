@@ -9,13 +9,29 @@ import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { QuizResultCard } from "@/components/quiz/quiz-result-card";
+import {
+  QuizResultCard,
+  RESULT_IMPACT_MS,
+} from "@/components/quiz/quiz-result-card";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { PromotionModal } from "@/components/gamification";
 import { useGamification } from "@/contexts/gamification-context";
 import { useTheme } from "@/contexts/theme-context";
+import { useSoundEffect } from "@/hooks/use-sound-effect";
+import {
+  MotionDuration,
+  MotionEasing,
+  MotionStagger,
+} from "@/constants/motion";
 import { Colors, Spacing } from "@/constants/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+/** The last two beats of the result timeline, picking up where the card ends. */
+function buttonEntrance(index: number) {
+  return FadeInDown.delay(RESULT_IMPACT_MS + MotionStagger * (5 + index))
+    .duration(MotionDuration.press)
+    .easing(MotionEasing.paper);
+}
 
 export default function QuizResultScreen() {
   const router = useRouter();
@@ -23,6 +39,7 @@ export default function QuizResultScreen() {
   const { fetchGamificationData, newlyUnlockedAchievements } =
     useGamification();
   const { isDark } = useTheme();
+  const { playLessonComplete, playIncorrect } = useSoundEffect();
   const [showPromotionModal, setShowPromotionModal] = React.useState(false);
 
   const correctCount = parseInt((params.correctCount as string) || "0", 10);
@@ -30,12 +47,21 @@ export default function QuizResultScreen() {
   const expEarned = parseInt((params.expEarned as string) || "0", 10);
   const starsEarned = parseInt((params.starsEarned as string) || "0", 10);
   const coinsEarned = parseInt((params.coinsEarned as string) || "0", 10);
+  const energyRewarded = parseInt((params.energyRewarded as string) || "0", 10);
   const status = params.status as string;
   const lessonType = (params.lessonType as string) || "NORMAL";
+  const remainingCount = parseInt((params.remainingCount as string) || "0", 10);
 
   const isFailed = status === "IN_PROGRESS";
   const isTimedReview = lessonType === "TIMED_REVIEW";
   const stars = isTimedReview ? Math.max(0, starsEarned) : 0;
+
+  // Ôn từ vựng / ôn lỗi sai bị cap theo phiên (20 từ, 10 lỗi) — còn dư thì mời
+  // ôn tiếp ngay tại đây thay vì bắt người dùng tự quay lại tab Review rồi
+  // bấm lại từ đầu để dọn nốt backlog.
+  const isReviewSession =
+    lessonType === "REVIEW_VOCAB" || lessonType === "REVIEW_MISTAKES";
+  const hasMoreToReview = isReviewSession && remainingCount > 0;
 
   useEffect(() => {
     fetchGamificationData();
@@ -43,8 +69,25 @@ export default function QuizResultScreen() {
     if (params.isPromoted === "true" && params.newRankName) {
       setShowPromotionModal(true);
     }
+
+    if (isFailed) {
+      playIncorrect();
+      return;
+    }
+
+    // Fire the fanfare when the seal lands, not on mount. Playing it at t=0
+    // left ~400ms of silent animation followed by a sound with nothing on
+    // screen to match it, which is most of why the payoff felt flat.
+    const t = setTimeout(playLessonComplete, RESULT_IMPACT_MS);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleContinueReview = () => {
+    router.replace(
+      lessonType === "REVIEW_VOCAB" ? "/review/vocabulary" : "/review/mistakes",
+    );
+  };
 
   const handleContinue = async () => {
     try {
@@ -72,13 +115,22 @@ export default function QuizResultScreen() {
     }
   };
 
+  const rewardLabel =
+    lessonType === "REVIEW_MISTAKES"
+      ? energyRewarded > 0
+        ? `+${energyRewarded} ⚡ Năng lượng`
+        : "Đã hoàn thành ôn lỗi"
+      : lessonType === "REVIEW_VOCAB"
+        ? `Đã ôn tập ${correctCount} từ vựng`
+        : `+${expEarned} EXP${coinsEarned > 0 ? `, +${coinsEarned} Coin` : ""}`;
+
   const realResult = {
     totalQuestions: correctCount + wrongCount || 1,
     correctCount,
     wrongCount,
     correctCategories: [
       {
-        name: `+${expEarned} EXP${coinsEarned > 0 ? `, +${coinsEarned} Coin` : ""}`,
+        name: rewardLabel,
         stars: stars,
       },
     ],
@@ -132,17 +184,36 @@ export default function QuizResultScreen() {
         </View>
 
         <View style={styles.buttons}>
-          <Animated.View entering={FadeInDown.delay(1000).springify()}>
-            <GradientButton title="Tiếp Tục" onPress={handleContinue} />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(1100).springify()}>
-            <GradientButton
-              title="Thử Lại"
-              variant="outline"
-              onPress={() => router.back()}
-            />
-          </Animated.View>
+          {hasMoreToReview ? (
+            <>
+              <Animated.View entering={buttonEntrance(0)}>
+                <GradientButton
+                  title={`Ôn Tiếp (${remainingCount})`}
+                  onPress={handleContinueReview}
+                />
+              </Animated.View>
+              <Animated.View entering={buttonEntrance(1)}>
+                <GradientButton
+                  title="Về Trang Chủ"
+                  variant="outline"
+                  onPress={handleContinue}
+                />
+              </Animated.View>
+            </>
+          ) : (
+            <>
+              <Animated.View entering={buttonEntrance(0)}>
+                <GradientButton title="Tiếp Tục" onPress={handleContinue} />
+              </Animated.View>
+              <Animated.View entering={buttonEntrance(1)}>
+                <GradientButton
+                  title="Thử Lại"
+                  variant="outline"
+                  onPress={() => router.back()}
+                />
+              </Animated.View>
+            </>
+          )}
         </View>
       </SafeAreaView>
 

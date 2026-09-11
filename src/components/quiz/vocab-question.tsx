@@ -2,7 +2,7 @@
  * VocabQuestion — Impeccable redesign. Theme-aware answer cards.
  */
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { View, Text, StyleSheet, Image, Pressable } from "react-native";
 import LottieView from "lottie-react-native";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
@@ -30,6 +30,12 @@ interface VocabQuestionProps {
   onSelectAnswer: (answerId: string) => void;
   /** Nguồn Lottie mascot (require(...) của character1/2/3.json) - hiện kèm bong bóng thoại phía trên. */
   mascotSource?: any;
+  /**
+   * Người học đã chốt đáp án chưa. Trước khi chốt phải khoá tra từ ở vùng đáp án
+   * (tra được nghĩa đáp án là biết luôn đáp án); sau khi chốt thì mở ra, vì lúc đó
+   * tra nghĩa mới đúng là thứ giúp họ hiểu vì sao mình sai.
+   */
+  hasSubmitted?: boolean;
 }
 
 export function VocabQuestionCard({
@@ -37,6 +43,7 @@ export function VocabQuestionCard({
   selectedAnswer,
   onSelectAnswer,
   mascotSource,
+  hasSubmitted = false,
 }: VocabQuestionProps) {
   const [showHint, setShowHint] = useState(false);
   const { colors, isDark } = useTheme();
@@ -45,7 +52,19 @@ export function VocabQuestionCard({
   const promptFallback =
     question.promptLang === "ja" ? question.word : undefined;
   const { isPlaying, play } = useAudio(question.audioUrl, promptFallback);
-  const { speak: speakAnswer } = useJapaneseSpeech();
+  // Player riêng cho đáp án, tách khỏi player của đề bài để 2 icon loa
+  // không nháy "đang phát" chéo nhau khi người dùng bấm đáp án.
+  const { play: playAnswerAudio, stop: stopAnswerAudio } = useAudio();
+  const { speak: speakAnswer, stop: stopAnswerSpeech } = useJapaneseSpeech();
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   const cardBg = colors.cardQuiz;
   const cardBorder = colors.cardQuizBorder;
@@ -156,8 +175,7 @@ export function VocabQuestionCard({
         <Image source={{ uri: question.imageUrl }} style={styles.image} />
       ) : null}
 
-      {/* Nút loa chỉ vẽ khi có file audioUrl để phát. Câu dịch đề bài đã in
-          sẵn mặt chữ kèm phiên âm nên không cần loa fallback. */}
+      {/* Nút loa chỉ vẽ khi có audioUrl để phát âm thanh chuẩn. */}
       {question.audioUrl ? (
         <View style={styles.audioRow}>
           <AudioButton
@@ -207,8 +225,9 @@ export function VocabQuestionCard({
         </Pressable>
       ) : null}
 
-      {/* Tra được nghĩa của đáp án là biết luôn đáp án — khoá từ điển ở đây. */}
-      <GlossaryLockdown>
+      {/* Tra được nghĩa của đáp án là biết luôn đáp án — khoá từ điển ở đây cho
+          tới khi người học đã chốt đáp án. */}
+      <GlossaryLockdown active={!hasSubmitted}>
         <View style={styles.answers}>
           {question.answers.map((answer) => {
             const isSelected = selectedAnswer === answer.id;
@@ -227,14 +246,30 @@ export function VocabQuestionCard({
                   },
                 ]}
                 onPress={() => {
+                  // Đã chốt rồi thì không cho đổi đáp án nữa. Chặn ở đây (thay vì
+                  // pointerEvents ở lớp ngoài) để chạm vào CHỮ vẫn tra được nghĩa.
+                  if (hasSubmitted) return;
                   onSelectAnswer(answer.id);
-                  // Đáp án tiếng Nhật (có romaji) thì đọc luôn khi chạm vào,
-                  // để người học nghe cách phát âm ngay lúc chọn.
-                  if (answer.romaji) speakAnswer(answer.text);
+                  // Ngắt ngay âm thanh / TTS cũ đang phát
+                  stopAnswerAudio();
+                  stopAnswerSpeech();
+                  if (debounceTimerRef.current) {
+                    clearTimeout(debounceTimerRef.current);
+                  }
+                  // Debounce 150ms: chỉ phát âm thanh khi người dùng dừng chạm,
+                  // tránh phát âm thanh liên tục dồn dập khi lướt đổi đáp án.
+                  debounceTimerRef.current = setTimeout(() => {
+                    if (answer.audioUrl) {
+                      playAnswerAudio(answer.audioUrl);
+                    } else if (answer.romaji) {
+                      speakAnswer(answer.text);
+                    }
+                  }, 150);
                 }}
                 pressScale={0.97}
               >
-                <Text
+                <JapaneseText
+                  text={answer.text}
                   style={[
                     styles.answerText,
                     {
@@ -247,9 +282,7 @@ export function VocabQuestionCard({
                           : Colors.textPrimary,
                     },
                   ]}
-                >
-                  {answer.text}
-                </Text>
+                />
                 {/* Đáp án viết bằng chữ Nhật thì người mới không đọc nổi, phải có
                   phiên âm ngay dưới. Đáp án tiếng Việt không có romaji nên dòng
                   này tự biến mất. */}

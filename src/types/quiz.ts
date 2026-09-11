@@ -20,6 +20,15 @@ export interface GlossaryEntry {
   r?: string;
   /** Nghĩa tiếng Việt. */
   v?: string;
+  /**
+   * Mục này là CẢ CỤM/CẢ CÂU (`vocabulary.item_type = PHRASE`), không phải một từ.
+   *
+   * Cần đánh dấu vì bộ tách từ chấm điểm theo bình phương độ dài: một mục dài như
+   * 「これはいくらですか」 luôn thắng áp đảo mọi cách chia nhỏ, nuốt trọn cả câu
+   * thành một khối duy nhất không còn ranh giới từ. Có cờ này thì tách theo TỪ
+   * trước, chỉ dùng tới mục cả cụm khi tách theo từ không sạch.
+   */
+  p?: boolean;
 }
 
 /**

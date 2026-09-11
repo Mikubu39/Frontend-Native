@@ -105,4 +105,43 @@ describe("Leaderboard Components", () => {
     );
     expect(getByTestId).toBeDefined();
   });
+
+  it("renders LeaderboardRow and LeaderboardStickyBar with custom avatarUrl without crashing", async () => {
+    const userWithAvatar: LeaderboardUserDto = {
+      userId: 42,
+      displayName: "Custom User",
+      level: 3,
+      exp: 750,
+      position: 6,
+      avatarUrl: "https://api.dicebear.com/7.x/avataaars/png?seed=duolingo",
+    };
+
+    const { getAllByText } = await render(
+      <>
+        <LeaderboardRow
+          user={userWithAvatar}
+          isCurrentUser={true}
+          displayExp={750}
+          delay={0}
+          cardColor="#FFFFFF"
+          textColor="#000000"
+          textSecondaryColor="#666666"
+          currentUserTintBg="#F5F3FF"
+        />
+        <LeaderboardStickyBar
+          position={6}
+          displayName="Custom User"
+          avatarUrl={userWithAvatar.avatarUrl}
+          userId={42}
+          exp={750}
+          cardColor="#FFFFFF"
+          textColor="#000000"
+          textSecondaryColor="#666666"
+        />
+      </>,
+    );
+
+    expect(getAllByText("Custom User").length).toBe(2);
+    expect(getAllByText("750").length).toBe(2);
+  });
 });

@@ -39,6 +39,104 @@ interface Lookup {
   meaning: string;
 }
 
+interface Chunk {
+  text: string;
+  lookup?: Lookup;
+}
+
+const PUNCT_REGEX = /[。、！？?!\s.,「」『』()\[\]:：]/;
+const PUNCT_ONLY_REGEX = /^[。、！？?!\s.,「」『』()\[\]:：]+$/;
+const HIRAGANA_ONLY_REGEX = /^[぀-ゟ]+$/;
+
+/**
+ * Tách câu bằng Quy Hoạch Động (DP).
+ *
+ * Đánh trọng số bậc 2 (wLen * wLen) để ưu tiên phân đoạn các từ hoàn chỉnh dài hơn,
+ * triệt tiêu tận gốc các bẫy nuốt ký tự (như nuốt "は" + "いくら" thành "はい" + "くら").
+ */
+function segment(rawText: string, dictionary: Record<string, Lookup>): Chunk[] {
+  const n = rawText.length;
+  const dp: { score: number; tokens: Chunk[] }[] = Array.from(
+    { length: n + 1 },
+    () => ({ score: 0, tokens: [] }),
+  );
+
+  for (let i = 0; i < n; i++) {
+    const cur = dp[i];
+    const char = rawText[i];
+
+    // 1. Ký tự dấu câu: giữ nguyên, gộp vào đoạn text thường nếu trước đó là text thường
+    if (PUNCT_REGEX.test(char)) {
+      const candScore = cur.score + 1;
+      if (candScore > dp[i + 1].score) {
+        const last = cur.tokens[cur.tokens.length - 1];
+        let nextTokens: Chunk[];
+        if (last && !last.lookup) {
+          nextTokens = [...cur.tokens.slice(0, -1), { text: last.text + char }];
+        } else {
+          nextTokens = [...cur.tokens, { text: char }];
+        }
+        dp[i + 1] = { score: candScore, tokens: nextTokens };
+      }
+      continue;
+    }
+
+    // 2. Ký tự đơn không tra được (unmatched)
+    if (cur.score >= dp[i + 1].score) {
+      const last = cur.tokens[cur.tokens.length - 1];
+      let nextTokens: Chunk[];
+      if (last && !last.lookup) {
+        nextTokens = [...cur.tokens.slice(0, -1), { text: last.text + char }];
+      } else {
+        nextTokens = [...cur.tokens, { text: char }];
+      }
+      dp[i + 1] = { score: cur.score, tokens: nextTokens };
+    }
+
+    // 3. Khớp từ vựng trong từ điển: ưu tiên các từ hoàn chỉnh dài hơn
+    const rest = rawText.slice(i);
+    for (const word in dictionary) {
+      if (rest.startsWith(word)) {
+        const wLen = word.length;
+        const candScore = cur.score + wLen * wLen;
+        if (candScore > dp[i + wLen].score) {
+          dp[i + wLen] = {
+            score: candScore,
+            tokens: [...cur.tokens, { text: word, lookup: dictionary[word] }],
+          };
+        }
+      }
+    }
+  }
+
+  return dp[n].tokens;
+}
+
+/**
+ * Kết quả tách theo TỪ có "sạch" không — tức có đáng tin để dùng thay cho việc
+ * khớp nguyên cả cụm hay không.
+ *
+ * Sạch = bắt đầu bằng một từ thật, tìm được ít nhất 2 từ, và mọi khe hở còn lại
+ * chỉ là trợ từ/đuôi chia hiragana ngắn (は, を, ですか...).
+ *
+ * Điều kiện này chặn đúng những ca tách bậy đã đo được trên dữ liệu thật:
+ * 「じゃあね」 → ·じゃ· + [あね] ("chị gái"!) bị loại vì không bắt đầu bằng từ thật;
+ * 「また明日」 khi thiếu 明日 trong từ điển bị loại vì khe hở có chữ Hán.
+ */
+function isCleanSplit(tokens: Chunk[]): boolean {
+  const meaningful = tokens.filter(
+    (t) => t.lookup || !PUNCT_ONLY_REGEX.test(t.text),
+  );
+  if (meaningful.length === 0 || !meaningful[0].lookup) return false;
+  if (meaningful.filter((t) => t.lookup).length < 2) return false;
+
+  return meaningful.every((t) => {
+    if (t.lookup) return true;
+    const gap = t.text.replace(new RegExp(PUNCT_REGEX.source, "g"), "");
+    return gap.length === 0 || (HIRAGANA_ONLY_REGEX.test(gap) && gap.length <= 3);
+  });
+}
+
 export function JapaneseText({ text, style, glossary }: JapaneseTextProps) {
   const { colors, isDark } = useTheme();
   const { glossary: globalGlossary } = useGlossary();
@@ -50,88 +148,45 @@ export function JapaneseText({ text, style, glossary }: JapaneseTextProps) {
   >(null);
 
   // Kho toàn cục làm nền, bảng riêng của câu hỏi ghi đè lên trên.
-  const dictionary = useMemo<Record<string, Lookup>>(() => {
-    if (locked) return {};
-    const merged: Record<string, Lookup> = {};
+  //
+  // Dựng SONG SONG hai bảng: `words` chỉ chứa từ đơn, `all` chứa thêm cả các mục
+  // cả cụm/cả câu. Bảng riêng của câu hỏi luôn là từ đơn nên có mặt ở cả hai.
+  const { words: wordDictionary, all: dictionary } = useMemo(() => {
+    if (locked) {
+      return { words: {}, all: {} } as {
+        words: Record<string, Lookup>;
+        all: Record<string, Lookup>;
+      };
+    }
+    const words: Record<string, Lookup> = {};
+    const all: Record<string, Lookup> = {};
     for (const [word, entry] of Object.entries(globalGlossary || {})) {
       if (entry?.v || entry?.r) {
-        merged[word] = { romaji: entry.r, meaning: entry.v || "" };
+        const lookup = { romaji: entry.r, meaning: entry.v || "" };
+        all[word] = lookup;
+        if (!entry.p) words[word] = lookup;
       }
     }
     for (const [word, entry] of Object.entries(glossary || {})) {
       if (entry?.v || entry?.r) {
-        merged[word] = { romaji: entry.r, meaning: entry.v || "" };
+        const lookup = { romaji: entry.r, meaning: entry.v || "" };
+        all[word] = lookup;
+        if (!entry.p) words[word] = lookup;
       }
     }
-    return merged;
+    return { words, all };
   }, [glossary, globalGlossary, locked]);
 
-  // Tách câu thành các mẩu tra được và mẩu không tra được bằng Quy Hoạch Động (DP).
-  // Đánh trọng số bậc 2 (wLen * wLen) để ưu tiên phân đoạn các từ hoàn chỉnh dài hơn,
-  // triệt tiêu tận gốc các bẫy nuốt ký tự (như nuốt "は" + "いくら" thành "はい" + "くら").
+  // Tách theo TỪ trước để người học nhìn thấy ranh giới từng từ (giống Duolingo);
+  // chỉ khi cách tách đó không sạch mới lùi về bảng có cả mục cả-cụm — lúc đó thà
+  // hiện nguyên cụm còn hơn tách bậy.
   const chunks = useMemo(() => {
     const rawText = text || "";
     if (!rawText) return [];
 
-    const n = rawText.length;
-    const dp: { score: number; tokens: { text: string; lookup?: Lookup }[] }[] =
-      Array.from({ length: n + 1 }, () => ({ score: 0, tokens: [] }));
-
-    const PUNCT_REGEX = /[。、！？?!\s.,「」『』()\[\]:：]/;
-
-    for (let i = 0; i < n; i++) {
-      const cur = dp[i];
-      const char = rawText[i];
-
-      // 1. Ký tự dấu câu: giữ nguyên, gộp vào đoạn text thường nếu trước đó là text thường
-      if (PUNCT_REGEX.test(char)) {
-        const candScore = cur.score + 1;
-        if (candScore > dp[i + 1].score) {
-          const last = cur.tokens[cur.tokens.length - 1];
-          let nextTokens: { text: string; lookup?: Lookup }[];
-          if (last && !last.lookup) {
-            nextTokens = [
-              ...cur.tokens.slice(0, -1),
-              { text: last.text + char },
-            ];
-          } else {
-            nextTokens = [...cur.tokens, { text: char }];
-          }
-          dp[i + 1] = { score: candScore, tokens: nextTokens };
-        }
-        continue;
-      }
-
-      // 2. Ký tự đơn không tra được (unmatched)
-      if (cur.score >= dp[i + 1].score) {
-        const last = cur.tokens[cur.tokens.length - 1];
-        let nextTokens: { text: string; lookup?: Lookup }[];
-        if (last && !last.lookup) {
-          nextTokens = [...cur.tokens.slice(0, -1), { text: last.text + char }];
-        } else {
-          nextTokens = [...cur.tokens, { text: char }];
-        }
-        dp[i + 1] = { score: cur.score, tokens: nextTokens };
-      }
-
-      // 3. Khớp từ vựng trong từ điển: ưu tiên các từ hoàn chỉnh dài hơn
-      const rest = rawText.slice(i);
-      for (const word in dictionary) {
-        if (rest.startsWith(word)) {
-          const wLen = word.length;
-          const candScore = cur.score + wLen * wLen;
-          if (candScore > dp[i + wLen].score) {
-            dp[i + wLen] = {
-              score: candScore,
-              tokens: [...cur.tokens, { text: word, lookup: dictionary[word] }],
-            };
-          }
-        }
-      }
-    }
-
-    return dp[n].tokens;
-  }, [text, dictionary]);
+    const byWord = segment(rawText, wordDictionary);
+    return isCleanSplit(byWord) ? byWord : segment(rawText, dictionary);
+  }, [text, wordDictionary, dictionary]);
 
   const handleLongPress = (word: string, lookup: Lookup) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});

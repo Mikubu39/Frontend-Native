@@ -11,6 +11,8 @@ import type { InventoryItemDto, ItemType, ShopItemDto } from "@/types/api";
 import type { ShelfEntry, ShelfKey } from "@/types/shop";
 import {
   buildShelfEntries,
+  formatItemDescription,
+  formatItemName,
   getItemRarity,
   pickFeaturedItem,
 } from "@/utils/shop";
@@ -76,14 +78,14 @@ export function useShop() {
       try {
         const result = await shopApi.buyItem(item.id);
         setGamificationState({ coins: result.currentCoins });
-        showSuccess("Đã mua " + item.name, result.message);
+        showSuccess(
+          "Đã mua " + formatItemName(item.name),
+          formatItemDescription(result.message),
+        );
         await load();
         return true;
       } catch (error: any) {
-        showError(
-          "Không mua được",
-          error?.response?.data?.message ?? "Thử lại sau ít phút.",
-        );
+        showError("Không mua được", error?.message ?? "Thử lại sau ít phút.");
         return false;
       } finally {
         setPendingItemId(null);
@@ -99,15 +101,15 @@ export function useShop() {
       setPendingItemId(entry.item.id);
       try {
         const result = await shopApi.consumeItem(entry.inventoryId);
-        showSuccess("Đã dùng " + result.itemName, result.effectDescription);
+        showSuccess(
+          "Đã dùng " + formatItemName(result.itemName),
+          formatItemDescription(result.effectDescription),
+        );
         // The effect lands on energy / streak / active buffs held globally.
         await Promise.all([fetchGamificationData(), load()]);
         return true;
       } catch (error: any) {
-        showError(
-          "Không dùng được",
-          error?.response?.data?.message ?? "Thử lại sau ít phút.",
-        );
+        showError("Không dùng được", error?.message ?? "Thử lại sau ít phút.");
         return false;
       } finally {
         setPendingItemId(null);

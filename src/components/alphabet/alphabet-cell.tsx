@@ -105,8 +105,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3.5,
     ...(Platform.OS === "ios" ? Shadows.sm : {}),
   },
+  // Selection is already carried by the border colour and the text colour.
+  // A coloured glow on top was a second answer to the same question — and a
+  // neon halo is the surest sign a surface is decorated rather than designed.
   selectedCell: {
-    ...(Platform.OS === "ios" ? Shadows.glow(Colors.primary) : {}),
+    ...(Platform.OS === "ios" ? Shadows.md : {}),
   },
   symbol: {
     fontSize: 24,

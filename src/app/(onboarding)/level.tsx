@@ -2,7 +2,7 @@
  * Level Selection Screen - "What is your level?"
  */
 
-import React from "react";
+import React, { useRef } from "react";
 import { Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useRouter } from "expo-router";
@@ -11,16 +11,29 @@ import { LevelSelector } from "@/components/onboarding/level-selector";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { useOnboarding } from "@/contexts/onboarding-context";
+import { useOptionalAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/contexts/theme-context";
 import { FontSizes, FontWeights, Spacing } from "@/constants/theme";
 
 export default function LevelScreen() {
   const router = useRouter();
-  const { state, setLevel } = useOnboarding();
+  const { state, setLevel, reset } = useOnboarding();
+  // Optional: cho phép render trong test không có AuthProvider bọc quanh,
+  // giống pattern đã dùng ở tutorial-context.tsx.
+  const auth = useOptionalAuth();
   const { colors } = useTheme();
+  // Chặn bấm 2 lần liên tiếp mở 2 phiên bài kiểm tra đầu vào song song.
+  const continuedRef = useRef(false);
 
   const handleContinue = () => {
+    if (continuedRef.current) return;
+    continuedRef.current = true;
+
     if (state.selectedLevel === "starter") {
+      // "Tôi chưa biết gì" — không cần làm bài kiểm tra đầu vào, onboarding
+      // coi như đã xong ngay tại đây.
+      auth?.completeOnboarding();
+      reset();
       router.replace("/(tabs)");
     } else {
       router.push("/(onboarding)/placement");

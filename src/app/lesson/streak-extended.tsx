@@ -24,14 +24,21 @@ import {
   Shadows,
 } from "@/constants/theme";
 import { useGamification } from "@/contexts/gamification-context";
+import { useSoundEffect } from "@/hooks/use-sound-effect";
 
 export default function StreakExtendedScreen() {
   const router = useRouter();
   const { streak, frozenToday } = useGamification();
+  const { playStreak } = useSoundEffect();
 
   // Animation values
   const scale = useSharedValue(0.5);
   const rotation = useSharedValue(0);
+
+  useEffect(() => {
+    playStreak();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const celebrationInfo = React.useMemo(() => {
     if (streak <= 1) {
@@ -45,11 +52,11 @@ export default function StreakExtendedScreen() {
       return {
         title: "Khiên băng đã bảo vệ bạn!",
         description:
-          "Streak Freeze đã giữ trọn vẹn chuỗi học của bạn. Ngọn lửa đã bùng cháy trở lại!",
+          "Đóng băng chuỗi đã bảo vệ trọn vẹn chuỗi học của bạn. Ngọn lửa đã bùng cháy trở lại!",
       };
     }
     return {
-      title: "Streak đã tăng!",
+      title: "Chuỗi học đã tăng!",
       description:
         "Tuyệt vời! Bạn đang giữ lửa rất tốt. Hãy tiếp tục học mỗi ngày nhé!",
     };

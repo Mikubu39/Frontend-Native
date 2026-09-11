@@ -29,6 +29,7 @@ export interface AuthResponse {
     email: string;
     displayName: string;
     username: string;
+    avatarUrl?: string;
     role: string;
     phoneNumber?: string;
   };
@@ -263,6 +264,7 @@ export interface LeaderboardUserDto {
 export interface CurrentUserStanding {
   userId: number;
   displayName: string;
+  avatarUrl?: string | null;
   exp: number | null;
   position: number | null;
   message: string;

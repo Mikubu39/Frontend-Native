@@ -9,8 +9,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +21,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { ModalCard } from "@/components/ui/modal-card";
 import {
   ChatBubble,
   ChatComposer,
@@ -92,6 +93,7 @@ export default function ConversationChatScreen() {
   } = useConversation(topicId, customTopic);
 
   const [draft, setDraft] = useState("");
+  const [showExitModal, setShowExitModal] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   // --- Giọng nói: đọc và nghe, LUÔN song song với việc gõ chữ ---
@@ -154,14 +156,7 @@ export default function ConversationChatScreen() {
       router.back();
       return;
     }
-    Alert.alert("Thoát hội thoại?", "Cuộc hội thoại đang diễn ra sẽ bị huỷ.", [
-      { text: "Huỷ", style: "cancel" },
-      {
-        text: "Thoát",
-        style: "destructive",
-        onPress: () => router.back(),
-      },
-    ]);
+    setShowExitModal(true);
   }, [sessionOver, router]);
 
   // Phiên kết thúc thì im ngay - để bot đọc nốt câu dở trong khi bản tổng kết
@@ -502,6 +497,39 @@ export default function ConversationChatScreen() {
           </>
         )}
       </KeyboardAvoidingView>
+
+      {/* Modal xác nhận thoát hội thoại theme-aware */}
+      {showExitModal && (
+        <ModalCard onClose={() => setShowExitModal(false)}>
+          <View style={styles.modalContent}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              Thoát hội thoại?
+            </Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+              Cuộc hội thoại đang diễn ra sẽ bị huỷ và không được lưu lại.
+            </Text>
+            <View style={styles.modalActions}>
+              <Pressable
+                style={[styles.modalStayBtn, { borderColor: colors.borderSubtle }]}
+                onPress={() => setShowExitModal(false)}
+              >
+                <Text style={[styles.modalStayText, { color: colors.text }]}>
+                  TIẾP TỤC
+                </Text>
+              </Pressable>
+              <Pressable
+                style={styles.modalExitBtn}
+                onPress={() => {
+                  setShowExitModal(false);
+                  router.back();
+                }}
+              >
+                <Text style={styles.modalExitText}>THOÁT</Text>
+              </Pressable>
+            </View>
+          </View>
+        </ModalCard>
+      )}
     </SafeAreaView>
   );
 }
@@ -626,5 +654,55 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.sans,
     fontSize: FontSizes.xs,
     fontWeight: FontWeights.semibold,
+  },
+  modalContent: {
+    alignItems: "center",
+    gap: Spacing.four,
+    paddingVertical: Spacing.two,
+  },
+  modalTitle: {
+    fontSize: FontSizes.xl,
+    fontFamily: Fonts.rounded,
+    fontWeight: FontWeights.bold,
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: FontSizes.md,
+    fontFamily: Fonts.sans,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: Spacing.three,
+    width: "100%",
+    marginTop: Spacing.two,
+  },
+  modalStayBtn: {
+    flex: 1,
+    paddingVertical: Spacing.three,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalStayText: {
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.rounded,
+    fontWeight: FontWeights.bold,
+  },
+  modalExitBtn: {
+    flex: 1,
+    paddingVertical: Spacing.three,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.error,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalExitText: {
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.rounded,
+    fontWeight: FontWeights.bold,
+    color: "#FFFFFF",
   },
 });

@@ -84,6 +84,93 @@ describe("JapaneseText — Tách từ vựng tối ưu và bóc tách câu (DP T
     expect(getByText("ikura")).toBeTruthy();
   });
 
+  /**
+   * Kho từ thật có cả mục CẢ CỤM (`item_type = PHRASE`). Vì DP chấm điểm bậc 2,
+   * mục dài luôn thắng áp đảo → nguyên câu bị nuốt thành MỘT khối, mất sạch ranh
+   * giới từ. Nhóm test này khoá luật "tách theo từ trước, chỉ lùi về cả cụm khi
+   * tách không sạch".
+   */
+  describe("mục cả cụm (PHRASE) không được nuốt trọn câu", () => {
+    it("tách 「また明日」 thành また + 明日 thay vì dính cả cụm", async () => {
+      mockedUseGlossary.mockReturnValue({
+        glossary: {
+          また明日: { r: "mata ashita", v: "Hẹn gặp lại vào ngày mai", p: true },
+          また: { r: "mata", v: "hẹn gặp lại" },
+          明日: { r: "ashita", v: "ngày mai" },
+        },
+        loading: false,
+        refresh: jest.fn(),
+      });
+
+      const { getByText, queryByText } = await render(
+        <JapaneseText text="また明日" />,
+      );
+
+      expect(getByText("また")).toBeTruthy();
+      expect(getByText("明日")).toBeTruthy();
+      expect(queryByText("また明日")).toBeNull();
+    });
+
+    it("KHÔNG tách bậy 「じゃあね」 thành ·じゃ· + あね ('chị gái')", async () => {
+      mockedUseGlossary.mockReturnValue({
+        glossary: {
+          じゃあね: { r: "jaa ne", v: "Hẹn gặp lại (thân mật)", p: true },
+          あね: { r: "ane", v: "chị gái" },
+        },
+        loading: false,
+        refresh: jest.fn(),
+      });
+
+      const { getByText, queryByText } = await render(
+        <JapaneseText text="じゃあね" />,
+      );
+
+      // Tách theo từ cho ra ·じゃ· + [あね] — không bắt đầu bằng từ thật nên bị
+      // loại, giữ nguyên cả cụm.
+      expect(getByText("じゃあね")).toBeTruthy();
+      expect(queryByText("あね")).toBeNull();
+    });
+
+    it("giữ nguyên cả cụm khi từ bên trong còn thiếu trong từ điển", async () => {
+      mockedUseGlossary.mockReturnValue({
+        glossary: {
+          また明日: { r: "mata ashita", v: "Hẹn gặp lại vào ngày mai", p: true },
+          また: { r: "mata", v: "hẹn gặp lại" },
+          // Thiếu 明日 -> khe hở còn chữ Hán -> tách không sạch.
+        },
+        loading: false,
+        refresh: jest.fn(),
+      });
+
+      const { getByText } = await render(<JapaneseText text="また明日" />);
+
+      expect(getByText("また明日")).toBeTruthy();
+    });
+
+    it("tách câu 「これはいくらですか」 dù cả câu cũng là một mục PHRASE", async () => {
+      mockedUseGlossary.mockReturnValue({
+        glossary: {
+          ...sampleGlobalGlossary,
+          これはいくらですか: {
+            r: "kore wa ikura desu ka",
+            v: "Cái này bao nhiêu tiền?",
+            p: true,
+          },
+        },
+        loading: false,
+        refresh: jest.fn(),
+      });
+
+      const { getByText, queryByText } = await render(
+        <JapaneseText text="これはいくらですか。" />,
+      );
+
+      expect(getByText("これ")).toBeTruthy();
+      expect(getByText("いくら")).toBeTruthy();
+      expect(queryByText("これはいくらですか")).toBeNull();
+    });
+  });
+
   it("ưu tiên glossary riêng của câu hỏi ghi đè lên glossary toàn cục", async () => {
     const localGlossary = {
       これ: { r: "kore-custom", v: "vật này (ngữ cảnh riêng)" },

@@ -18,7 +18,7 @@ import {
   Spacing,
 } from "@/constants/theme";
 import { formatCoins } from "@/utils/shop";
-import { CoinMark } from "./coin-mark";
+import { CoinMark } from "@/components/ui/coin-mark";
 import { ShopButton } from "./shop-button";
 
 interface PurseEmptyDialogProps {

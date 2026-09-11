@@ -30,6 +30,16 @@ const JAPANESE_LOCALE = "ja-JP";
  */
 const LOW_CONFIDENCE = 0.6;
 
+/**
+ * Trần thời gian tối đa cho một lượt nghe. Che chắn trường hợp module native
+ * (Android SpeechRecognizer) không bắn bất kỳ sự kiện nào — không `start`,
+ * không `result`, không `end`, không `error` — ví dụ khi mất mạng giữa lúc
+ * mở mic hoặc máy thiếu dịch vụ nhận diện giọng nói. Không có trần này thì
+ * `status` mắc kẹt ở "listening" vĩnh viễn, mic nhấp nháy nhưng không có gì
+ * xảy ra và người dùng đứng chờ trong im lặng.
+ */
+const LISTEN_TIMEOUT_MS = 8000;
+
 export type SpeechInputStatus =
   "idle" | "unsupported" | "denied" | "listening" | "error";
 
@@ -64,12 +74,21 @@ export function useSpeechInput({
     onFinal.current = onFinalTranscript;
   }, [onFinalTranscript]);
 
+  const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearListenTimeout = useCallback(() => {
+    if (listenTimeoutRef.current) {
+      clearTimeout(listenTimeoutRef.current);
+      listenTimeoutRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
       // Rời màn hình giữa lúc đang nghe -> huỷ hẳn, nếu không micro vẫn mở.
+      clearListenTimeout();
       ExpoSpeechRecognitionModule.abort();
     };
-  }, []);
+  }, [clearListenTimeout]);
 
   useSpeechRecognitionEvent("start", () => {
     setStatus("listening");
@@ -83,6 +102,7 @@ export function useSpeechInput({
     if (!best) return;
 
     if (event.isFinal) {
+      clearListenTimeout();
       // confidence = -1 nghĩa là máy không cung cấp thông tin, KHÔNG phải kém.
       setLowConfidence(
         best.confidence >= 0 && best.confidence < LOW_CONFIDENCE,
@@ -97,16 +117,19 @@ export function useSpeechInput({
   });
 
   useSpeechRecognitionEvent("end", () => {
+    clearListenTimeout();
     setStatus((current) => (current === "listening" ? "idle" : current));
     setPartialTranscript("");
   });
 
   useSpeechRecognitionEvent("nomatch", () => {
+    clearListenTimeout();
     setError("Mình chưa nghe rõ. Bạn thử nói lại gần micro hơn nhé.");
     setStatus("idle");
   });
 
   useSpeechRecognitionEvent("error", (event) => {
+    clearListenTimeout();
     setPartialTranscript("");
     // Người dùng tự bấm dừng thì không phải lỗi, đừng doạ họ bằng thông báo đỏ.
     if (event.error === "aborted") {
@@ -139,17 +162,31 @@ export function useSpeechInput({
         maxAlternatives: 1,
       });
       setStatus("listening");
+
+      clearListenTimeout();
+      listenTimeoutRef.current = setTimeout(() => {
+        listenTimeoutRef.current = null;
+        // Không có bất kỳ sự kiện nào bắn về (mất mạng giữa lúc mở mic, máy
+        // thiếu dịch vụ nhận diện...) -> tự huỷ để tránh mic nhấp nháy vô thời hạn.
+        ExpoSpeechRecognitionModule.abort();
+        setPartialTranscript("");
+        setStatus("error");
+        setError(
+          "Nhận diện giọng nói mất quá lâu không phản hồi. Bạn gõ chữ giúp mình nhé.",
+        );
+      }, LISTEN_TIMEOUT_MS);
     } catch {
       setStatus("error");
       setError("Không mở được micro. Bạn gõ chữ giúp mình nhé.");
     }
-  }, []);
+  }, [clearListenTimeout]);
 
   const stop = useCallback(() => {
+    clearListenTimeout();
     // `stop` chờ xử lý nốt phần đã nghe rồi mới trả kết quả cuối, khác `abort`
     // là vứt bỏ toàn bộ. Người dùng bấm dừng nghĩa là "tôi nói xong rồi".
     ExpoSpeechRecognitionModule.stop();
-  }, []);
+  }, [clearListenTimeout]);
 
   return { status, partialTranscript, lowConfidence, error, start, stop };
 }

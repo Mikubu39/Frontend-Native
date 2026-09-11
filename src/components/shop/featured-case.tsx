@@ -16,8 +16,8 @@ import {
   Spacing,
 } from "@/constants/theme";
 import type { ShelfEntry } from "@/types/shop";
-import { describeEffect, formatCoins } from "@/utils/shop";
-import { CoinMark } from "./coin-mark";
+import { describeEffect, formatCoins, formatItemName } from "@/utils/shop";
+import { CoinMark } from "@/components/ui/coin-mark";
 import { ItemGlyph } from "./item-glyph";
 import { RarityFrame } from "./rarity-frame";
 
@@ -33,11 +33,13 @@ export function FeaturedCase({ entry, coins, onPress }: FeaturedCaseProps) {
   const stat = describeEffect(item);
   const affordable = coins >= item.priceCoins;
 
+  const itemName = formatItemName(item.name);
+
   return (
     <AnimatedPressable
       onPress={() => onPress(entry)}
       pressScale={0.98}
-      accessibilityLabel={`Hàng nổi bật: ${item.name}, ${formatCoins(item.priceCoins)} xu`}
+      accessibilityLabel={`Hàng nổi bật: ${itemName}, ${formatCoins(item.priceCoins)} xu`}
       accessibilityHint="Mở chi tiết vật phẩm"
     >
       <RarityFrame
@@ -53,7 +55,7 @@ export function FeaturedCase({ entry, coins, onPress }: FeaturedCaseProps) {
             {item.limitedTime ? "Có hạn · hàng nổi bật" : "Hàng nổi bật"}
           </Text>
           <Text style={styles.name} numberOfLines={1}>
-            {item.name}
+            {itemName}
           </Text>
           <Text style={styles.meta} numberOfLines={1}>
             {[tier.label, stat].filter(Boolean).join(" · ")}

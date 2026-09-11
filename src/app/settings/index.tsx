@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Modal,
   Switch,
 } from "react-native";
@@ -18,6 +17,7 @@ import { useTheme } from "@/contexts/theme-context";
 import { useTutorial } from "@/contexts/tutorial-context";
 import { useSoundEffect } from "@/hooks/use-sound-effect";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { SignOutModal } from "@/components/ui/sign-out-modal";
 import {
   Colors,
   Fonts,
@@ -39,18 +39,15 @@ export default function SettingsScreen() {
     useSoundEffect();
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [soundModalVisible, setSoundModalVisible] = useState(false);
+  const [signOutModalVisible, setSignOutModalVisible] = useState(false);
 
   const handleSignOut = () => {
-    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất không?", [
-      { text: "Hủy", style: "cancel" },
-      {
-        text: "Đăng xuất",
-        style: "destructive",
-        onPress: async () => {
-          await signOut();
-        },
-      },
-    ]);
+    setSignOutModalVisible(true);
+  };
+
+  const handleConfirmSignOut = async () => {
+    setSignOutModalVisible(false);
+    await signOut();
   };
 
   const themeOptions: {
@@ -578,6 +575,12 @@ export default function SettingsScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      <SignOutModal
+        visible={signOutModalVisible}
+        onClose={() => setSignOutModalVisible(false)}
+        onConfirm={handleConfirmSignOut}
+      />
     </SafeAreaView>
   );
 }

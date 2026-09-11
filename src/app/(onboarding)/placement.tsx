@@ -13,9 +13,11 @@ import {
   ScrollView,
   Text,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import LottieView from "lottie-react-native";
 import {
   QuizHeader,
@@ -32,6 +34,9 @@ import {
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Spacing, FontSizes, FontWeights, Colors } from "@/constants/theme";
 import { useTheme } from "@/contexts/theme-context";
+import { useToast } from "@/contexts/toast-context";
+import { useOnboarding } from "@/contexts/onboarding-context";
+import { useOptionalAuth } from "@/contexts/auth-context";
 import { placementApi } from "@/services/api/placement";
 import { mapApiQuestionsToQuizQuestions } from "@/utils/quiz-mapper";
 import type { QuizQuestion } from "@/types/quiz";
@@ -42,6 +47,15 @@ type Phase = "loading" | "question" | "result" | "skipped";
 export default function PlacementScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { showInfo } = useToast();
+  const { reset: resetOnboarding } = useOnboarding();
+  const auth = useOptionalAuth();
+
+  const finishOnboardingAndGoToTabs = () => {
+    auth?.completeOnboarding();
+    resetOnboarding();
+    router.replace("/(tabs)");
+  };
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [attemptId, setAttemptId] = useState<number | null>(null);
@@ -93,6 +107,15 @@ export default function PlacementScreen() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    // setState của context khác (auth/onboarding) không được gọi thẳng trong
+    // thân render — chờ effect chạy sau khi phase="skipped" đã commit.
+    if (phase === "skipped") {
+      finishOnboardingAndGoToTabs();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   const currentQuestion = questions[currentIndex];
   const progress =
@@ -218,7 +241,6 @@ export default function PlacementScreen() {
           <SpeakingQuestionCard
             question={currentQuestion}
             onAnswerChange={() => handleAnswerSelection()}
-            onSkipSpeaking={() => handleAnswerSelection()}
           />
         );
       default:
@@ -227,8 +249,7 @@ export default function PlacementScreen() {
   };
 
   if (phase === "skipped") {
-    // Fire-and-forget navigate away; render nothing meaningful in between.
-    router.replace("/(tabs)");
+    // Điều hướng đã được xử lý trong useEffect ở trên; ở đây chỉ render rỗng.
     return null;
   }
 
@@ -277,7 +298,7 @@ export default function PlacementScreen() {
           <GradientButton
             testID="placement-finish-btn"
             title="BẮT ĐẦU HỌC"
-            onPress={() => router.replace("/(tabs)")}
+            onPress={finishOnboardingAndGoToTabs}
             style={styles.nextButton}
           />
         </View>
@@ -289,10 +310,7 @@ export default function PlacementScreen() {
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      <QuizHeader
-        progress={progress}
-        onClose={() => router.replace("/(tabs)")}
-      />
+      <QuizHeader progress={progress} onClose={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
@@ -307,6 +325,27 @@ export default function PlacementScreen() {
       </ScrollView>
 
       <View style={[styles.bottomBar, { backgroundColor: colors.background }]}>
+        {currentQuestion?.type === "speaking" && !hasInteracted && (
+          <TouchableOpacity
+            style={styles.skipSpeakingBtn}
+            onPress={() => {
+              showInfo("Đã bỏ qua câu luyện nói");
+              handleAnswerSelection();
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="mic-off-outline"
+              size={16}
+              color={colors.textSecondary}
+            />
+            <Text
+              style={[styles.skipSpeakingText, { color: colors.textSecondary }]}
+            >
+              Không thể nói lúc này?
+            </Text>
+          </TouchableOpacity>
+        )}
         <GradientButton
           testID="placement-next-btn"
           title={isSubmittingRound ? "ĐANG XỬ LÝ..." : "TIẾP TỤC"}
@@ -333,31 +372,42 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
   },
   scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
     paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
+    paddingTop: Spacing.four,
+    paddingBottom: Spacing.six,
   },
   content: {
+    maxWidth: 500,
     width: "100%",
-    maxWidth: 480,
     alignSelf: "center",
-    gap: Spacing.four,
   },
   title: {
     fontSize: FontSizes.xl,
-    fontWeight: FontWeights.bold,
-    textAlign: "center",
-    marginBottom: Spacing.two,
+    fontWeight: FontWeights.extrabold,
+    marginBottom: Spacing.one,
   },
   subtitle: {
-    fontSize: FontSizes.md,
-    textAlign: "center",
-    marginBottom: Spacing.six,
+    fontSize: FontSizes.sm,
+    marginBottom: Spacing.four,
   },
   bottomBar: {
-    paddingHorizontal: Spacing.six,
-    paddingBottom: Spacing.six,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
+  },
+  skipSpeakingBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.two,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    alignSelf: "center",
+    marginBottom: Spacing.two,
+  },
+  skipSpeakingText: {
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.semibold,
+    textDecorationLine: "underline",
   },
   nextButton: {
     width: "100%",

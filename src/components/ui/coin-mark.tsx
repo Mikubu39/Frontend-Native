@@ -1,7 +1,11 @@
 /**
- * CoinMark - The shop's currency symbol: a struck coin with a square hole,
+ * CoinMark - The app's currency symbol: a struck coin with a square hole,
  * after the old Japanese mon. Drawn from views rather than a glyph so it
  * reads the same at 14px as it does on the shop sign.
+ *
+ * Canonical mark for "xu" everywhere it appears (map header, shop, profile) —
+ * don't reach for a generic Ionicon (sparkles/cash/coin-outline) instead, or
+ * the same currency ends up wearing a different face on every screen.
  */
 
 import React from "react";

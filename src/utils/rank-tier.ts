@@ -24,3 +24,27 @@ export function getRankTierStyle(orderIndex: number): RankTierStyle {
   const index = Math.min(Math.max(orderIndex - 1, 0), RANK_TIERS.length - 1);
   return RANK_TIERS[index];
 }
+
+const RANK_TRANSLATIONS: Record<string, string> = {
+  bronze: "Đồng",
+  silver: "Bạc",
+  gold: "Vàng",
+  platinum: "Bạch Kim",
+  diamond: "Kim Cương",
+  sapphire: "Ngọc Bích",
+  ruby: "Hồng Ngọc",
+  emerald: "Lục Bảo",
+  amethyst: "Thạch Anh Tím",
+  pearl: "Ngọc Trai",
+  obsidian: "Hắc Diện Thạch",
+};
+
+/**
+ * Dịch tên Rank từ Tiếng Anh (backend enum) sang Tiếng Việt hiển thị chuẩn.
+ * Hỗ trợ fallback an toàn nếu chuỗi rỗng hoặc đã là tiếng Việt.
+ */
+export function translateRank(rankName: string | null | undefined): string {
+  if (!rankName) return "Chưa xếp hạng";
+  const trimmed = rankName.trim();
+  return RANK_TRANSLATIONS[trimmed.toLowerCase()] || trimmed;
+}

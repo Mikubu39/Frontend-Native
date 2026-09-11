@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
 import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   ScrollView,
@@ -23,6 +23,7 @@ import {
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/use-theme";
+import { extractApiErrorMessage } from "@/utils/error-handler";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -32,6 +33,9 @@ export default function LoginScreen() {
   const [emailOrUser, setEmailOrUser] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  // Nếu người dùng bấm "✕" thoát trong lúc đăng nhập đang chờ mạng, đừng để
+  // request trả về muộn kéo họ quay lại vào app.
+  const leftScreenRef = useRef(false);
 
   const handleLogin = async () => {
     if (!emailOrUser || !password) {
@@ -44,11 +48,15 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signIn(emailOrUser, password);
+      if (leftScreenRef.current) return;
+      // Xoá sạch stack (welcome, login) để back ở trang chủ thoát app,
+      // không quay lại các màn pre-auth.
+      if (router.canDismiss()) router.dismissAll();
       router.replace("/(tabs)");
     } catch (error: any) {
       showError(
         "Đăng nhập thất bại",
-        error.message || "Email hoặc mật khẩu không chính xác.",
+        extractApiErrorMessage(error, "Email hoặc mật khẩu không chính xác."),
       );
     } finally {
       setLoading(false);
@@ -75,7 +83,10 @@ export default function LoginScreen() {
           style={[styles.header, { borderBottomColor: colors.borderSubtle }]}
         >
           <AnimatedPressable
-            onPress={() => router.replace("/welcome")}
+            onPress={() => {
+              leftScreenRef.current = true;
+              router.replace("/welcome");
+            }}
             style={[
               styles.closeButton,
               { backgroundColor: colors.cardElevated },
@@ -147,11 +158,17 @@ export default function LoginScreen() {
           <SocialAuthSection
             onGooglePress={async () => {
               const success = await signInWithGoogle();
-              if (success) router.replace("/(tabs)");
+              if (success && !leftScreenRef.current) {
+                if (router.canDismiss?.()) router.dismissAll();
+                router.replace("/(tabs)");
+              }
             }}
             onFacebookPress={async () => {
               const success = await signInWithFacebook();
-              if (success) router.replace("/(tabs)");
+              if (success && !leftScreenRef.current) {
+                if (router.canDismiss?.()) router.dismissAll();
+                router.replace("/(tabs)");
+              }
             }}
           />
         </Animated.View>

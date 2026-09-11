@@ -20,6 +20,7 @@ import {
   AlphabetPracticeSubmitResponse,
   isPracticePromoted,
 } from "@/types/alphabet";
+import { translateRank } from "@/utils/rank-tier";
 
 interface PracticeResultCardProps {
   result: AlphabetPracticeSubmitResponse;
@@ -60,7 +61,9 @@ export function PracticeResultCard({
       {isPracticePromoted(result) && result.newRankName && (
         <Animated.View entering={FadeInUp.delay(200)} style={styles.rankBox}>
           <Ionicons name="ribbon" size={20} color={Colors.secondary} />
-          <Text style={styles.rankText}>Thăng hạng: {result.newRankName}!</Text>
+          <Text style={styles.rankText}>
+            Thăng hạng: {translateRank(result.newRankName)}!
+          </Text>
         </Animated.View>
       )}
 

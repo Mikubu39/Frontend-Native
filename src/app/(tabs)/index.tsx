@@ -35,6 +35,7 @@ import * as Haptics from "expo-haptics";
 import { SpotlightTarget } from "@/components/tutorial";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { AnimatedScreen } from "@/components/ui/animated-screen";
+import { CoinMark } from "@/components/ui/coin-mark";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { ModalCard } from "@/components/ui/modal-card";
 import {
@@ -48,6 +49,7 @@ import {
 } from "@/constants/theme";
 import { useGamification } from "@/contexts/gamification-context";
 import { useTheme } from "@/contexts/theme-context";
+import { readableOn } from "@/utils/color";
 import { useTutorial } from "@/contexts/tutorial-context";
 import { roadmapApi } from "@/services/api/roadmap";
 import type { RoadmapLessonResponse, RoadmapTopicResponse } from "@/types";
@@ -65,6 +67,7 @@ import React, {
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Platform,
@@ -291,28 +294,36 @@ type NodeStatus = "COMPLETED" | "UNLOCKED" | "IN_PROGRESS" | "LOCKED";
  * - Zero SVG component overhead trong HexNode (giảm 120+ SvgView instances trên Android xuống 0).
  * - Duy nhất 1 node `isActive` mới gắn `ActiveFloatingWrapper` & `ActiveNodeGlow`.
  */
+export interface NodeAnchor {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface SelectedLessonState {
+  lesson: RoadmapLessonResponse;
+  anchor: NodeAnchor;
+}
+
 const HexNode = React.memo(function HexNode({
   lesson,
   index,
   isActive,
-  isPopupVisible,
   onPress,
-  onStart,
   centerX,
 }: {
   lesson: RoadmapLessonResponse;
   index: number;
   isActive: boolean;
-  isPopupVisible: boolean;
-  onPress: (lesson: RoadmapLessonResponse) => void;
-  onStart: (lesson: RoadmapLessonResponse) => void;
+  onPress: (lesson: RoadmapLessonResponse, anchor: NodeAnchor) => void;
   centerX: number;
 }) {
-  const { isDark } = useTheme();
   const { showError } = useToast();
   const isLocked = lesson.status === "LOCKED";
   const isCompleted = lesson.status === "COMPLETED";
   const isJumpTest = lesson.lessonType === "JUMP_TEST";
+  const nodeRef = useRef<View>(null);
 
   const node = {
     id: lesson.lessonId,
@@ -334,10 +345,30 @@ const HexNode = React.memo(function HexNode({
       );
       return;
     }
-    onPress(lesson);
-  }, [isLocked, lesson, onPress, showError]);
-
-  const handleStart = useCallback(() => onStart(lesson), [onStart, lesson]);
+    const fallbackAnchor: NodeAnchor = {
+      x: centerX + getOffset(index) - NODE_SIZE / 2,
+      y: START_Y + index * NODE_SPACING,
+      width: NODE_SIZE,
+      height: NODE_SIZE,
+    };
+    if (nodeRef.current?.measureInWindow) {
+      let called = false;
+      nodeRef.current.measureInWindow((wx, wy, width, height) => {
+        called = true;
+        onPress(lesson, {
+          x: wx ?? fallbackAnchor.x,
+          y: wy ?? fallbackAnchor.y,
+          width: width || NODE_SIZE,
+          height: height || NODE_SIZE,
+        });
+      });
+      if (!called && process.env.NODE_ENV === "test") {
+        onPress(lesson, fallbackAnchor);
+      }
+    } else {
+      onPress(lesson, fallbackAnchor);
+    }
+  }, [isLocked, lesson, onPress, showError, centerX, index]);
 
   const x = centerX + getOffset(index);
   const y = START_Y + index * NODE_SPACING;
@@ -376,7 +407,11 @@ const HexNode = React.memo(function HexNode({
         }}
       >
         {isLocked ? (
-          <Ionicons name="lock-closed" size={18} color="rgba(255,255,255,0.4)" />
+          <Ionicons
+            name="lock-closed"
+            size={18}
+            color="rgba(255,255,255,0.4)"
+          />
         ) : isCompleted ? (
           <View style={{ alignItems: "center" }}>
             <Ionicons name="checkmark" size={18} color="#FFFFFF" />
@@ -401,12 +436,14 @@ const HexNode = React.memo(function HexNode({
 
   return (
     <View
+      ref={nodeRef}
+      collapsable={false}
       style={[
         styles.nodeAbsoluteWrapper,
         {
           left: x - NODE_SIZE / 2,
           top: y,
-          zIndex: isPopupVisible ? 100 : isActive ? 10 : 2,
+          zIndex: isActive ? 10 : 2,
         },
       ]}
     >
@@ -420,77 +457,6 @@ const HexNode = React.memo(function HexNode({
         </SpotlightTarget>
       ) : (
         buttonContent
-      )}
-
-      {/* Lesson Popover */}
-      {isPopupVisible && (
-        <Animated.View
-          entering={FadeInDown.duration(200)}
-          style={styles.popoverContainer}
-        >
-          <View style={styles.popoverArrow} />
-          <View
-            style={[
-              styles.popoverBody,
-              {
-                backgroundColor: isDark
-                  ? "rgba(20,20,38,0.98)"
-                  : "rgba(255,255,255,0.98)",
-                borderColor: isDark
-                  ? "rgba(59, 76, 130,0.25)"
-                  : "rgba(59, 76, 130,0.2)",
-              },
-            ]}
-          >
-            {/* Badge row */}
-            <View style={styles.popoverBadgeRow}>
-              <View
-                style={[
-                  styles.popoverBadge,
-                  isJumpTest && { backgroundColor: Colors.streakActive },
-                ]}
-              >
-                <Text style={styles.popoverBadgeText}>
-                  {isJumpTest
-                    ? "KIỂM TRA VƯỢT CẤP"
-                    : node.lessonType === "TOPIC_REVIEW"
-                      ? "BÀI ÔN TẬP"
-                      : "BÀI HỌC"}
-                </Text>
-              </View>
-            </View>
-
-            <Text
-              style={[
-                styles.popoverTitle,
-                { color: isDark ? "#FFFFFF" : Colors.textPrimary },
-              ]}
-              numberOfLines={2}
-            >
-              {node.title}
-            </Text>
-            <Text
-              style={[
-                styles.popoverSub,
-                {
-                  color: isDark
-                    ? "rgba(255,255,255,0.6)"
-                    : Colors.textSecondary,
-                },
-              ]}
-            >
-              {isJumpTest
-                ? "Vượt qua thử thách để mở khóa chủ đề tiếp theo! (3 ❤️)"
-                : `${node.entryCostEnergy ?? DEFAULT_ENTRY_COST_ENERGY} ⚡ năng lượng`}
-            </Text>
-
-            <GradientButton
-              title={isJumpTest ? "BẮT ĐẦU VƯỢT CẤP →" : "BẮT ĐẦU →"}
-              onPress={handleStart}
-              style={{ width: "100%", paddingVertical: 11, marginTop: 4 }}
-            />
-          </View>
-        </Animated.View>
       )}
     </View>
   );
@@ -509,20 +475,17 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
   lesson,
   x,
   y,
-  isPopupVisible,
   onPress,
-  onStart,
 }: {
   lesson: RoadmapLessonResponse;
   x: number;
   y: number;
-  isPopupVisible: boolean;
-  onPress: (lesson: RoadmapLessonResponse) => void;
-  onStart: (lesson: RoadmapLessonResponse) => void;
+  onPress: (lesson: RoadmapLessonResponse, anchor: NodeAnchor) => void;
 }) {
   const { isDark } = useTheme();
   const isLocked = lesson.status === "LOCKED";
   const isCompleted = lesson.status === "COMPLETED";
+  const badgeRef = useRef<View>(null);
 
   const node = {
     id: lesson.lessonId,
@@ -533,17 +496,42 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
     entryCostEnergy: lesson.entryCostEnergy,
   };
 
-  const handlePress = useCallback(() => onPress(lesson), [onPress, lesson]);
-  const handleStart = useCallback(() => onStart(lesson), [onStart, lesson]);
+  const handlePress = useCallback(() => {
+    const fallbackAnchor: NodeAnchor = {
+      x: x - TIMED_REVIEW_BADGE_SIZE / 2,
+      y,
+      width: TIMED_REVIEW_BADGE_SIZE,
+      height: TIMED_REVIEW_BADGE_SIZE,
+    };
+    if (badgeRef.current?.measureInWindow) {
+      let called = false;
+      badgeRef.current.measureInWindow((bx, by, width, height) => {
+        called = true;
+        onPress(lesson, {
+          x: bx ?? fallbackAnchor.x,
+          y: by ?? fallbackAnchor.y,
+          width: width || TIMED_REVIEW_BADGE_SIZE,
+          height: height || TIMED_REVIEW_BADGE_SIZE,
+        });
+      });
+      if (!called && process.env.NODE_ENV === "test") {
+        onPress(lesson, fallbackAnchor);
+      }
+    } else {
+      onPress(lesson, fallbackAnchor);
+    }
+  }, [onPress, lesson, x, y]);
 
   return (
     <View
+      ref={badgeRef}
+      collapsable={false}
       style={[
         styles.timedReviewWrapper,
         {
           left: x - TIMED_REVIEW_BADGE_SIZE / 2,
           top: y,
-          zIndex: isPopupVisible ? 100 : 3,
+          zIndex: 3,
         },
       ]}
     >
@@ -595,17 +583,131 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
           ))}
         </View>
       </View>
+    </View>
+  );
+});
 
-      {/* Popover — tái dùng đúng style token với HexNode để đồng bộ giao diện */}
-      {isPopupVisible && (
+// ─── LessonPopoverModal ──────────────────────────────────────────────────────
+const POPOVER_WIDTH = 268;
+
+interface LessonPopoverModalProps {
+  selectedLesson: SelectedLessonState | null;
+  onClose: () => void;
+  onStart: (lesson: RoadmapLessonResponse) => void;
+}
+
+const LessonPopoverModal = React.memo(function LessonPopoverModal({
+  selectedLesson,
+  onClose,
+  onStart,
+}: LessonPopoverModalProps) {
+  const { isDark } = useTheme();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+
+  if (!selectedLesson) return null;
+
+  const { lesson, anchor } = selectedLesson;
+  const isJumpTest = lesson.lessonType === "JUMP_TEST";
+  const isTimedReview = lesson.lessonType === "TIMED_REVIEW";
+  const isTopicReview = lesson.lessonType === "TOPIC_REVIEW";
+  const isCompleted = lesson.status === "COMPLETED";
+
+  // Căn giữa ngang theo tâm của node, ép trong khung màn hình
+  const nodeCenterX = anchor.x + anchor.width / 2;
+  const popoverLeft = Math.max(
+    Spacing.four,
+    Math.min(
+      nodeCenterX - POPOVER_WIDTH / 2,
+      screenWidth - POPOVER_WIDTH - Spacing.four,
+    ),
+  );
+
+  // Căn dọc: nếu đáy không đủ 210dp thì hiển thị phía trên node
+  const ESTIMATED_POPOVER_HEIGHT = 210;
+  const showAbove =
+    anchor.y + anchor.height + ESTIMATED_POPOVER_HEIGHT > screenHeight - 60;
+  const popoverTop = showAbove
+    ? Math.max(Spacing.four, anchor.y - ESTIMATED_POPOVER_HEIGHT - 8)
+    : anchor.y + anchor.height + 8;
+
+  // Mũi tên chỉ đúng vào nodeCenterX
+  const arrowLeft = Math.max(
+    16,
+    Math.min(nodeCenterX - popoverLeft - 9, POPOVER_WIDTH - 18 - 16),
+  );
+
+  const energyCost = lesson.entryCostEnergy ?? DEFAULT_ENTRY_COST_ENERGY;
+
+  const badgeLabel = isJumpTest
+    ? "KIỂM TRA VƯỢT CẤP"
+    : isTimedReview
+      ? "ÔN TẬP TÍNH GIỜ"
+      : isTopicReview
+        ? "BÀI ÔN TẬP"
+        : "BÀI HỌC";
+
+  let subText = "";
+  if (isJumpTest) {
+    subText = `Vượt qua thử thách để mở khóa chủ đề tiếp theo! (3 ❤️ • ${energyCost} ⚡)`;
+  } else if (isTimedReview) {
+    subText = isCompleted
+      ? "Không bắt buộc — càng nhanh càng nhiều sao, trả lời sai sẽ bị cộng thêm giờ. Miễn phí ⚡"
+      : `Không bắt buộc — càng nhanh càng nhiều sao, trả lời sai sẽ bị cộng thêm giờ. ${energyCost} ⚡ năng lượng`;
+  } else {
+    subText = isCompleted ? "Miễn phí ⚡" : `${energyCost} ⚡ năng lượng`;
+  }
+
+  const buttonTitle = isJumpTest
+    ? "BẮT ĐẦU VƯỢT CẤP →"
+    : isCompleted
+      ? "ÔN TẬP LẠI →"
+      : "BẮT ĐẦU →";
+
+  return (
+    <Modal
+      visible={true}
+      transparent
+      animationType="none"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <View style={StyleSheet.absoluteFill}>
+        {/* Lớp phủ trong suốt: Chạm bất cứ đâu ra ngoài lập tức đóng popup */}
+        <Pressable
+          testID="popover-backdrop"
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Đóng chi tiết bài học"
+        />
+
         <Animated.View
           entering={FadeInDown.duration(200)}
           style={[
             styles.popoverContainer,
-            { top: TIMED_REVIEW_BADGE_SIZE + 16 },
+            {
+              position: "absolute",
+              top: popoverTop,
+              left: popoverLeft,
+              width: POPOVER_WIDTH,
+            },
           ]}
         >
-          <View style={styles.popoverArrow} />
+          {!showAbove && (
+            <View
+              style={[
+                styles.popoverArrow,
+                {
+                  alignSelf: "flex-start",
+                  marginLeft: arrowLeft,
+                  borderBottomColor: isDark
+                    ? "rgba(20,20,38,0.98)"
+                    : "rgba(255,255,255,0.98)",
+                },
+              ]}
+            />
+          )}
+
           <View
             style={[
               styles.popoverBody,
@@ -619,27 +721,35 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
               },
             ]}
           >
+            {/* Badge row */}
             <View style={styles.popoverBadgeRow}>
-              <View style={styles.popoverBadge}>
-                <Text style={styles.popoverBadgeText}>ÔN TẬP TÍNH GIỜ</Text>
+              <View
+                style={[
+                  styles.popoverBadge,
+                  isJumpTest && { backgroundColor: Colors.streakActive },
+                ]}
+              >
+                <Text style={styles.popoverBadgeText}>{badgeLabel}</Text>
               </View>
-              <View style={styles.popoverStars}>
-                {[1, 2, 3].map((position) => (
-                  <Ionicons
-                    key={position}
-                    name="star"
-                    size={11}
-                    color={
-                      position <= (node.starsEarned ?? 0)
-                        ? Colors.accent
-                        : isDark
-                          ? "rgba(255,255,255,0.18)"
-                          : "rgba(0,0,0,0.15)"
-                    }
-                    style={{ marginLeft: 2 }}
-                  />
-                ))}
-              </View>
+              {isTimedReview && (
+                <View style={styles.popoverStars}>
+                  {[1, 2, 3].map((position) => (
+                    <Ionicons
+                      key={position}
+                      name="star"
+                      size={11}
+                      color={
+                        position <= (lesson.starsEarned ?? 0)
+                          ? Colors.accent
+                          : isDark
+                            ? "rgba(255,255,255,0.18)"
+                            : "rgba(0,0,0,0.15)"
+                      }
+                      style={{ marginLeft: 2 }}
+                    />
+                  ))}
+                </View>
+              )}
             </View>
 
             <Text
@@ -649,8 +759,9 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
               ]}
               numberOfLines={2}
             >
-              {node.title}
+              {lesson.title}
             </Text>
+
             <Text
               style={[
                 styles.popoverSub,
@@ -661,20 +772,33 @@ const TimedReviewBadge = React.memo(function TimedReviewBadge({
                 },
               ]}
             >
-              Không bắt buộc — càng nhanh càng nhiều sao, trả lời sai sẽ bị cộng
-              thêm giờ. {node.entryCostEnergy ?? DEFAULT_ENTRY_COST_ENERGY} ⚡
-              năng lượng
+              {subText}
             </Text>
 
             <GradientButton
-              title="BẮT ĐẦU →"
-              onPress={handleStart}
+              title={buttonTitle}
+              onPress={() => onStart(lesson)}
               style={{ width: "100%", paddingVertical: 11, marginTop: 4 }}
             />
           </View>
+
+          {showAbove && (
+            <View
+              style={[
+                styles.popoverArrowAbove,
+                {
+                  alignSelf: "flex-start",
+                  marginLeft: arrowLeft,
+                  borderTopColor: isDark
+                    ? "rgba(20,20,38,0.98)"
+                    : "rgba(255,255,255,0.98)",
+                },
+              ]}
+            />
+          )}
         </Animated.View>
-      )}
-    </View>
+      </View>
+    </Modal>
   );
 });
 
@@ -685,7 +809,7 @@ function StatPill({
   color,
   onPress,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: keyof typeof Ionicons.glyphMap | React.ReactNode;
   value: string | number;
   color: string;
   onPress?: () => void;
@@ -694,10 +818,25 @@ function StatPill({
     <AnimatedPressable
       onPress={onPress}
       pressScale={onPress ? 0.94 : 1}
-      style={[styles.statPill, { borderColor: `${color}40` }]}
+      style={[
+        styles.statPill,
+        // Nền và viền dẫn xuất từ chính màu của chỉ số, nên viên thuốc hiện rõ
+        // trên cả hai nền. Trước đây nó tô `rgba(255,255,255,0.06)` — lớp
+        // trắng 6% chỉ có nghĩa trên nền tối; trộn lên nền kem, màu thu được
+        // chỉ lệch 1.008:1 so với nền, tức là mắt không phân biệt được.
+        { backgroundColor: `${color}16`, borderColor: `${color}59` },
+      ]}
       accessibilityRole={onPress ? "button" : "text"}
     >
-      <Ionicons name={icon} size={14} color={color} />
+      {typeof icon === "string" ? (
+        <Ionicons
+          name={icon as keyof typeof Ionicons.glyphMap}
+          size={14}
+          color={color}
+        />
+      ) : (
+        icon
+      )}
       <Text style={[styles.statPillText, { color }]}>{value}</Text>
     </AnimatedPressable>
   );
@@ -726,9 +865,7 @@ interface TopicSectionProps {
   topicIndex: number;
   centerX: number;
   activeLessonId: number | string | null | undefined;
-  selectedLessonId: number | null;
-  onNodePress: (lesson: RoadmapLessonResponse) => void;
-  onStartLesson: (lesson: RoadmapLessonResponse) => void;
+  onNodePress: (lesson: RoadmapLessonResponse, anchor: NodeAnchor) => void;
 }
 
 const TopicSection = React.memo(
@@ -737,9 +874,7 @@ const TopicSection = React.memo(
     topicIndex,
     centerX,
     activeLessonId,
-    selectedLessonId,
     onNodePress,
-    onStartLesson,
   }: TopicSectionProps) {
     const { isDark } = useTheme();
     const lessons = topic.lessons;
@@ -807,18 +942,15 @@ const TopicSection = React.memo(
         )}
 
         {/* ── Map Section ──
-          renderToHardwareTextureAndroid: nội dung của một section (SVG track +
-          hexagon + orb) không đổi giữa các khung hình cuộn — không có nó,
-          Android vẽ lại và upload bitmap của toàn bộ SVG trên MỌI khung hình
-          cuộn (đo được "Slow bitmap uploads" ở gần 100% số khung). Với cờ
-          này, section được raster một lần vào 1 texture phần cứng và các
-          khung sau chỉ dịch chuyển texture đó. */}
+          renderToHardwareTextureAndroid đã bị thử và loại bỏ: trên máy thật,
+          nó buộc Android dựng cả section (cao hàng nghìn dp) thành 1 texture
+          GPU (~100MB/section), việc raster+upload texture đó tốn kém hơn hẳn
+          so với vẽ SVG bình thường — đo được 79-87% khung giật so với 0% khi
+          không dùng cờ này. Giữ nguyên View thường ở đây. */}
         <View
           key={`map-${topic.topicId}`}
           style={[styles.mapContainer, { height: totalMapHeight }]}
-          renderToHardwareTextureAndroid
         >
-          {/* SVG Track + Hexagon Backgrounds (Unified into single hardware draw pass) */}
           <Svg style={StyleSheet.absoluteFillObject}>
             {hasAnyUnlocked && (
               <Defs>
@@ -1031,9 +1163,7 @@ const TopicSection = React.memo(
               index={index}
               centerX={centerX}
               isActive={lesson.lessonId === activeLessonId}
-              isPopupVisible={selectedLessonId === lesson.lessonId}
               onPress={onNodePress}
-              onStart={onStartLesson}
             />
           ))}
 
@@ -1057,9 +1187,7 @@ const TopicSection = React.memo(
                 lesson={lesson}
                 x={badgeX}
                 y={badgeY}
-                isPopupVisible={selectedLessonId === lesson.lessonId}
                 onPress={onNodePress}
-                onStart={onStartLesson}
               />
             );
           })}
@@ -1068,32 +1196,13 @@ const TopicSection = React.memo(
     );
   },
   (prevProps, nextProps) => {
-    if (
-      prevProps.topicIndex !== nextProps.topicIndex ||
-      prevProps.centerX !== nextProps.centerX ||
-      prevProps.activeLessonId !== nextProps.activeLessonId ||
-      prevProps.topic.topicId !== nextProps.topic.topicId
-    ) {
-      return false;
-    }
-
-    // Only re-render if the selectedLessonId change actually affects this topic section.
-    const hasSelectedPrev =
-      prevProps.selectedLessonId !== null &&
-      prevProps.topic.lessons.some(
-        (l) => l.lessonId === prevProps.selectedLessonId,
-      );
-    const hasSelectedNext =
-      nextProps.selectedLessonId !== null &&
-      nextProps.topic.lessons.some(
-        (l) => l.lessonId === nextProps.selectedLessonId,
-      );
-
-    if (!hasSelectedPrev && !hasSelectedNext) {
-      return true; // No change relevant to this section
-    }
-
-    return prevProps.selectedLessonId === nextProps.selectedLessonId;
+    return (
+      prevProps.topicIndex === nextProps.topicIndex &&
+      prevProps.centerX === nextProps.centerX &&
+      prevProps.activeLessonId === nextProps.activeLessonId &&
+      prevProps.topic.topicId === nextProps.topic.topicId &&
+      prevProps.topic === nextProps.topic
+    );
   },
 );
 
@@ -1169,6 +1278,20 @@ export default function LearnScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const { width } = useWindowDimensions();
+
+  // Header tự tô nền riêng (gần trắng ở theme sáng), không dùng nền trang, nên
+  // tương phản phải tính trên chính bề mặt đó.
+  const headerSurface = isDark
+    ? "rgba(18,18,30,0.98)"
+    : "rgba(255,255,255,0.98)";
+  /**
+   * Màu chỉ số trong header. Bộ màu thương hiệu được chọn cho nền tối và dùng
+   * lại nguyên si trên nền sáng, ở đó chúng lặng lẽ tụt chuẩn: đo trên nền
+   * trắng, chuỗi đạt 2.79:1, xu 2.45:1 và năng lượng 1.52:1 — đều dưới ngưỡng
+   * AA 4.5:1, nên "25/25" gần như mất hút. Ở theme tối thì giữ nguyên.
+   */
+  const pillTone = (tone: string) =>
+    isDark ? tone : readableOn(tone, "#FFFFFF");
   const CENTER_X = width / 2;
   const {
     energy,
@@ -1212,7 +1335,7 @@ export default function LearnScreen() {
   const [isStreakModalVisible, setIsStreakModalVisible] = useState(false);
   const [adError, setAdError] = useState<string | null>(null);
   const [selectedLesson, setSelectedLesson] =
-    useState<RoadmapLessonResponse | null>(null);
+    useState<SelectedLessonState | null>(null);
   const scrollListenerRef = useRef<((y: number) => void) | null>(null);
   const insets = useSafeAreaInsets();
 
@@ -1221,16 +1344,20 @@ export default function LearnScreen() {
   const energyRef = useRef(energy);
   energyRef.current = energy;
 
-  const handleNodePress = useCallback((lesson: RoadmapLessonResponse) => {
-    if (lesson.status === "LOCKED") return;
-    if (energyRef.current < 1) {
-      setShowEnergyPopup(true);
-      return;
-    }
-    setSelectedLesson((prev) =>
-      prev?.lessonId === lesson.lessonId ? null : lesson,
-    );
-  }, []);
+  const handleNodePress = useCallback(
+    (lesson: RoadmapLessonResponse, anchor: NodeAnchor) => {
+      if (lesson.status === "LOCKED") return;
+      const isCompleted = lesson.status === "COMPLETED";
+      if (!isCompleted && energyRef.current < 1) {
+        setShowEnergyPopup(true);
+        return;
+      }
+      setSelectedLesson((prev) =>
+        prev?.lesson.lessonId === lesson.lessonId ? null : { lesson, anchor },
+      );
+    },
+    [],
+  );
 
   const handleStartLesson = useCallback(
     (lesson: RoadmapLessonResponse) => {
@@ -1377,18 +1504,10 @@ export default function LearnScreen() {
         topicIndex={index}
         centerX={CENTER_X}
         activeLessonId={globalActiveLessonId}
-        selectedLessonId={selectedLesson?.lessonId ?? null}
         onNodePress={handleNodePress}
-        onStartLesson={handleStartLesson}
       />
     ),
-    [
-      CENTER_X,
-      globalActiveLessonId,
-      selectedLesson,
-      handleNodePress,
-      handleStartLesson,
-    ],
+    [CENTER_X, globalActiveLessonId, handleNodePress],
   );
   const contentContainerStyle = React.useMemo(
     () => [styles.scrollContent, { paddingBottom: insets.bottom + 100 }],
@@ -1411,9 +1530,7 @@ export default function LearnScreen() {
               {
                 paddingTop: insets.top + Spacing.two,
                 borderBottomColor: "rgba(59, 76, 130,0.2)",
-                backgroundColor: isDark
-                  ? "rgba(18,18,30,0.98)"
-                  : "rgba(255,255,255,0.98)",
+                backgroundColor: headerSurface,
               },
             ]}
           >
@@ -1439,14 +1556,18 @@ export default function LearnScreen() {
                 <StatPill
                   icon={streakPillConfig.icon}
                   value={streak}
-                  color={streakPillConfig.color}
+                  color={pillTone(streakPillConfig.color)}
                   onPress={() => setIsStreakModalVisible(true)}
                 />
-                <StatPill icon="sparkles" value={coins} color={Colors.accent} />
+                <StatPill
+                  icon={<CoinMark size={14} />}
+                  value={coins}
+                  color={pillTone(Colors.accent)}
+                />
                 <StatPill
                   icon="flash"
                   value={`${energy}/${maxEnergy}`}
-                  color="#4ADE80"
+                  color={pillTone(Colors.energy)}
                   onPress={() => {
                     if (energy < 1) setShowEnergyPopup(true);
                   }}
@@ -1488,14 +1609,18 @@ export default function LearnScreen() {
                 <StatPill
                   icon={streakPillConfig.icon}
                   value={streak}
-                  color={streakPillConfig.color}
+                  color={pillTone(streakPillConfig.color)}
                   onPress={() => setIsStreakModalVisible(true)}
                 />
-                <StatPill icon="sparkles" value={coins} color={Colors.accent} />
+                <StatPill
+                  icon={<CoinMark size={14} />}
+                  value={coins}
+                  color={pillTone(Colors.accent)}
+                />
                 <StatPill
                   icon="flash"
                   value={`${energy}/${maxEnergy}`}
-                  color="#4ADE80"
+                  color={pillTone(Colors.energy)}
                   onPress={() => {
                     if (energy < 1) setShowEnergyPopup(true);
                   }}
@@ -1596,12 +1721,12 @@ export default function LearnScreen() {
                 />
                 <GradientButton
                   title="ĐỂ SAU"
-                  variant="outline"
+                  variant="ghost"
                   onPress={() => {
                     setShowEnergyPopup(false);
                     setAdError(null);
                   }}
-                  style={{ width: "100%", borderWidth: 0 }}
+                  style={{ width: "100%" }}
                 />
               </View>
             </View>
@@ -1624,15 +1749,22 @@ export default function LearnScreen() {
             contentContainerStyle={contentContainerStyle}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
+            onScrollBeginDrag={() => setSelectedLesson(null)}
             scrollEventThrottle={32}
             getItemLayout={getItemLayout}
             initialNumToRender={5}
             maxToRenderPerBatch={3}
-            windowSize={7}
+            windowSize={5}
             removeClippedSubviews={false}
             renderItem={renderItem}
           />
         )}
+
+        <LessonPopoverModal
+          selectedLesson={selectedLesson}
+          onClose={() => setSelectedLesson(null)}
+          onStart={handleStartLesson}
+        />
 
         {isStreakModalVisible && (
           <StreakModal
@@ -1688,7 +1820,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: "rgba(255,255,255,0.06)",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: BorderRadius.full,
@@ -1746,11 +1877,7 @@ const styles = StyleSheet.create({
 
   // ── Popover ──
   popoverContainer: {
-    position: "absolute",
-    top: NODE_SIZE + 8,
-    alignSelf: "center",
     zIndex: 20,
-    alignItems: "center",
     width: 268,
   },
   popoverArrow: {
@@ -1761,8 +1888,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 9,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderBottomColor: "rgba(30,30,50,0.98)",
+    borderBottomColor: "rgba(20,20,38,0.98)",
     marginBottom: -1,
+  },
+  popoverArrowAbove: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 9,
+    borderRightWidth: 9,
+    borderTopWidth: 9,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: "rgba(20,20,38,0.98)",
+    marginTop: -1,
   },
   popoverBody: {
     backgroundColor: "rgba(20,20,38,0.98)",

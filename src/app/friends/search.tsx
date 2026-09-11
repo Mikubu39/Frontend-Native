@@ -9,7 +9,7 @@ import {
 import { userService } from "@/services/api/user";
 import { UserSearchResponse } from "@/types/user-api";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -22,29 +22,47 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/contexts/theme-context";
+import { useToast } from "@/contexts/toast-context";
 import { resolveAvatarUri } from "@/utils/media";
 import { BackButton } from "@/components/ui/back-button";
+import { extractApiErrorMessage } from "@/utils/error-handler";
 
 export default function FriendsSearchScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { showError } = useToast();
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<UserSearchResponse[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Chặn response cũ (từ lần tìm trước) ghi đè kết quả của lần tìm mới hơn
+  // khi người dùng bấm "Tìm kiếm" nhiều lần liên tiếp.
+  const searchRequestIdRef = useRef(0);
+  // Theo dõi những hàng đang gọi API theo dõi/bỏ theo dõi — chặn double-tap
+  // trên cùng một người dùng.
+  const [followingInFlight, setFollowingInFlight] = useState<Set<number>>(
+    new Set(),
+  );
 
   const handleSearch = async () => {
-    if (!keyword.trim()) return;
+    if (!keyword.trim() || loading) return;
     setLoading(true);
+    const requestId = ++searchRequestIdRef.current;
     try {
       const page = await userService.searchUsers(keyword.trim());
+      if (requestId !== searchRequestIdRef.current) return; // đã có lần tìm mới hơn
       setResults(page.items);
       setNextCursor(page.nextCursor);
     } catch (e) {
+      if (requestId !== searchRequestIdRef.current) return;
       console.error(e);
+      showError(
+        "Tìm kiếm thất bại",
+        extractApiErrorMessage(e, "Không thể tải danh sách kết quả."),
+      );
     } finally {
-      setLoading(false);
+      if (requestId === searchRequestIdRef.current) setLoading(false);
     }
   };
 
@@ -63,6 +81,8 @@ export default function FriendsSearchScreen() {
   };
 
   const handleToggleFollow = async (id: number, currentIndex: number) => {
+    if (followingInFlight.has(id)) return;
+    setFollowingInFlight((prev) => new Set(prev).add(id));
     try {
       const newStatus = await userService.toggleFollow(id);
       setResults((prev) =>
@@ -72,6 +92,16 @@ export default function FriendsSearchScreen() {
       );
     } catch (e) {
       console.error(e);
+      showError(
+        "Thao tác thất bại",
+        extractApiErrorMessage(e, "Không thể cập nhật theo dõi lúc này."),
+      );
+    } finally {
+      setFollowingInFlight((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -101,6 +131,7 @@ export default function FriendsSearchScreen() {
         <TouchableOpacity
           style={styles.searchBtn}
           onPress={handleSearch}
+          disabled={loading}
           accessibilityRole="button"
           accessibilityLabel="Tìm kiếm"
         >
@@ -190,6 +221,7 @@ export default function FriendsSearchScreen() {
                   ],
                 ]}
                 onPress={() => handleToggleFollow(item.id, index)}
+                disabled={followingInFlight.has(item.id)}
               >
                 <Text
                   style={[

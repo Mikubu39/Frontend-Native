@@ -7,6 +7,7 @@
 
 import axios, { AxiosInstance, create } from "axios";
 import { storage } from "@/services/storage/async-storage";
+import { ApiError, extractApiErrorMessage } from "@/utils/error-handler";
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "https://api.example.com";
@@ -49,17 +50,22 @@ class ApiClient {
           error.config?.url?.includes("/auth/login") ||
           error.config?.url?.includes("/auth/register");
 
-        if ((status === 401 || status === 403) && !isAuthEndpoint) {
+        // 401: Unauthorized (session expired / token invalid)
+        if (status === 401 && !isAuthEndpoint) {
           await storage.remove(TOKEN_KEY);
           await storage.remove("user_data");
           this.notifyUnauthorized();
         }
 
         // Do not use console.error here as it triggers Expo LogBox for expected errors like 401/403
-        // console.error("API Error in Axios interceptor:", error);
-        const errorMessage =
-          error.response?.data?.message || error.message || "API Error";
-        return Promise.reject(new Error(errorMessage));
+        const friendlyMessage = extractApiErrorMessage(error);
+        const apiError = new ApiError(
+          friendlyMessage,
+          status,
+          error.response,
+          error.code,
+        );
+        return Promise.reject(apiError);
       },
     );
   }

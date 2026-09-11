@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useFocusEffect } from "expo-router";
 import {
   View,
@@ -32,31 +32,14 @@ import {
   LeaderboardResponse,
   LeaderboardUserDto,
 } from "@/types/api";
+import { useOptionalAuth } from "@/contexts/auth-context";
 import { useGamification } from "@/contexts/gamification-context";
 import { useTheme } from "@/contexts/theme-context";
-
-/**
- * Hàm hỗ trợ dịch tên Rank từ Tiếng Anh sang Tiếng Việt
- */
-function translateRank(rankName: string | null | undefined): string {
-  if (!rankName) return "Chưa xếp hạng";
-  const rankMap: Record<string, string> = {
-    bronze: "Đồng",
-    silver: "Bạc",
-    gold: "Vàng",
-    platinum: "Bạch Kim", // Đã bổ sung Platinum
-    sapphire: "Ngọc Bích",
-    ruby: "Hồng Ngọc",
-    emerald: "Lục Bảo",
-    amethyst: "Thạch Anh Tím",
-    pearl: "Ngọc Trai",
-    obsidian: "Hắc Diện Thạch",
-    diamond: "Kim Cương",
-  };
-  return rankMap[rankName.toLowerCase()] || rankName;
-}
+import { translateRank } from "@/utils/rank-tier";
 
 export default function LeaderboardScreen() {
+  const auth = useOptionalAuth();
+  const authUser = auth?.user;
   const { rankId: currentUserRankId, exp: currentFreshExp } = useGamification();
   const { colors, isDark } = useTheme();
   const [ranks, setRanks] = useState<RankResponse[]>([]);
@@ -65,6 +48,8 @@ export default function LeaderboardScreen() {
     useState<LeaderboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // Chặn response cũ ghi đè response mới khi người dùng đổi tab hạng nhanh.
+  const leaderboardRequestIdRef = useRef(0);
 
   const fetchRanks = useCallback(async () => {
     try {
@@ -85,14 +70,18 @@ export default function LeaderboardScreen() {
   const fetchLeaderboard = useCallback(
     async (targetRankId: number, silent = false) => {
       if (!silent) setIsLoading(true);
+      const requestId = ++leaderboardRequestIdRef.current;
       try {
         const data = await rankApi.getLeaderboard(targetRankId);
+        if (requestId !== leaderboardRequestIdRef.current) return; // response cũ, bỏ qua
         setLeaderboardData(data);
       } catch (error) {
         console.error("Failed to fetch leaderboard:", error);
       } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
+        if (requestId === leaderboardRequestIdRef.current) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
       }
     },
     [],
@@ -119,10 +108,26 @@ export default function LeaderboardScreen() {
     }
   };
 
-  const topThree = leaderboardData?.topUsers.slice(0, 3) ?? [];
-  const rest = leaderboardData?.topUsers.slice(3) ?? [];
   const currentUserId = leaderboardData?.currentUserStanding?.userId;
   const currentUserStanding = leaderboardData?.currentUserStanding;
+
+  const topThree = useMemo(() => {
+    const raw = leaderboardData?.topUsers?.slice(0, 3) ?? [];
+    return raw.map((item) =>
+      item.userId === currentUserId && !item.avatarUrl && authUser?.avatarUrl
+        ? { ...item, avatarUrl: authUser.avatarUrl }
+        : item,
+    );
+  }, [leaderboardData?.topUsers, currentUserId, authUser?.avatarUrl]);
+
+  const rest = useMemo(() => {
+    const raw = leaderboardData?.topUsers?.slice(3) ?? [];
+    return raw.map((item) =>
+      item.userId === currentUserId && !item.avatarUrl && authUser?.avatarUrl
+        ? { ...item, avatarUrl: authUser.avatarUrl }
+        : item,
+    );
+  }, [leaderboardData?.topUsers, currentUserId, authUser?.avatarUrl]);
 
   const expFor = (item: LeaderboardUserDto) =>
     item.userId === currentUserId
@@ -153,7 +158,7 @@ export default function LeaderboardScreen() {
   );
 
   const renderHeader = () => {
-    if (!leaderboardData) return null;
+    if (!leaderboardData || !leaderboardData.currentRankInfo) return null;
     const { currentRankInfo } = leaderboardData;
     const isCurrentRank = currentUserStanding?.position !== null;
 
@@ -292,8 +297,16 @@ export default function LeaderboardScreen() {
               currentUserStanding.position > 3 && (
                 <LeaderboardStickyBar
                   position={currentUserStanding.position}
-                  displayName={currentUserStanding.displayName || "Bạn"}
-                  avatarUrl={null}
+                  displayName={
+                    currentUserStanding.displayName ||
+                    authUser?.displayName ||
+                    "Bạn"
+                  }
+                  avatarUrl={
+                    currentUserStanding.avatarUrl ||
+                    authUser?.avatarUrl ||
+                    null
+                  }
                   userId={currentUserStanding.userId}
                   exp={Math.max(currentUserStanding.exp ?? 0, currentFreshExp)}
                   cardColor={colors.card}

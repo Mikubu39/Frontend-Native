@@ -16,7 +16,6 @@ export type TutorialTargetId =
   | "review-vocab"
   | "review-mistakes"
   | "review-conversation"
-  | "review-dictionary"
   | "review-pronunciation";
 
 /** Toạ độ tuyệt đối trong cửa sổ (kết quả của `measureInWindow`). */

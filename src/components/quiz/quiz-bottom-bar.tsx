@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { MotionDuration, MotionEasing } from "@/constants/motion";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import LottieView from "lottie-react-native";
@@ -12,6 +13,7 @@ import {
   FontWeights,
   BorderRadius,
 } from "@/constants/theme";
+import { useTheme } from "@/contexts/theme-context";
 
 interface QuizBottomBarProps {
   hasInteracted: boolean;
@@ -26,6 +28,11 @@ interface QuizBottomBarProps {
   finishLabel?: string;
   submittingLabel?: string;
   isLastQuestion?: boolean;
+  /**
+   * Callback khi người dùng không thể nói (câu hỏi phát âm)
+   */
+  onSkipSpeaking?: () => void;
+  skipSpeakingLabel?: string;
   /**
    * Nhãn thay thế cho "Tuyệt vời!" khi trả lời đúng — dùng cho các trạng thái
    * đặc biệt (vd chuỗi trả lời đúng liên tiếp). Không ảnh hưởng nhãn khi sai.
@@ -46,8 +53,11 @@ export function QuizBottomBar({
   finishLabel = "ĐÃ HOÀN THÀNH",
   submittingLabel = "ĐANG TẢI...",
   isLastQuestion = false,
+  onSkipSpeaking,
+  skipSpeakingLabel = "Không thể nói lúc này?",
   correctFeedbackLabel,
 }: QuizBottomBarProps) {
+  const { colors } = useTheme();
   const lottieRef = useRef<LottieView>(null);
 
   useEffect(() => {
@@ -68,7 +78,9 @@ export function QuizBottomBar({
     <View style={styles.container}>
       {hasInteracted && hasSubmitted && (
         <Animated.View
-          entering={FadeInUp.springify().mass(0.8)}
+          entering={FadeInUp.duration(MotionDuration.press).easing(
+            MotionEasing.paper,
+          )}
           style={styles.feedbackPanel}
         >
           <LinearGradient
@@ -90,7 +102,7 @@ export function QuizBottomBar({
                     : require("@/assets/animations/confuse_mascot.json")
                 }
                 autoPlay={false}
-                loop={true}
+                loop={false}
                 style={styles.lottie}
               />
             </View>
@@ -122,6 +134,28 @@ export function QuizBottomBar({
         </Animated.View>
       )}
 
+      {!hasSubmitted && onSkipSpeaking && (
+        <TouchableOpacity
+          style={styles.skipSpeakingBtn}
+          onPress={onSkipSpeaking}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="mic-off-outline"
+            size={16}
+            color={colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.skipSpeakingText,
+              { color: colors.textSecondary },
+            ]}
+          >
+            {skipSpeakingLabel}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       <GradientButton
         title={isSubmitting ? submittingLabel : btnLabel}
         onPress={!hasSubmitted ? onCheck : onNext}
@@ -143,6 +177,21 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     gap: Spacing.three,
+  },
+  skipSpeakingBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.two,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    alignSelf: "center",
+  },
+  skipSpeakingText: {
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.semibold,
+    textDecorationLine: "underline",
+    color: Colors.textSecondary,
   },
   feedbackPanel: {
     borderRadius: BorderRadius.lg,
@@ -176,6 +225,8 @@ const styles = StyleSheet.create({
   feedbackLabel: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.extrabold,
+    flexShrink: 1,
+    flexWrap: "wrap",
   },
   feedbackAnswerLabel: {
     fontSize: FontSizes.xs,

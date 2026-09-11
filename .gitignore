@@ -51,3 +51,7 @@ scripts/.cache/
 # Claude Code: junction -> .agents/skills/impeccable (khong commit ban sao thu ba)
 .claude/skills/impeccable/
 scripts/ngrok.exe
+
+# build artifacts & release APKs
+release/
+*.apk

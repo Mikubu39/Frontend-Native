@@ -17,6 +17,10 @@ interface DualTextProps {
    * đọc và nghĩa của từ đó. Không có thì vẫn là một dòng chữ thường như cũ.
    */
   glossary?: Glossary;
+  /**
+   * Tắt tính năng tra từ điển (ví dụ ở các ô gạch ghép từ kana).
+   */
+  disableGlossary?: boolean;
 }
 
 export function DualText({
@@ -27,20 +31,20 @@ export function DualText({
   containerStyle,
   align = "center",
   glossary,
+  disableGlossary = false,
 }: DualTextProps) {
   const { mainText, subText } = getDualText(text, hint);
-  const hasGlossary = !!glossary && Object.keys(glossary).length > 0;
 
   return (
     <View style={[styles.container, { alignItems: align }, containerStyle]}>
-      {hasGlossary ? (
+      {disableGlossary ? (
+        <Text style={[styles.mainText, mainStyle]}>{mainText}</Text>
+      ) : (
         <JapaneseText
           text={mainText}
           style={StyleSheet.flatten([styles.mainText, mainStyle])}
           glossary={glossary}
         />
-      ) : (
-        <Text style={[styles.mainText, mainStyle]}>{mainText}</Text>
       )}
       {subText ? (
         <Text style={[styles.subText, subStyle]}>{subText}</Text>

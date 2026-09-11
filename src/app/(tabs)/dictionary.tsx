@@ -17,7 +17,10 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -29,19 +32,36 @@ import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 
 const TABS = ["Tất cả", "Cần ôn"] as const;
 
+/** Chiều cao cố định của thanh điều hướng đáy CustomTabBar */
+const TAB_BAR_HEIGHT = 56;
+
 /** Ghép mục kho từ về hình dạng mà `WordCard` đã dùng sẵn. */
 function toEntry(item: VocabularyItem): DictionaryEntry {
+  const normalizedRomaji = item.romaji
+    ? item.romaji
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^\w-]/g, "")
+    : "";
+  const audioUrl =
+    item.audioUrl ||
+    (normalizedRomaji
+      ? `/uploads/audios/words/${normalizedRomaji}.mp3`
+      : undefined);
+
   return {
     id: String(item.id),
     kanji: item.surface,
     romaji: item.romaji ?? "",
     meaning: item.meaningVn,
-    audioUrl: item.audioUrl ?? undefined,
+    audioUrl,
   };
 }
 
 export default function DictionaryScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState(0);
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [dueCount, setDueCount] = useState(0);
@@ -78,9 +98,12 @@ export default function DictionaryScreen() {
   }, [load]);
 
   const visible = activeTab === 1 ? items.filter((i) => i.due) : items;
+  const bottomPadding =
+    TAB_BAR_HEIGHT + Math.max(insets.bottom, 8) + Spacing.six;
 
   return (
     <SafeAreaView
+      edges={["top", "left", "right"]}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <View style={styles.headerRow}>
@@ -125,7 +148,10 @@ export default function DictionaryScreen() {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: bottomPadding },
+          ]}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -199,7 +225,6 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: Spacing.five,
-    paddingBottom: Spacing.eight,
     gap: Spacing.three,
   },
   emptyText: {

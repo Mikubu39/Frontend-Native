@@ -29,6 +29,8 @@ import { useGamification } from "@/contexts/gamification-context";
 import { AchievementMedal } from "@/components/profile/achievement-medal";
 import { getAchievementIconStyle } from "@/utils/achievement-icon";
 import { useTheme } from "@/contexts/theme-context";
+import { useSoundEffect } from "@/hooks/use-sound-effect";
+import { formatItemDescription } from "@/utils/shop";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function AchievementUnlockedScreen() {
@@ -36,10 +38,18 @@ export default function AchievementUnlockedScreen() {
   const { newlyUnlockedAchievements, clearNewlyUnlockedAchievements } =
     useGamification();
   const { colors } = useTheme();
+  const { playAchievement } = useSoundEffect();
 
   // Animation values
   const scale = useSharedValue(0.5);
   const rotation = useSharedValue(0);
+
+  useEffect(() => {
+    if (newlyUnlockedAchievements && newlyUnlockedAchievements.length > 0) {
+      playAchievement();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     // Delayed past the screen's own reveal transition so the medal visibly
@@ -137,8 +147,12 @@ export default function AchievementUnlockedScreen() {
           style={styles.textContainer}
         >
           <Text style={styles.title}>Thành tựu mới!</Text>
-          <Text style={styles.achievementName}>{achievement.name}</Text>
-          <Text style={styles.description}>{achievement.description}</Text>
+          <Text style={styles.achievementName}>
+            {formatItemDescription(achievement.name)}
+          </Text>
+          <Text style={styles.description}>
+            {formatItemDescription(achievement.description)}
+          </Text>
 
           {count > 1 && (
             <Animated.Text

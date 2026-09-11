@@ -5,7 +5,10 @@
  * sổ tay "từ đã học", và hàng đợi "hôm nay cần ôn gì".
  */
 
-export type VocabularyItemType = "VOCAB" | "KANJI" | "KANA";
+// Khớp đúng enum `vocabulary.item_type` của backend. "PHRASE" là cụm/câu trọn vẹn
+// (「また明日」, 「これはいくらですか」) — trước đây thiếu ở đây nên FE không phân biệt
+// được cụm với từ đơn.
+export type VocabularyItemType = "VOCAB" | "KANJI" | "KANA" | "PHRASE";
 
 export interface VocabularyItem {
   id: number;

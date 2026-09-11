@@ -46,7 +46,7 @@ describe("StreakModal", () => {
     expect(getByText("CN")).toBeTruthy();
 
     // Verify streak freeze details
-    expect(getByText("Băng tuyết giữ chuỗi")).toBeTruthy();
+    expect(getByText("Đóng băng chuỗi")).toBeTruthy();
     expect(getByText("Đang trang bị 2 lượt bảo vệ chuỗi.")).toBeTruthy();
 
     // Verify close
@@ -101,7 +101,7 @@ describe("StreakModal", () => {
     expect(getByText("ĐANG ĐÓNG BĂNG")).toBeTruthy();
     expect(
       getByText(
-        "Chuỗi ngày học đang được bảo vệ an toàn bằng khiên băng Streak Freeze. Hãy học hôm nay để ngọn lửa bùng cháy trở lại!",
+        "Chuỗi ngày học đang được bảo vệ an toàn bằng Đóng băng chuỗi. Hãy học hôm nay để ngọn lửa bùng cháy trở lại!",
       ),
     ).toBeTruthy();
   });

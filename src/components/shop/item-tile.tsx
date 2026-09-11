@@ -14,9 +14,15 @@ import {
   FontWeights,
   Spacing,
 } from "@/constants/theme";
+import { readableOn } from "@/utils/color";
 import type { ShelfEntry } from "@/types/shop";
-import { describeEffect, formatCoins } from "@/utils/shop";
-import { CoinMark } from "./coin-mark";
+import {
+  describeEffect,
+  formatCoins,
+  formatItemName,
+  formatItemDescription,
+} from "@/utils/shop";
+import { CoinMark } from "@/components/ui/coin-mark";
 import { ItemGlyph } from "./item-glyph";
 import { RarityFrame } from "./rarity-frame";
 
@@ -40,14 +46,21 @@ export const ItemTile = React.memo(function ItemTile({
   const { item, rarity, owned } = entry;
   const tier = RARITY_STYLES[rarity];
   const affordable = coins >= item.priceCoins;
+  // Bảng màu Cửa hàng được chỉnh cho mặt sơn mài tối. Kệ hàng thì đi theo
+  // theme của người dùng, nên màu chữ phải được kéo về đúng ngưỡng trên đúng
+  // bề mặt đang vẽ — `readableOn` trả nguyên màu nếu vốn đã đạt.
+  const accent = readableOn(tier.accent, surface);
+  const unaffordableTone = readableOn(ShopPalette.vermilion, surface);
   const stat = describeEffect(item);
+
+  const itemName = formatItemName(item.name);
 
   return (
     <AnimatedPressable
       style={styles.slot}
       onPress={() => onPress(entry)}
       pressScale={0.96}
-      accessibilityLabel={`${item.name}, ${tier.label}, ${formatCoins(item.priceCoins)} xu`}
+      accessibilityLabel={`${itemName}, ${tier.label}, ${formatCoins(item.priceCoins)} xu`}
       accessibilityHint="Mở chi tiết vật phẩm"
     >
       <RarityFrame
@@ -57,17 +70,17 @@ export const ItemTile = React.memo(function ItemTile({
         faceStyle={styles.face}
       >
         <View style={styles.topRow}>
-          <Text style={[styles.tierLabel, { color: tier.accent }]}>
+          <Text style={[styles.tierLabel, { color: accent }]}>
             {tier.label}
           </Text>
           {owned > 0 ? (
             <View
               style={[
                 styles.seal,
-                { borderColor: tier.accent, backgroundColor: tier.wash },
+                { borderColor: accent, backgroundColor: tier.wash },
               ]}
             >
-              <Text style={[styles.sealText, { color: tier.accent }]}>
+              <Text style={[styles.sealText, { color: accent }]}>
                 {`×${owned}`}
               </Text>
             </View>
@@ -77,30 +90,32 @@ export const ItemTile = React.memo(function ItemTile({
         <ItemGlyph item={item} rarity={rarity} size={54} />
 
         <Text style={[styles.name, { color: textColor }]} numberOfLines={2}>
-          {item.name}
+          {itemName}
         </Text>
         <Text style={[styles.stat, { color: mutedColor }]} numberOfLines={1}>
-          {stat ?? item.description}
+          {stat ?? formatItemDescription(item.description)}
         </Text>
 
         {item.limitedTime ? (
           <View style={styles.limitedTag}>
-            <Ionicons name="time" size={11} color={ShopPalette.vermilion} />
-            <Text style={styles.limitedText}>Có hạn</Text>
+            <Ionicons name="time" size={11} color={unaffordableTone} />
+            <Text style={[styles.limitedText, { color: unaffordableTone }]}>
+              Có hạn
+            </Text>
           </View>
         ) : null}
 
         <View
           style={[
             styles.pricePlate,
-            { borderTopColor: tier.accent + "33", backgroundColor: tier.wash },
+            { borderTopColor: accent + "33", backgroundColor: tier.wash },
           ]}
         >
           <CoinMark size={15} dimmed={!affordable} />
           <Text
             style={[
               styles.price,
-              { color: affordable ? textColor : ShopPalette.vermilion },
+              { color: affordable ? textColor : unaffordableTone },
             ]}
           >
             {formatCoins(item.priceCoins)}
@@ -167,7 +182,6 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.extrabold,
     letterSpacing: 0.8,
     textTransform: "uppercase",
-    color: ShopPalette.vermilion,
   },
   pricePlate: {
     marginTop: "auto",

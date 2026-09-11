@@ -14,6 +14,7 @@ import {
   AlphabetPracticeResultItem,
   AlphabetPracticeSubmitResponse,
 } from "@/types/alphabet";
+import { normalizeAlphabetPrompt } from "@/utils";
 
 export type AlphabetPracticeStatus =
   "loading" | "playing" | "submitting" | "finished" | "empty" | "error";
@@ -53,6 +54,9 @@ export function useAlphabetPractice(): UseAlphabetPracticeValue {
   const firstAttempts = useRef(new Map<number, boolean>());
   const replayCounter = useRef(0);
   const isMounted = useRef(true);
+  // Chặn bấm đáp án liên tiếp trước khi state kịp cập nhật — tránh submit()
+  // bị gọi 2 lần cho cùng một câu cuối.
+  const answeringRef = useRef(false);
 
   useEffect(() => {
     isMounted.current = true;
@@ -104,7 +108,10 @@ export function useAlphabetPractice(): UseAlphabetPracticeValue {
       setQueue(
         questions.map((question, index) => ({
           key: `${question.characterId}-${index}`,
-          question,
+          question: {
+            ...question,
+            prompt: normalizeAlphabetPrompt(question.prompt),
+          },
         })),
       );
       setTotal(questions.length);
@@ -121,11 +128,18 @@ export function useAlphabetPractice(): UseAlphabetPracticeValue {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    answeringRef.current = false;
+  }, [queue]);
+
   const answer = useCallback(
     (isCorrect: boolean) => {
       if (status !== "playing") return;
+      if (answeringRef.current) return;
+
       const head = queue[0];
       if (!head) return;
+      answeringRef.current = true;
 
       // Chỉ ghi nhận lần làm ĐẦU TIÊN của mỗi chữ cái cho server.
       if (!firstAttempts.current.has(head.question.characterId)) {

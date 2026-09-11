@@ -13,7 +13,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 /** The coin mark is the app's currency symbol; the shop owns the drawing. */
-import { CoinMark } from "@/components/shop/coin-mark";
+import { CoinMark } from "@/components/ui/coin-mark";
 import { goldInk, QuestPalette } from "@/constants/quests";
 import {
   BorderRadius,

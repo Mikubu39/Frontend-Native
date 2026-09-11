@@ -2,7 +2,7 @@
  * PictureQuestionCard — Impeccable redesign. Theme-aware.
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 import Animated, { ZoomIn } from "react-native-reanimated";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
@@ -37,7 +37,19 @@ export function PictureQuestionCard({
   onSelectAnswer,
 }: PictureQuestionProps) {
   const { isPlaying, play } = useAudio(question.audioUrl, question.word);
-  const { speak: speakOption } = useJapaneseSpeech();
+  // Player riêng cho đáp án, tách khỏi player của câu hỏi để 2 icon loa
+  // không nháy "đang phát" chéo nhau khi người dùng bấm ảnh.
+  const { play: playAnswerAudio, stop: stopAnswerAudio } = useAudio();
+  const { speak: speakOption, stop: stopOptionSpeech } = useJapaneseSpeech();
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
   const { colors, isDark } = useTheme();
 
   useEffect(() => {
@@ -122,9 +134,21 @@ export function PictureQuestionCard({
               ]}
               onPress={() => {
                 onSelectAnswer(img.id, img.isCorrect);
-                // Chạm vào ảnh nào đọc luôn từ vựng của ảnh đó, để người học
-                // nghe cách phát âm ngay cả khi chọn sai.
-                if (img.text) speakOption(img.text);
+                // Ngắt ngay âm thanh / TTS cũ đang phát
+                stopAnswerAudio();
+                stopOptionSpeech();
+                if (debounceTimerRef.current) {
+                  clearTimeout(debounceTimerRef.current);
+                }
+                // Debounce 150ms: chỉ phát âm thanh khi người dùng dừng chạm,
+                // tránh phát âm thanh liên tục dồn dập khi lướt đổi đáp án.
+                debounceTimerRef.current = setTimeout(() => {
+                  if (img.audioUrl) {
+                    playAnswerAudio(img.audioUrl);
+                  } else if (img.text) {
+                    speakOption(img.text);
+                  }
+                }, 150);
               }}
               pressScale={0.95}
             >

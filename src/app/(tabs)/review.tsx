@@ -47,6 +47,7 @@ export default function PracticeHubScreen() {
   const [loading, setLoading] = React.useState<boolean>(true);
   /** Số từ tới hạn ôn hôm nay — số này mới là thứ dẫn người học quay lại. */
   const [dueCount, setDueCount] = React.useState<number>(0);
+  const [learnedCount, setLearnedCount] = React.useState<number>(0);
 
   // Đọc lại MỖI LẦN màn này được tiêu điểm, không phải một lần lúc mount.
   //
@@ -62,8 +63,16 @@ export default function PracticeHubScreen() {
       // phải bấm được.
       vocabularyApi
         .getDue(1)
-        .then((res) => !cancelled && setDueCount(res.dueCount))
-        .catch(() => !cancelled && setDueCount(0));
+        .then((res) => {
+          if (cancelled) return;
+          setDueCount(res.dueCount);
+          setLearnedCount(res.learnedCount);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setDueCount(0);
+          setLearnedCount(0);
+        });
 
       mistakesApi
         .getSummary()
@@ -109,10 +118,18 @@ export default function PracticeHubScreen() {
       description:
         dueCount > 0
           ? "Có từ sắp quên — ôn lại ngay để nhớ lâu."
-          : "Chưa có từ nào tới hạn. Học bài mới để mở thêm từ nhé!",
+          : learnedCount > 0
+            ? `Đã ghi nhớ ${learnedCount} từ vựng. Chưa có từ nào tới hạn cần ôn lại.`
+            : "Chưa có từ nào tới hạn. Học bài mới để mở thêm từ nhé!",
       icon: "time-outline",
       route: "/review/vocabulary",
-      badge: loading ? "..." : dueCount > 0 ? `${dueCount} từ` : undefined,
+      badge: loading
+        ? "..."
+        : dueCount > 0
+          ? `${dueCount} từ`
+          : learnedCount > 0
+            ? `${learnedCount} đã học`
+            : undefined,
       color: Colors.accent,
     },
     {
@@ -137,15 +154,6 @@ export default function PracticeHubScreen() {
       icon: "chatbubbles-outline",
       route: "/conversation",
       badge: "Mới",
-      color: Colors.primary,
-    },
-    {
-      id: "p3",
-      tutorialTarget: "review-dictionary",
-      title: "Sổ tay Từ điển",
-      description: "Ôn tập và kiểm tra từ vựng bạn đã mở khóa.",
-      icon: "book-outline",
-      route: "/dictionary",
       color: Colors.primary,
     },
   ];

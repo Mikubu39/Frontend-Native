@@ -196,7 +196,11 @@ describe("Onboarding Flow & Placement Test — Theme & Error Handling", () => {
     });
 
     it("calls placementApi.start() and renders the first round's question", async () => {
-      await render(<PlacementScreen />);
+      await render(
+        <OnboardingProvider>
+          <PlacementScreen />
+        </OnboardingProvider>,
+      );
 
       await waitFor(() => {
         expect(mockedPlacementApi.start).toHaveBeenCalledTimes(1);
@@ -208,7 +212,11 @@ describe("Onboarding Flow & Placement Test — Theme & Error Handling", () => {
     });
 
     it("submits the round's answers, shows the result screen, and navigates to tabs", async () => {
-      await render(<PlacementScreen />);
+      await render(
+        <OnboardingProvider>
+          <PlacementScreen />
+        </OnboardingProvider>,
+      );
 
       await waitFor(() => {
         expect(screen.getByText("Con mèo")).toBeTruthy();
@@ -236,11 +244,32 @@ describe("Onboarding Flow & Placement Test — Theme & Error Handling", () => {
     it("skips gracefully (goes straight to tabs) when the user is not eligible for placement", async () => {
       mockedPlacementApi.start.mockRejectedValue(new Error("409 Conflict"));
 
-      await render(<PlacementScreen />);
+      await render(
+        <OnboardingProvider>
+          <PlacementScreen />
+        </OnboardingProvider>,
+      );
 
       await waitFor(() => {
         expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
       });
+    });
+
+    it("closing (X button) goes back instead of jumping straight to tabs", async () => {
+      await render(
+        <OnboardingProvider>
+          <PlacementScreen />
+        </OnboardingProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Con mèo")).toBeTruthy();
+      });
+
+      await fireEvent.press(screen.getByLabelText("Đóng bài học"));
+
+      expect(mockBack).toHaveBeenCalledTimes(1);
+      expect(mockReplace).not.toHaveBeenCalled();
     });
   });
 });

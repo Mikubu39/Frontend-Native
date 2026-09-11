@@ -107,3 +107,44 @@ export function pickFeaturedItem(items: ShopItemDto[]): ShopItemDto | null {
     current.priceCoins > best.priceCoins ? current : best,
   );
 }
+
+const SHOP_ITEM_NAME_MAP: Record<string, string> = {
+  "Streak Freeze": "Đóng băng chuỗi",
+  "Energy Refill": "Bình hồi năng lượng",
+  "Double XP Boost (30 phút)": "Nhân đôi EXP (30 phút)",
+  "Double Coin Boost (30 phút)": "Nhân đôi xu (30 phút)",
+  "Timer Boost (10 phút)": "Thêm giờ làm bài (10 phút)",
+  "Khung avatar: Sakura": "Khung ảnh đại diện: Sakura",
+  "Khung avatar: Fuji": "Khung ảnh đại diện: Fuji",
+  "Khung avatar: Neon Tokyo": "Khung ảnh đại diện: Neon Tokyo",
+  "Chủ đề: Dark Mode": "Chủ đề: Giao diện tối",
+  "Chủ đề: Sakura Pink": "Chủ đề: Hồng Sakura",
+};
+
+/**
+ * Chuẩn hóa tên vật phẩm hiển thị trên UI sang tiếng Việt thân thiện.
+ */
+export function formatItemName(name?: string | null): string {
+  if (!name) return "";
+  const trimmed = name.trim();
+  if (SHOP_ITEM_NAME_MAP[trimmed]) {
+    return SHOP_ITEM_NAME_MAP[trimmed];
+  }
+  return trimmed
+    .replace(/^Khung avatar:/i, "Khung ảnh đại diện:")
+    .replace(/Dark Mode/i, "Giao diện tối")
+    .replace(/Streak Freeze/i, "Đóng băng chuỗi")
+    .replace(/Energy Refill/i, "Bình hồi năng lượng");
+}
+
+/**
+ * Chuẩn hóa mô tả vật phẩm hiển thị trên UI sang tiếng Việt sạch sẽ.
+ */
+export function formatItemDescription(description?: string | null): string {
+  if (!description) return "";
+  return description
+    .replace(/Timed Review/g, "Ôn tập tính giờ")
+    .replace(/avatar/g, "ảnh đại diện")
+    .replace(/Streak Freeze/g, "Đóng băng chuỗi")
+    .replace(/Coin/g, "xu");
+}

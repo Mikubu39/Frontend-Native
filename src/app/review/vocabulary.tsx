@@ -3,7 +3,7 @@
  * Đồng bộ với giao diện Bài học.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -43,6 +43,21 @@ const QUESTION_MASCOTS = [
 
 const DISTRACTOR_COUNT = 3;
 
+const FALLBACK_DISTRACTORS = [
+  "Chào buổi sáng",
+  "Xin chào",
+  "Tạm biệt",
+  "Cảm ơn",
+  "Xin lỗi",
+  "Nước",
+  "Trà",
+  "Cơm",
+  "Học sinh",
+  "Giáo viên",
+  "Bác sĩ",
+  "Ngày mai",
+];
+
 interface ReviewCard {
   item: VocabularyItem;
   choices: string[];
@@ -57,10 +72,36 @@ function shuffle<T>(input: T[]): T[] {
   return out;
 }
 
-function buildCard(item: VocabularyItem, pool: string[]): ReviewCard {
-  const distractors = shuffle(
-    pool.filter((m) => m && m !== item.meaningVn),
-  ).slice(0, DISTRACTOR_COUNT);
+function buildCard(
+  item: VocabularyItem,
+  allItems: VocabularyItem[],
+  fallbackPool: string[],
+): ReviewCard {
+  const otherSessionMeanings = shuffle(
+    Array.from(
+      new Set(
+        allItems
+          .map((i) => i.meaningVn)
+          .filter((m) => m && m !== item.meaningVn),
+      ),
+    ),
+  );
+
+  const neededFromPool = Math.max(
+    0,
+    DISTRACTOR_COUNT - otherSessionMeanings.length,
+  );
+  const additionalDistractors = shuffle(
+    fallbackPool.filter(
+      (m) => m && m !== item.meaningVn && !otherSessionMeanings.includes(m),
+    ),
+  ).slice(0, neededFromPool);
+
+  const distractors = [
+    ...otherSessionMeanings.slice(0, DISTRACTOR_COUNT),
+    ...additionalDistractors,
+  ].slice(0, DISTRACTOR_COUNT);
+
   return { item, choices: shuffle([item.meaningVn, ...distractors]) };
 }
 
@@ -80,6 +121,11 @@ export default function VocabularyReviewScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [finished, setFinished] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [remainingDue, setRemainingDue] = useState(0);
+
+  // Chặn bấm "Tiếp tục" liên tiếp trước khi state kịp cập nhật —
+  // tránh index nhảy vượt quá mảng cards và gây crash.
+  const advancingRef = useRef(false);
 
   const meaningPool = useMemo(
     () =>
@@ -95,11 +141,14 @@ export default function VocabularyReviewScreen() {
       .getDue(20)
       .then((res) => {
         if (cancelled) return;
-        const pool =
-          meaningPool.length > DISTRACTOR_COUNT
-            ? meaningPool
-            : res.items.map((i) => i.meaningVn);
-        setCards(res.items.map((item) => buildCard(item, pool)));
+        const pool = Array.from(
+          new Set([
+            ...meaningPool,
+            ...res.items.map((i) => i.meaningVn),
+            ...FALLBACK_DISTRACTORS,
+          ]),
+        ).filter(Boolean);
+        setCards(res.items.map((item) => buildCard(item, res.items, pool)));
         setLoading(false);
       })
       .catch(() => {
@@ -138,6 +187,9 @@ export default function VocabularyReviewScreen() {
   );
 
   const handleNext = useCallback(async () => {
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+
     if (index + 1 < cards.length) {
       setIndex((i) => i + 1);
       setPicked(null);
@@ -145,14 +197,20 @@ export default function VocabularyReviewScreen() {
     }
     setSubmitting(true);
     try {
-      await vocabularyApi.submitReview(results);
+      const res = await vocabularyApi.submitReview(results);
+      setRemainingDue(res.remainingDue);
     } catch {
       setError("Đã ôn xong nhưng chưa lưu được lên máy chủ.");
     } finally {
       setSubmitting(false);
       setFinished(true);
+      advancingRef.current = false;
     }
   }, [index, cards.length, results]);
+
+  useEffect(() => {
+    advancingRef.current = false;
+  }, [index]);
 
   useEffect(() => {
     if (finished) {
@@ -164,10 +222,11 @@ export default function VocabularyReviewScreen() {
           wrongCount: results.length - correctCount,
           lessonType: "REVIEW_VOCAB",
           status: "COMPLETED",
+          remainingCount: remainingDue,
         },
       });
     }
-  }, [finished, results, router]);
+  }, [finished, results, remainingDue, router]);
 
   if (loading) {
     return (
@@ -202,6 +261,7 @@ export default function VocabularyReviewScreen() {
   }
 
   if (finished) return null;
+  if (!current) return null;
 
   const bg = isDark ? Colors.dark.background : Colors.light.background;
   const progress =
@@ -229,8 +289,10 @@ export default function VocabularyReviewScreen() {
               {
                 id: current.item.id,
                 type: "vocab",
+                word: current.item.surface,
                 surface: current.item.surface,
                 romaji: current.item.romaji,
+                audioUrl: current.item.audioUrl,
                 instruction: "Từ này nghĩa là gì?",
                 prompt: current.item.surface,
                 promptRomaji: current.item.romaji,
@@ -249,6 +311,7 @@ export default function VocabularyReviewScreen() {
                 : null
             }
             mascotSource={currentMascot}
+            hasSubmitted={picked !== null}
             onSelectAnswer={(id) => {
               if (picked !== null) return;
               handlePick(current.choices[parseInt(id, 10)]);

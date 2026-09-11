@@ -17,12 +17,7 @@ import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 import { mistakesApi } from "@/services/api/mistakes";
 import { mapApiQuestionsToQuizQuestions } from "@/utils/quiz-mapper";
 import { QuizQuestion } from "@/types/quiz";
-import {
-  Colors,
-  Fonts,
-  Spacing,
-  FontSizes,
-} from "@/constants/theme";
+import { Colors, Fonts, Spacing, FontSizes } from "@/constants/theme";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useGamification } from "@/contexts/gamification-context";
 import { useToast } from "@/contexts/toast-context";
@@ -54,6 +49,7 @@ export default function MistakeReviewScreen() {
   const { showError } = useToast();
   const { colors, isDark } = useTheme();
   const { playCorrect, playIncorrect } = useSoundEffect();
+  const { showInfo } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -61,7 +57,7 @@ export default function MistakeReviewScreen() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<
-    { questionId: number; selectedOptionId: number }[]
+    { questionId: number; selectedOptionId?: number; isCorrect?: boolean }[]
   >([]);
 
   // Current question state
@@ -74,9 +70,17 @@ export default function MistakeReviewScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
+  // Chặn bấm "Tiếp tục" liên tiếp trước khi state kịp cập nhật —
+  // tránh currentIndex nhảy vượt quá mảng questions và gây crash.
+  const advancingRef = useRef(false);
+
   useEffect(() => {
     loadMistakes();
   }, []);
+
+  useEffect(() => {
+    advancingRef.current = false;
+  }, [currentIndex]);
 
   const loadMistakes = async () => {
     try {
@@ -128,27 +132,20 @@ export default function MistakeReviewScreen() {
   };
 
   const handleNext = () => {
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+
     const currentQ = questions[currentIndex] as any;
 
-    let optionId = selectedAnswerId ? Number(selectedAnswerId) : null;
-    if (
-      !optionId &&
-      currentQ.originalOptions &&
-      currentQ.originalOptions.length > 0
-    ) {
-      optionId = Number(currentQ.originalOptions[0].optionId);
-    }
-    if (!optionId && currentQ.answers && currentQ.answers.length > 0) {
-      optionId = Number(currentQ.answers[0].id);
-    }
-
-    const newAnswers = [...answers];
-    if (optionId) {
-      newAnswers.push({
+    const optionId = selectedAnswerId ? Number(selectedAnswerId) : undefined;
+    const newAnswers = [
+      ...answers,
+      {
         questionId: Number(currentQ.id),
         selectedOptionId: optionId,
-      });
-    }
+        isCorrect: currentIsCorrect,
+      },
+    ];
     setAnswers(newAnswers);
 
     if (currentIndex < questions.length - 1) {
@@ -163,7 +160,11 @@ export default function MistakeReviewScreen() {
   };
 
   const submitReview = async (
-    finalAnswers: { questionId: number; selectedOptionId: number }[],
+    finalAnswers: {
+      questionId: number;
+      selectedOptionId?: number;
+      isCorrect?: boolean;
+    }[],
   ) => {
     setSubmitting(true);
     try {
@@ -172,14 +173,25 @@ export default function MistakeReviewScreen() {
       const correctCount = res.results.filter((r) => r.correct).length;
       setEnergy(res.currentEnergy);
 
+      // Best-effort: hỏi lại tổng số lỗi còn active để biết có nên mời ôn tiếp
+      // không. Lỗi ở đây không nên chặn màn kết quả — cứ coi như hết backlog.
+      let remainingCount = 0;
+      try {
+        const summary = await mistakesApi.getSummary();
+        remainingCount = summary.activeCount;
+      } catch {
+        // ignore — không có "Ôn Tiếp" thì vẫn về được trang chủ bình thường
+      }
+
       router.replace({
         pathname: "/quiz/result",
         params: {
           correctCount,
           wrongCount: res.results.length - correctCount,
-          coinsEarned: res.energyRewarded, // Passing energy as coins Earned for UI if we want
+          energyRewarded: res.energyRewarded,
           lessonType: "REVIEW_MISTAKES",
           status: "COMPLETED",
+          remainingCount,
         },
       });
     } catch {
@@ -187,6 +199,7 @@ export default function MistakeReviewScreen() {
       router.back();
     } finally {
       setSubmitting(false);
+      advancingRef.current = false;
     }
   };
 
@@ -233,6 +246,7 @@ export default function MistakeReviewScreen() {
   if (showResults) return null; // handled by useEffect redirect
 
   const currentQuestion = questions[currentIndex];
+  if (!currentQuestion) return null;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
   const progress =
     questions.length > 0
@@ -250,6 +264,7 @@ export default function MistakeReviewScreen() {
             question={currentQuestion}
             selectedAnswer={selectedAnswerId}
             mascotSource={currentMascot}
+            hasSubmitted={hasSubmitted}
             onSelectAnswer={(answerId) => {
               setSelectedAnswerId(answerId);
               const answer = currentQuestion.answers.find(
@@ -305,6 +320,7 @@ export default function MistakeReviewScreen() {
           <ListeningQuestionCard
             question={currentQuestion}
             selectedAnswer={selectedAnswerId}
+            hasSubmitted={hasSubmitted}
             onSelectAnswer={(answerId) => {
               setSelectedAnswerId(answerId);
               const answer = currentQuestion.answers.find(
@@ -321,27 +337,30 @@ export default function MistakeReviewScreen() {
             onAnswerChange={(isCorrect) => {
               handleAnswerSelection(isCorrect);
             }}
-            onSkipSpeaking={() => {
-              const futureNonSpeaking = questions
-                .slice(currentIndex + 1)
-                .filter((q) => q.type !== "speaking");
-
-              if (futureNonSpeaking.length === 0) {
-                handleAnswerSelection(true);
-              } else {
-                setQuestions((prev) => {
-                  const past = prev.slice(0, currentIndex);
-                  return [...past, ...futureNonSpeaking];
-                });
-                setSelectedAnswerId(null);
-                setHasInteracted(false);
-                setHasSubmitted(false);
-              }
-            }}
           />
         );
       default:
         return <Text>Loại câu hỏi không được hỗ trợ</Text>;
+    }
+  };
+
+  const handleSkipSpeaking = () => {
+    const futureNonSpeaking = questions
+      .slice(currentIndex + 1)
+      .filter((q) => q.type !== "speaking");
+
+    showInfo("Đã tạm bỏ qua các bài tập nói trong bài ôn tập này");
+
+    if (futureNonSpeaking.length === 0) {
+      handleAnswerSelection(true);
+    } else {
+      setQuestions((prev) => {
+        const past = prev.slice(0, currentIndex);
+        return [...past, ...futureNonSpeaking];
+      });
+      setSelectedAnswerId(null);
+      setHasInteracted(false);
+      setHasSubmitted(false);
     }
   };
 
@@ -360,10 +379,21 @@ export default function MistakeReviewScreen() {
           exiting={FadeOutLeft.duration(200)}
           style={{ width: "100%", maxWidth: 480, alignSelf: "center" }}
         >
-          <View pointerEvents={hasSubmitted ? "none" : "auto"}>
-            {currentQuestion.type !== "vocab" && (
-              <QuestionMascot seed={currentIndex} />
-            )}
+          {/* Cùng lý do như màn bài học: "vocab"/"listening" đã tự chặn đổi đáp án
+              bên trong nên để chúng nhận chạm tiếp để tra nghĩa sau khi nộp. */}
+          <View
+            pointerEvents={
+              hasSubmitted &&
+              currentQuestion.type !== "vocab" &&
+              currentQuestion.type !== "listening"
+                ? "none"
+                : "auto"
+            }
+          >
+            {currentQuestion.type !== "vocab" &&
+              currentQuestion.type !== "speaking" && (
+                <QuestionMascot seed={currentIndex} />
+              )}
             {renderQuestionCard()}
           </View>
         </Animated.View>
@@ -379,6 +409,11 @@ export default function MistakeReviewScreen() {
           onCheck={checkAnswer}
           onNext={handleNext}
           isLastQuestion={currentIndex === questions.length - 1}
+          onSkipSpeaking={
+            currentQuestion?.type === "speaking"
+              ? handleSkipSpeaking
+              : undefined
+          }
         />
       </View>
     </SafeAreaView>

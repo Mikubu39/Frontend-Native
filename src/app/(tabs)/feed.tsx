@@ -3,7 +3,7 @@
  * đăng trạng thái, like, bình luận. Xem FE_API_GUIDE_SOCIAL_FEED.md.
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import {
   FlatList,
@@ -32,6 +32,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
 import { feedApi } from "@/services/api/feed";
 import { FeedPostResponse } from "@/types/api";
+import { extractApiErrorMessage } from "@/utils/error-handler";
 
 export default function FeedScreen() {
   const { colors } = useTheme();
@@ -47,6 +48,9 @@ export default function FeedScreen() {
   const [activePost, setActivePost] = useState<FeedPostResponse | null>(null);
   const [statusText, setStatusText] = useState("");
   const [posting, setPosting] = useState(false);
+  // Chặn double-tap "thích" gửi 2 request like/unlike chồng lên nhau cho
+  // cùng một bài trước khi cái đầu kịp trả về.
+  const likeInFlightRef = useRef<Set<number>>(new Set());
 
   const loadFeed = useCallback(async () => {
     try {
@@ -55,7 +59,10 @@ export default function FeedScreen() {
       setNextCursor(page.nextCursor);
     } catch (e) {
       console.error(e);
-      showError("Lỗi", "Không thể tải bảng tin.");
+      showError(
+        "Lỗi",
+        extractApiErrorMessage(e, "Không thể tải bảng tin."),
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -88,6 +95,9 @@ export default function FeedScreen() {
   };
 
   const handleToggleLike = async (post: FeedPostResponse) => {
+    if (likeInFlightRef.current.has(post.id)) return;
+    likeInFlightRef.current.add(post.id);
+
     const wasLiked = post.likedByMe;
     setPosts((prev) =>
       prev.map((p) =>
@@ -113,6 +123,8 @@ export default function FeedScreen() {
             : p,
         ),
       );
+    } finally {
+      likeInFlightRef.current.delete(post.id);
     }
   };
 
@@ -122,7 +134,10 @@ export default function FeedScreen() {
       setPosts((prev) => prev.filter((p) => p.id !== post.id));
     } catch (e) {
       console.error(e);
-      showError("Lỗi", "Không thể xoá bài đăng.");
+      showError(
+        "Lỗi xoá bài",
+        extractApiErrorMessage(e, "Không thể xoá bài đăng."),
+      );
     }
   };
 
@@ -146,7 +161,10 @@ export default function FeedScreen() {
       await loadFeed();
     } catch (e) {
       console.error(e);
-      showError("Lỗi", "Không thể đăng bài.");
+      showError(
+        "Lỗi đăng bài",
+        extractApiErrorMessage(e, "Không thể đăng bài lúc này."),
+      );
     } finally {
       setPosting(false);
     }

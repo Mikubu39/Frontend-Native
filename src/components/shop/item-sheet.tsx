@@ -18,10 +18,16 @@ import {
   FontWeights,
   Spacing,
 } from "@/constants/theme";
+import { readableOn } from "@/utils/color";
 import { useCountdown } from "@/hooks/use-countdown";
 import type { ShelfEntry } from "@/types/shop";
-import { describeEffect, formatCoins } from "@/utils/shop";
-import { CoinMark } from "./coin-mark";
+import {
+  describeEffect,
+  formatCoins,
+  formatItemName,
+  formatItemDescription,
+} from "@/utils/shop";
+import { CoinMark } from "@/components/ui/coin-mark";
 import { ItemGlyph } from "./item-glyph";
 import { ShopButton } from "./shop-button";
 
@@ -80,6 +86,9 @@ export function ItemSheet({
 
   const { item, rarity, owned } = entry;
   const tier = RARITY_STYLES[rarity];
+  // Tấm này vẽ trên `colors.background` (theo theme), còn bảng màu Cửa hàng
+  // được chỉnh cho mặt sơn mài tối — kéo về đúng ngưỡng trên nền đang vẽ.
+  const accent = readableOn(tier.accent, colors.background);
   const meta = EFFECT_META[item.effectType];
   const stat = describeEffect(item);
   const affordable = coins >= item.priceCoins;
@@ -121,11 +130,9 @@ export function ItemSheet({
           <View style={styles.headRow}>
             <ItemGlyph item={item} rarity={rarity} size={76} />
             <View style={styles.headBody}>
-              <Text style={[styles.tier, { color: tier.accent }]}>
-                {tier.label}
-              </Text>
+              <Text style={[styles.tier, { color: accent }]}>{tier.label}</Text>
               <Text style={[styles.name, { color: colors.text }]}>
-                {item.name}
+                {formatItemName(item.name)}
               </Text>
               <Text style={[styles.effect, { color: colors.textSecondary }]}>
                 {meta?.label ?? item.effectType}
@@ -134,32 +141,30 @@ export function ItemSheet({
           </View>
 
           <Text style={[styles.description, { color: colors.textSecondary }]}>
-            {item.description}
+            {formatItemDescription(item.description)}
           </Text>
 
           <View style={styles.statRow}>
             <StatCell
               label="Hiệu lực"
               value={stat ?? "Vĩnh viễn"}
-              accent={tier.accent}
+              accent={accent}
               mutedColor={colors.textSecondary}
             />
             <StatCell
               label="Trong túi"
               value={owned > 0 ? "×" + owned : "Chưa có"}
-              accent={tier.accent}
+              accent={accent}
               mutedColor={colors.textSecondary}
             />
           </View>
 
           {remaining ? (
-            <View
-              style={[styles.liveBanner, { borderColor: tier.accent + "44" }]}
-            >
-              <Ionicons name="pulse" size={15} color={tier.accent} />
+            <View style={[styles.liveBanner, { borderColor: accent + "44" }]}>
+              <Ionicons name="pulse" size={15} color={accent} />
               <Text style={[styles.liveText, { color: colors.text }]}>
                 Đang chạy, còn{" "}
-                <Text style={{ color: tier.accent }}>{remaining}</Text>
+                <Text style={{ color: accent }}>{remaining}</Text>
               </Text>
             </View>
           ) : null}

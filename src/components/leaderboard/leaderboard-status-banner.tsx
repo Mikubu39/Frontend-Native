@@ -52,7 +52,7 @@ export function LeaderboardStatusBanner({
 
         {/* Info Column */}
         <View style={styles.infoCol}>
-          <Text style={styles.rankTitle}>Hạng {rankName}</Text>
+          <Text style={styles.rankTitle}>{theme.label}</Text>
 
           <View style={styles.statusPill}>
             <Ionicons

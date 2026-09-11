@@ -1,5 +1,4 @@
 export * from "./buff-ticker";
-export * from "./coin-mark";
 export * from "./featured-case";
 export * from "./item-glyph";
 export * from "./item-sheet";

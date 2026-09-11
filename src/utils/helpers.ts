@@ -64,3 +64,19 @@ export function debounce<T extends (...args: unknown[]) => void>(
     timeoutId = setTimeout(() => fn(...args), delay);
   };
 }
+
+/**
+ * Chuẩn hóa prompt bài luyện tập bảng chữ cái sang tiếng Việt có dấu
+ * (hỗ trợ hiển thị đúng ngay cả khi API trả về chuỗi không dấu cũ).
+ */
+export function normalizeAlphabetPrompt(prompt?: string | null): string {
+  if (!prompt) return "";
+  const trimmed = prompt.trim();
+  if (/^nghe va chon chu cai dung$/i.test(trimmed)) {
+    return "Nghe và chọn chữ cái đúng";
+  }
+  if (/^viet chu:\s*/i.test(trimmed)) {
+    return trimmed.replace(/^viet chu:\s*/i, "Viết chữ: ");
+  }
+  return trimmed;
+}

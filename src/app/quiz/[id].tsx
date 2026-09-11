@@ -18,6 +18,7 @@ import {
   VocabQuestionCard,
 } from "@/components/quiz";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { InkBloom } from "@/components/ui/ink-bloom";
 import { ModalCard } from "@/components/ui/modal-card";
 import {
   Colors,
@@ -27,6 +28,7 @@ import {
   BorderRadius,
   Fonts,
 } from "@/constants/theme";
+import { struckShake } from "@/constants/motion";
 import { useGamification } from "@/contexts/gamification-context";
 import { useTheme } from "@/contexts/theme-context";
 import { useToast } from "@/contexts/toast-context";
@@ -43,21 +45,20 @@ import LottieView from "lottie-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   BackHandler,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { extractApiErrorMessage } from "@/utils/error-handler";
 import Animated, {
   FadeInRight,
   FadeInUp,
   FadeOutLeft,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
-  withSequence,
-  withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -75,6 +76,7 @@ export default function QuizScreen() {
   const { lessonId = "lp1" } = useLocalSearchParams<{ lessonId: string }>();
   const { isDark } = useTheme();
   const { playCorrect, playIncorrect } = useSoundEffect();
+  const reduceMotion = useReducedMotion();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
@@ -100,7 +102,7 @@ export default function QuizScreen() {
   >([]);
   const startTime = useRef(Date.now());
   const { deductEnergy, maxEnergy } = useGamification();
-  const { showError } = useToast();
+  const { showError, showInfo } = useToast();
 
   const [lessonType, setLessonType] = useState<string>("NORMAL");
   const [isReplay, setIsReplay] = useState<boolean>(false);
@@ -120,6 +122,30 @@ export default function QuizScreen() {
   const [showEnergyPopup, setShowEnergyPopup] = useState(false);
   const [showExitModal, setShowExitModal] = useState<boolean>(false);
   const [adError, setAdError] = useState<string | null>(null);
+
+  // Chặn bấm "Tiếp tục"/"Hoàn thành" liên tiếp trước khi state kịp cập nhật —
+  // tránh nộp bài 2 lần hoặc nhảy quá currentIndex.
+  const advancingRef = useRef(false);
+  // Chặn điều hướng/ghi state sau khi người dùng đã rời màn hình (ví dụ thoát
+  // giữa lúc đang chờ submitLesson trả về).
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    advancingRef.current = false;
+  }, [currentIndex, isShowingRedoIntro]);
+
+  // Chặn bấm "KIỂM TRA" liên tiếp trước khi hasSubmitted kịp cập nhật —
+  // tránh cộng điểm/combo 2 lần cho cùng một câu.
+  const checkingRef = useRef(false);
+  useEffect(() => {
+    checkingRef.current = false;
+  }, [hasSubmitted]);
 
   const fetchQuestions = async () => {
     setIsLoading(true);
@@ -147,22 +173,23 @@ export default function QuizScreen() {
       setElapsedSeconds(0);
       setPenaltyTick(0);
     } catch (error: any) {
+      if (!isMountedRef.current) return;
       console.error("Failed to start lesson:", error);
-      const errorMsg = error?.message || error?.response?.data?.message || "";
+      const errorMsg = extractApiErrorMessage(
+        error,
+        "Không thể bắt đầu bài học. Vui lòng kiểm tra kết nối.",
+      );
       if (
         errorMsg.toLowerCase().includes("nang luong") ||
         errorMsg.toLowerCase().includes("năng lượng")
       ) {
         setShowEnergyPopup(true);
       } else {
-        Alert.alert(
-          "Lỗi",
-          errorMsg || "Không thể bắt đầu bài học. Vui lòng kiểm tra kết nối.",
-          [{ text: "OK", onPress: () => router.back() }],
-        );
+        showError("Không thể tải bài học", errorMsg);
+        router.back();
       }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) setIsLoading(false);
     }
   };
 
@@ -204,6 +231,9 @@ export default function QuizScreen() {
   const isLastQuestion = currentIndex >= questions.length - 1;
 
   const shakeOffset = useSharedValue(0);
+  // Đếm số lần mực loang — đổi giá trị là InkBloom phát lại. Dùng bộ đếm thay
+  // vì cờ boolean để hai câu đúng liên tiếp vẫn kích hoạt được hiệu ứng.
+  const [inkTrigger, setInkTrigger] = useState(0);
 
   const getCorrectAnswerText = (q: QuizQuestion): string | null => {
     switch (q.type) {
@@ -230,26 +260,32 @@ export default function QuizScreen() {
   };
 
   const checkAnswer = () => {
+    if (checkingRef.current) return;
+    checkingRef.current = true;
     setHasSubmitted(true);
     if (currentIsCorrect) {
+      // Cao độ tiếng koto leo theo chuỗi đang có TRƯỚC câu này, nên câu đúng
+      // đầu tiên phát bậc thấp nhất và mỗi câu sau cao thêm một bậc.
+      playCorrect(comboCount);
       setComboCount((prev) => prev + 1);
-      playCorrect();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-        () => {},
-      );
+      setInkTrigger((prev) => prev + 1);
+      // Cú chạm gọn thay cho rung thông báo Success (một tràng dài trên
+      // Android, đến muộn hơn cả tiếng động và làm phản hồi có cảm giác ì).
+      // Chuỗi càng dài thì cú chạm càng nặng.
+      Haptics.impactAsync(
+        comboCount >= 4
+          ? Haptics.ImpactFeedbackStyle.Heavy
+          : comboCount >= 2
+            ? Haptics.ImpactFeedbackStyle.Medium
+            : Haptics.ImpactFeedbackStyle.Light,
+      ).catch(() => {});
     } else {
       setComboCount(0);
       playIncorrect();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
-        () => {},
-      );
-      shakeOffset.value = withSequence(
-        withTiming(-10, { duration: 50 }),
-        withTiming(10, { duration: 50 }),
-        withTiming(-10, { duration: 50 }),
-        withTiming(10, { duration: 50 }),
-        withTiming(0, { duration: 50 }),
-      );
+      // Một cú gõ dứt khoát, đúng lúc tiếng hyoshigi vang — không phải tràng
+      // rung Error ba nhịp nghe như báo lỗi hệ thống.
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid).catch(() => {});
+      shakeOffset.value = struckShake(12, reduceMotion);
 
       if (lessonType === "JUMP_TEST") {
         setHeartsRemaining((prev) => Math.max(0, prev - 1));
@@ -326,6 +362,9 @@ export default function QuizScreen() {
   };
 
   const moveToNextQuestion = async () => {
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+
     const isFailed = lessonType === "JUMP_TEST" && heartsRemaining <= 0;
 
     if (isLastQuestion || isFailed) {
@@ -347,6 +386,10 @@ export default function QuizScreen() {
           },
         );
 
+        // Người dùng có thể đã thoát màn hình trong lúc chờ submitLesson —
+        // đừng điều hướng vào một màn kết quả mà họ không còn ở đó để thấy.
+        if (!isMountedRef.current) return;
+
         router.replace({
           pathname: "/quiz/result",
           params: {
@@ -363,6 +406,7 @@ export default function QuizScreen() {
           },
         });
       } catch (error: any) {
+        if (!isMountedRef.current) return;
         // Trước đây chỉ console.error rồi tắt spinner: người học đứng ở câu cuối,
         // không biết mình đã mất toàn bộ kết quả và cũng không có gì để bấm.
         // Trạng thái bài làm vẫn còn nguyên trong state nên bấm lại là nộp lại
@@ -371,9 +415,13 @@ export default function QuizScreen() {
         setIsSubmitting(false);
         showError(
           "Chưa nộp được bài",
-          error?.message ||
+          extractApiErrorMessage(
+            error,
             "Kiểm tra kết nối mạng rồi bấm lại nút hoàn thành nhé.",
+          ),
         );
+      } finally {
+        advancingRef.current = false;
       }
     } else {
       if (
@@ -455,13 +503,12 @@ export default function QuizScreen() {
             style={[
               styles.exitSubtitle,
               {
-                color: isDark
-                  ? "rgba(255,255,255,0.6)"
-                  : Colors.textSecondary,
+                color: isDark ? "rgba(255,255,255,0.6)" : Colors.textSecondary,
               },
             ]}
           >
-            Tiến trình làm bài hiện tại sẽ không được lưu và bạn sẽ mất lượt này.
+            Tiến trình làm bài hiện tại sẽ không được lưu và bạn sẽ mất lượt
+            này.
           </Text>
 
           <View style={styles.exitBtnGroup}>
@@ -472,12 +519,12 @@ export default function QuizScreen() {
             />
             <GradientButton
               title="RỜI KHỎI BÀI"
-              variant="outline"
+              variant="ghost"
               onPress={() => {
                 setShowExitModal(false);
                 router.back();
               }}
-              style={{ width: "100%", borderWidth: 0 }}
+              style={{ width: "100%" }}
               textStyle={{ color: Colors.error }}
             />
           </View>
@@ -498,6 +545,7 @@ export default function QuizScreen() {
             question={currentQuestion}
             selectedAnswer={selectedAnswerId}
             mascotSource={currentMascot}
+            hasSubmitted={hasSubmitted}
             onSelectAnswer={(answerId) => {
               setSelectedAnswerId(answerId);
               const answer = currentQuestion.answers.find(
@@ -571,6 +619,7 @@ export default function QuizScreen() {
           <ListeningQuestionCard
             question={currentQuestion}
             selectedAnswer={selectedAnswerId}
+            hasSubmitted={hasSubmitted}
             onSelectAnswer={(answerId) => {
               setSelectedAnswerId(answerId);
               const answer = currentQuestion.answers.find(
@@ -587,37 +636,42 @@ export default function QuizScreen() {
             onAnswerChange={(isCorrect) => {
               handleAnswerSelection(isCorrect);
             }}
-            onSkipSpeaking={() => {
-              const remainingSpeakingCount = questions
-                .slice(currentIndex)
-                .filter((q) => q.type === "speaking").length;
-
-              const futureNonSpeaking = questions
-                .slice(currentIndex + 1)
-                .filter((q) => q.type !== "speaking");
-
-              setOriginalQuestionsLength(
-                (prev) => prev - remainingSpeakingCount,
-              );
-
-              if (futureNonSpeaking.length === 0) {
-                // If there are no more questions, we just mark this as correct so the user can finish
-                handleAnswerSelection(true);
-              } else {
-                setQuestions((prev) => {
-                  const past = prev.slice(0, currentIndex);
-                  return [...past, ...futureNonSpeaking];
-                });
-                setSelectedAnswerId(null);
-                setCurrentIsCorrect(false);
-                setHasInteracted(false);
-                setHasSubmitted(false);
-              }
-            }}
           />
         );
       default:
         return null;
+    }
+  };
+
+  const handleSkipSpeaking = () => {
+    const remainingSpeakingCount = questions
+      .slice(currentIndex)
+      .filter((q) => q.type === "speaking").length;
+
+    const futureNonSpeaking = questions
+      .slice(currentIndex + 1)
+      .filter((q) => q.type !== "speaking");
+
+    setOriginalQuestionsLength((prev) =>
+      Math.max(
+        prev - remainingSpeakingCount,
+        currentIndex + futureNonSpeaking.length,
+      ),
+    );
+
+    showInfo("Đã tạm bỏ qua các bài tập nói trong bài học này");
+
+    if (futureNonSpeaking.length === 0) {
+      handleAnswerSelection(true);
+    } else {
+      setQuestions((prev) => {
+        const past = prev.slice(0, currentIndex);
+        return [...past, ...futureNonSpeaking];
+      });
+      setSelectedAnswerId(null);
+      setCurrentIsCorrect(false);
+      setHasInteracted(false);
+      setHasSubmitted(false);
     }
   };
 
@@ -693,13 +747,13 @@ export default function QuizScreen() {
               />
               <GradientButton
                 title="ĐỂ SAU"
-                variant="outline"
+                variant="ghost"
                 onPress={() => {
                   setShowEnergyPopup(false);
                   setAdError(null);
                   router.back();
                 }}
-                style={{ width: "100%", borderWidth: 0 }}
+                style={{ width: "100%" }}
               />
             </View>
           </View>
@@ -914,20 +968,34 @@ export default function QuizScreen() {
             exiting={FadeOutLeft.duration(200)}
             style={{ width: "100%" }}
           >
-            <View pointerEvents={hasSubmitted ? "none" : "auto"}>
+            {/* Sau khi nộp phải chặn sửa bài. "vocab"/"listening" đã tự chặn đổi
+                đáp án bên trong thẻ, nên để chúng nhận chạm tiếp — nhờ vậy người
+                học tra được nghĩa từ trong đáp án đúng lúc cần hiểu vì sao sai.
+                Các loại còn lại (xếp thẻ kana, điền kanji...) chưa có chốt riêng
+                nên vẫn chặn cứng ở đây. */}
+            <View
+              pointerEvents={
+                hasSubmitted &&
+                currentQuestion.type !== "vocab" &&
+                currentQuestion.type !== "listening"
+                  ? "none"
+                  : "auto"
+              }
+            >
               {/* Mascot minh hoạ dùng chung - hiện ở các loại câu hỏi CHƯA tự tích hợp
                   mascot + bong bóng riêng (vd "vocab" đã tự vẽ trong VocabQuestionCard,
-                  nên bỏ qua ở đây để tránh hiện trùng 2 con mascot cùng lúc). */}
-              {currentQuestion.type !== "vocab" && (
-                <View style={styles.questionMascotWrap}>
-                  <LottieView
-                    source={currentMascot}
-                    autoPlay
-                    loop
-                    style={styles.questionMascotLottie}
-                  />
-                </View>
-              )}
+                  câu "speaking" cần toàn bộ không gian cho micro và câu mẫu nên cũng ẩn). */}
+              {currentQuestion.type !== "vocab" &&
+                currentQuestion.type !== "speaking" && (
+                  <View style={styles.questionMascotWrap}>
+                    <LottieView
+                      source={currentMascot}
+                      autoPlay
+                      loop
+                      style={styles.questionMascotLottie}
+                    />
+                  </View>
+                )}
               {renderQuestionCard()}
             </View>
           </Animated.View>
@@ -946,6 +1014,17 @@ export default function QuizScreen() {
           },
         ]}
       >
+        {/* Mực chỉ loang khi trả lời đúng. Trả lời sai thì trang giấy vẫn
+            trắng — đó là toàn bộ ý tưởng, mực là thứ phải giành được. */}
+        <View style={styles.inkAnchor} pointerEvents="none">
+          <InkBloom
+            trigger={inkTrigger}
+            color={Colors.success}
+            size={260}
+            intensity={isDark ? 0.3 : 0.2}
+          />
+        </View>
+
         <QuizBottomBar
           key={`quiz-bar-${currentIndex}`}
           hasInteracted={hasInteracted}
@@ -959,6 +1038,11 @@ export default function QuizScreen() {
           finishLabel="HOÀN THÀNH"
           submittingLabel="ĐANG NỘP BÀI..."
           isLastQuestion={isLastQuestion}
+          onSkipSpeaking={
+            currentQuestion?.type === "speaking"
+              ? handleSkipSpeaking
+              : undefined
+          }
         />
       </View>
       {renderExitModal()}
@@ -1055,6 +1139,19 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.five,
     paddingTop: Spacing.three,
     gap: Spacing.three,
+  },
+  // Neo giọt mực ngay trên mép thanh đáy, đúng chỗ mắt đang nhìn khi bấm
+  // "KIỂM TRA", để hiệu ứng nở ra từ chính hành động vừa thực hiện.
+  //
+  // Phân lớp bằng THỨ TỰ con (khối này đứng trước QuizBottomBar nên vẽ dưới),
+  // không dùng zIndex âm: trên Android zIndex âm đẩy view xuống dưới cả nền
+  // đặc của cha, mực sẽ không bao giờ hiện ra.
+  inkAnchor: {
+    position: "absolute",
+    top: -40,
+    left: 0,
+    right: 0,
+    alignItems: "center",
   },
   nextButton: {
     width: "100%",

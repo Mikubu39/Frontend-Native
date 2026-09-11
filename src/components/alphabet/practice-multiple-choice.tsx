@@ -137,7 +137,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    ...Shadows.glow(Colors.primary),
+    // A bottom edge reads wrong on a circle, so this one keeps plain ink
+    // depth rather than a coloured glow.
+    ...Shadows.md,
   },
   symbolBox: {
     width: 120,

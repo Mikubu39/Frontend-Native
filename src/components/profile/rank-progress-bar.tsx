@@ -9,7 +9,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { BorderRadius, Shadows, Spacing } from "@/constants/theme";
-import type { RankTierStyle } from "@/utils/rank-tier";
+import { translateRank, type RankTierStyle } from "@/utils/rank-tier";
 
 interface RankProgressBarProps {
   currentRankName: string;
@@ -36,15 +36,17 @@ export function RankProgressBar({
 }: RankProgressBarProps) {
   const clamped = Math.min(Math.max(progress, 0), 1);
   const isMaxed = !nextRankName;
+  const currentRankLabel = translateRank(currentRankName);
+  const nextRankLabel = nextRankName ? translateRank(nextRankName) : null;
 
   return (
     <View style={[styles.card, { backgroundColor: cardColor, borderColor }]}>
       <View style={styles.labelRow}>
         <Text style={[styles.rankLabel, { color: currentTier.solid }]}>
-          Hạng {currentRankName}
+          Hạng {currentRankLabel}
         </Text>
         <Text style={[styles.rankLabel, { color: textSecondaryColor }]}>
-          {isMaxed ? "Cao nhất" : `Hạng ${nextRankName}`}
+          {isMaxed ? "Cao nhất" : `Hạng ${nextRankLabel}`}
         </Text>
       </View>
 
@@ -66,7 +68,7 @@ export function RankProgressBar({
         <Text style={[styles.captionText, { color: textSecondaryColor }]}>
           {isMaxed
             ? "Bạn đang ở hạng cao nhất!"
-            : `Còn ${(expToNext ?? 0).toLocaleString("vi-VN")} EXP để lên hạng ${nextRankName}`}
+            : `Còn ${(expToNext ?? 0).toLocaleString("vi-VN")} EXP để lên hạng ${nextRankLabel}`}
         </Text>
       </View>
     </View>

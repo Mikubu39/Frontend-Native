@@ -9,7 +9,9 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   type ReactNode,
 } from "react";
 import type {
@@ -18,6 +20,8 @@ import type {
   OnboardingStep,
   OnboardingState,
 } from "@/types";
+import { useOptionalAuth } from "@/contexts/auth-context";
+import { storage } from "@/services/storage";
 
 interface OnboardingContextType {
   state: OnboardingState;
@@ -36,12 +40,47 @@ const initialState: OnboardingState = {
   selectedLevel: null,
 };
 
+const ONBOARDING_PROGRESS_PREFIX = "onboarding_progress_";
+
 const OnboardingContext = createContext<OnboardingContextType | undefined>(
   undefined,
 );
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<OnboardingState>(initialState);
+  // Không import useAuth() (bắt buộc có Provider) để tránh vỡ khi
+  // OnboardingProvider được test/dùng độc lập — chỉ optional.
+  const auth = useOptionalAuth();
+  const userId = auth?.user?.id;
+  // Tránh ghi đè storage bằng initialState trước khi kịp đọc state đã lưu.
+  const hasLoadedForUser = useRef<string | undefined>(undefined);
+
+  // Khôi phục tiến trình (onboarding) đã lưu của đúng user này — dùng khi app
+  // bị tắt (kill) giữa chừng lúc đang chọn goal/interests/level hoặc đang làm
+  // bài kiểm tra đầu vào, để index.tsx biết đưa user quay lại đúng bước.
+  useEffect(() => {
+    if (!userId) return;
+    hasLoadedForUser.current = undefined;
+    (async () => {
+      try {
+        const saved = await storage.get(ONBOARDING_PROGRESS_PREFIX + userId);
+        if (saved) {
+          setState(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error("Failed to load onboarding progress", e);
+      } finally {
+        hasLoadedForUser.current = userId;
+      }
+    })();
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId || hasLoadedForUser.current !== userId) return;
+    storage
+      .set(ONBOARDING_PROGRESS_PREFIX + userId, JSON.stringify(state))
+      .catch(() => {});
+  }, [state, userId]);
 
   const setGoal = useCallback((goal: OnboardingGoal) => {
     setState((prev) => ({ ...prev, selectedGoal: goal }));
@@ -66,7 +105,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const reset = useCallback(() => {
     setState(initialState);
-  }, []);
+    if (userId) {
+      storage.remove(ONBOARDING_PROGRESS_PREFIX + userId).catch(() => {});
+    }
+  }, [userId]);
 
   const isComplete =
     state.selectedGoal !== null &&

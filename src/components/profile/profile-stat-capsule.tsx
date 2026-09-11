@@ -7,11 +7,18 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { BorderRadius, FontSizes, Shadows, Spacing } from "@/constants/theme";
+import { CoinMark } from "@/components/ui/coin-mark";
+import {
+  BorderRadius,
+  Colors,
+  FontSizes,
+  Shadows,
+  Spacing,
+} from "@/constants/theme";
 
 interface StatSegment {
   key: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: keyof typeof Ionicons.glyphMap | null;
   iconColor: string;
   value: string;
   label: string;
@@ -45,7 +52,7 @@ export function ProfileStatCapsule({
     {
       key: "streak",
       icon: "flame",
-      iconColor: "#FF7A00",
+      iconColor: Colors.streakActive,
       value: `${streak}`,
       label: "Streak",
       badge: streakFreezeCount > 0 ? `x${streakFreezeCount}` : undefined,
@@ -53,21 +60,21 @@ export function ProfileStatCapsule({
     {
       key: "exp",
       icon: "star",
-      iconColor: "#3B4C82",
+      iconColor: Colors.primary,
       value: exp.toLocaleString("vi-VN"),
       label: "EXP",
     },
     {
       key: "coins",
-      icon: "cash",
-      iconColor: "#C4922E",
+      icon: null,
+      iconColor: Colors.accent,
       value: coins.toLocaleString("vi-VN"),
       label: "Xu",
     },
     {
       key: "energy",
       icon: "flash",
-      iconColor: "#38BDF8",
+      iconColor: Colors.energy,
       value: `${energy}/${maxEnergy}`,
       label: "Năng lượng",
     },
@@ -84,7 +91,11 @@ export function ProfileStatCapsule({
           )}
           <View style={styles.segment}>
             <View style={styles.iconRow}>
-              <Ionicons name={s.icon} size={17} color={s.iconColor} />
+              {s.icon ? (
+                <Ionicons name={s.icon} size={17} color={s.iconColor} />
+              ) : (
+                <CoinMark size={17} />
+              )}
               {s.badge && (
                 <View style={styles.freezeBadge}>
                   <Ionicons name="snow" size={9} color="#FFFFFF" />
@@ -162,7 +173,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 1,
-    backgroundColor: "#38BDF8",
+    backgroundColor: Colors.streakFrozenDeep,
     borderRadius: BorderRadius.full,
     paddingHorizontal: 4,
     paddingVertical: 1,

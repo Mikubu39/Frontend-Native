@@ -18,18 +18,25 @@ import {
 import { useAudio } from "@/hooks/use-audio";
 import { useTheme } from "@/contexts/theme-context";
 import { QuestionPrompt } from "@/components/quiz/question-prompt";
+import { JapaneseText } from "@/components/ui/japanese-text";
 import { GlossaryLockdown } from "@/contexts/glossary-context";
 
 interface ListeningQuestionProps {
   question: ListeningQuestion;
   selectedAnswer: string | null;
   onSelectAnswer: (answerId: string) => void;
+  /**
+   * Người học đã chốt đáp án chưa. Đáp án ở đây chính là câu đang được hỏi, nên
+   * tra nghĩa trước khi chốt là lộ bài; sau khi chốt thì mở ra để họ hiểu bài.
+   */
+  hasSubmitted?: boolean;
 }
 
 export function ListeningQuestionCard({
   question,
   selectedAnswer,
   onSelectAnswer,
+  hasSubmitted = false,
 }: ListeningQuestionProps) {
   // Đáp án đúng CHÍNH LÀ câu tiếng Nhật đang được hỏi (xem comment ở dưới) —
   // dùng nó làm nội dung đọc TTS khi backend chưa có file audio thật.
@@ -75,8 +82,9 @@ export function ListeningQuestionCard({
         </Text>
       </View>
 
-      {/* Đáp án là chính từ đang được hỏi — tra nghĩa ở đây là lộ bài. */}
-      <GlossaryLockdown>
+      {/* Đáp án là chính từ đang được hỏi — tra nghĩa ở đây là lộ bài, chỉ mở
+          sau khi người học đã chốt đáp án. */}
+      <GlossaryLockdown active={!hasSubmitted}>
         <View style={styles.answers}>
           {question.answers.map((answer) => {
             const isSelected = selectedAnswer === answer.id;
@@ -90,10 +98,16 @@ export function ListeningQuestionCard({
                     borderColor: isSelected ? Colors.primary : cardBorder,
                   },
                 ]}
-                onPress={() => onSelectAnswer(answer.id)}
+                onPress={() => {
+                  // Đã chốt rồi thì không cho đổi đáp án nữa. Chặn ở đây (thay vì
+                  // pointerEvents ở lớp ngoài) để chạm vào CHỮ vẫn tra được nghĩa.
+                  if (hasSubmitted) return;
+                  onSelectAnswer(answer.id);
+                }}
                 pressScale={0.97}
               >
-                <Text
+                <JapaneseText
+                  text={answer.text}
                   style={[
                     styles.answerText,
                     {
@@ -104,9 +118,7 @@ export function ListeningQuestionCard({
                         : colors.text,
                     },
                   ]}
-                >
-                  {answer.text}
-                </Text>
+                />
                 {/* Câu nghe thì đáp án luôn là chữ Nhật — không có phiên âm bên
                   dưới thì người mới chỉ nhìn thấy 4 hình vẽ lạ như nhau. */}
                 {answer.romaji ? (

@@ -216,6 +216,6 @@ describe("AlphabetPracticeScreen", () => {
     fireEvent.press(getByText("Tôi đã viết xong"));
     fireEvent.press(await findByText("Tiếp tục"));
 
-    expect(await findByText("Thăng hạng: SILVER!")).toBeTruthy();
+    expect(await findByText("Thăng hạng: Bạc!")).toBeTruthy();
   });
 });

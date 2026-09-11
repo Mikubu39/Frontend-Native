@@ -12,13 +12,38 @@ import {
   Spacing,
 } from "@/constants/theme";
 import { useTheme } from "@/contexts/theme-context";
-import { HankoStamp } from "@/components/ui/hanko-stamp";
+import { HANKO_LANDING_MS, HankoStamp } from "@/components/ui/hanko-stamp";
+import {
+  MotionDuration,
+  MotionEasing,
+  MotionStagger,
+} from "@/constants/motion";
 import type { QuizResult } from "@/types";
 import LottieView from "lottie-react-native";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { BounceIn, FadeInUp } from "react-native-reanimated";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+
+/**
+ * The screen's timeline, in ms from mount.
+ *
+ * Every beat hangs off `impact` — the instant the seal meets the paper —
+ * because that is the event this screen is about. Previously the title bounced
+ * in at 300ms while the seal did not land until 640ms, so the payoff arrived
+ * after the reaction to it and the whole screen read as unrelated pieces
+ * animating on their own schedules.
+ */
+const SEAL_START = 180;
+export const RESULT_IMPACT_MS = SEAL_START + HANKO_LANDING_MS;
+const BEAT = {
+  seal: SEAL_START,
+  title: RESULT_IMPACT_MS,
+  badge: RESULT_IMPACT_MS + MotionStagger,
+  score: RESULT_IMPACT_MS + MotionStagger * 2,
+  reward: RESULT_IMPACT_MS + MotionStagger * 3,
+  wrong: RESULT_IMPACT_MS + MotionStagger * 4,
+};
 
 interface QuizResultCardProps {
   result: QuizResult;
@@ -89,12 +114,19 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
           ? Colors.primary
           : Colors.secondary;
 
+  // Con số kết quả phải đọc được trên CẢ hai nền. Cặp màu sáng chỉ hợp nền
+  // tối; trên giấy kem chúng tụt xuống 1.36:1 và 2.15:1.
+  const correctTone = isDark ? "#4ADE80" : Colors.successInk;
+  const wrongTone = isDark ? "#F87171" : Colors.errorInk;
+
   const cardBg = isDark ? "rgba(255,255,255,0.06)" : Colors.light.card;
   const cardBorder = isDark ? "rgba(255,255,255,0.1)" : Colors.light.border;
 
   return (
     <Animated.View
-      entering={FadeInUp.duration(600).springify()}
+      entering={FadeInUp.duration(MotionDuration.press).easing(
+        MotionEasing.paper,
+      )}
       style={[
         styles.container,
         {
@@ -114,45 +146,42 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
           />
         </View>
       ) : (
-        <Animated.View
-          entering={FadeInUp.duration(400)}
-          style={styles.stampHeroContainer}
-        >
-          <HankoStamp
-            size={108}
-            delay={420}
-            color={sealColor}
-          />
-          <View
+        <View style={styles.stampHeroContainer}>
+          <HankoStamp size={108} delay={BEAT.seal} color={sealColor} />
+          <Animated.View
+            entering={FadeInDown.delay(BEAT.badge)
+              .duration(MotionDuration.press)
+              .easing(MotionEasing.ink)}
             style={[
               styles.sealBadge,
               {
-                backgroundColor: isDark
-                  ? `${sealColor}26`
-                  : `${sealColor}12`,
-                borderColor: isDark
-                  ? `${sealColor}55`
-                  : `${sealColor}33`,
+                backgroundColor: isDark ? `${sealColor}26` : `${sealColor}12`,
+                borderColor: isDark ? `${sealColor}55` : `${sealColor}33`,
               },
             ]}
           >
             <Text style={[styles.sealBadgeText, { color: sealColor }]}>
               {sealText}
             </Text>
-          </View>
-        </Animated.View>
+          </Animated.View>
+        </View>
       )}
 
       {/* Title */}
       <Animated.Text
-        entering={BounceIn.delay(300)}
+        entering={FadeInDown.delay(BEAT.title)
+          .duration(MotionDuration.press)
+          .easing(MotionEasing.ink)}
         style={[styles.title, { color: titleColor }]}
       >
         {titleText}
       </Animated.Text>
 
       {/* Score row */}
-      <View
+      <Animated.View
+        entering={FadeInDown.delay(BEAT.score)
+          .duration(MotionDuration.press)
+          .easing(MotionEasing.ink)}
         style={[
           styles.scoreRow,
           {
@@ -164,8 +193,8 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
         ]}
       >
         <View style={styles.scoreBlock}>
-          <Ionicons name="checkmark-circle" size={20} color="#4ADE80" />
-          <Text style={[styles.scoreValue, styles.correctValue]}>
+          <Ionicons name="checkmark-circle" size={20} color={correctTone} />
+          <Text style={[styles.scoreValue, { color: correctTone }]}>
             {result.correctCount}
           </Text>
           <Text
@@ -192,8 +221,8 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
         />
 
         <View style={styles.scoreBlock}>
-          <Ionicons name="close-circle" size={20} color="#F87171" />
-          <Text style={[styles.scoreValue, styles.wrongValue]}>
+          <Ionicons name="close-circle" size={20} color={wrongTone} />
+          <Text style={[styles.scoreValue, { color: wrongTone }]}>
             {result.wrongCount}
           </Text>
           <Text
@@ -207,14 +236,16 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
             Sai
           </Text>
         </View>
-      </View>
+      </Animated.View>
 
       {/* Category rewards */}
       <View style={styles.categoriesList}>
         {result.correctCategories.map((cat, index) => (
           <Animated.View
             key={cat.name}
-            entering={FadeInUp.delay(500 + index * 100)}
+            entering={FadeInDown.delay(BEAT.reward + index * MotionStagger)
+              .duration(MotionDuration.press)
+              .easing(MotionEasing.ink)}
             style={[
               styles.categoryRow,
               {
@@ -253,7 +284,9 @@ export function QuizResultCard({ result, isFailed }: QuizResultCardProps) {
       {/* Wrong categories */}
       {result.wrongCategories.length > 0 && (
         <Animated.View
-          entering={FadeInUp.delay(800)}
+          entering={FadeInDown.delay(BEAT.wrong)
+            .duration(MotionDuration.press)
+            .easing(MotionEasing.ink)}
           style={[
             styles.wrongSection,
             {
@@ -348,12 +381,6 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.title,
     fontWeight: FontWeights.extrabold,
     fontFamily: Fonts.rounded,
-  },
-  correctValue: {
-    color: "#4ADE80",
-  },
-  wrongValue: {
-    color: "#F87171",
   },
   divider: {
     width: 1,

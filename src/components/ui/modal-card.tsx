@@ -8,11 +8,11 @@
 
 import React from "react";
 import {
-  View,
   TouchableOpacity,
   Text,
   StyleSheet,
   type ViewStyle,
+  type StyleProp,
 } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
@@ -29,11 +29,11 @@ import { useTheme } from "@/contexts/theme-context";
 interface ModalCardProps {
   children: React.ReactNode;
   onClose?: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function ModalCard({ children, onClose, style }: ModalCardProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   return (
     <Animated.View
@@ -43,7 +43,17 @@ export function ModalCard({ children, onClose, style }: ModalCardProps) {
       <BlurView intensity={45} tint="dark" style={styles.overlay} />
       <Animated.View
         entering={FadeInDown.duration(AnimationPresets.duration.normal)}
-        style={[styles.card, { backgroundColor: colors.cardElevated }, style]}
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.cardElevated,
+            // Vien phai theo theme. Truoc day no co dinh o trang 80%: tren nen
+            // toi do la vien sang co y do, nhung tren the mau trang o theme
+            // sang thi trang tren trang - the mat han duong vien.
+            borderColor: isDark ? "rgba(255,255,255,0.8)" : colors.border,
+          },
+          style,
+        ]}
       >
         {onClose && (
           <TouchableOpacity
@@ -73,7 +83,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: Spacing.six,
-    zIndex: 100,
+    zIndex: 2000,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -85,7 +95,6 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 360,
     borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.8)",
     ...Shadows.float,
   },
   closeButton: {

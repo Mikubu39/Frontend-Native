@@ -5,10 +5,10 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { AudioButton } from "@/components/ui/audio-button";
+import { useAudio } from "@/hooks/use-audio";
 import { useTheme } from "@/contexts/theme-context";
 import type { DictionaryEntry } from "@/types";
 import {
-  Colors,
   FontSizes,
   FontWeights,
   BorderRadius,
@@ -21,6 +21,7 @@ interface WordCardProps {
 
 export const WordCard = React.memo(function WordCard({ entry }: WordCardProps) {
   const { colors } = useTheme();
+  const { isPlaying, play } = useAudio(entry.audioUrl, entry.kanji);
 
   return (
     <View
@@ -38,7 +39,12 @@ export const WordCard = React.memo(function WordCard({ entry }: WordCardProps) {
             {entry.romaji}
           </Text>
         </View>
-        <AudioButton variant="speaker" size="small" onPress={() => {}} />
+        <AudioButton
+          variant="speaker"
+          size="small"
+          isPlaying={isPlaying}
+          onPress={() => play()}
+        />
       </View>
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
       <Text style={[styles.meaning, { color: colors.textSecondary }]}>

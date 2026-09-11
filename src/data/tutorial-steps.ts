@@ -104,14 +104,6 @@ export const HOME_TUTORIAL_STEPS: TutorialStep[] = [
     mascot: "happy",
   },
   {
-    id: "review-dictionary",
-    target: "review-dictionary",
-    route: REVIEW_ROUTE,
-    title: "Sổ tay Từ điển",
-    body: "Từ vựng bạn đã mở khoá nằm cả ở đây. Tra lại lúc quên, hoặc tự kiểm tra khi rảnh.",
-    mascot: "school",
-  },
-  {
     id: "review-pronunciation",
     target: "review-pronunciation",
     route: REVIEW_ROUTE,

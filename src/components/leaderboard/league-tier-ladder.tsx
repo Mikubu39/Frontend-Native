@@ -10,6 +10,7 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { RankResponse } from "@/types/api";
 import {
   BorderRadius,
+  Colors,
   FontSizes,
   FontWeights,
   Shadows,
@@ -20,6 +21,7 @@ import {
   LEAGUE_THEMES,
   normalizeRankKey,
 } from "./leaderboard-trophy";
+import { translateRank } from "@/utils/rank-tier";
 
 interface LeagueTierLadderProps {
   ranks: RankResponse[];
@@ -149,7 +151,7 @@ export function LeagueTierLadder({
                   ]}
                   numberOfLines={1}
                 >
-                  {r.name}
+                  {translateRank(r.name)}
                 </Text>
               </AnimatedPressable>
             </React.Fragment>
@@ -223,7 +225,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: "#10B981",
+    backgroundColor: Colors.success,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,

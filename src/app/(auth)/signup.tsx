@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
 import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   ScrollView,
@@ -21,6 +21,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/use-theme";
+import { extractApiErrorMessage } from "@/utils/error-handler";
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -33,6 +34,9 @@ export default function SignupScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  // Nếu người dùng bấm "✕" thoát trong lúc đăng ký đang chờ mạng, đừng để
+  // request trả về muộn kéo họ quay lại vào app.
+  const leftScreenRef = useRef(false);
 
   const handleSignup = async () => {
     if (!email || !password) {
@@ -51,11 +55,12 @@ export default function SignupScreen() {
     setLoading(true);
     try {
       await signUp(email, password, name || "User");
+      if (leftScreenRef.current) return;
       router.replace("/(onboarding)/goal");
     } catch (error: any) {
       showError(
         "Đăng ký thất bại",
-        error.message || "Không thể tạo tài khoản lúc này.",
+        extractApiErrorMessage(error, "Không thể tạo tài khoản lúc này."),
       );
     } finally {
       setLoading(false);
@@ -82,7 +87,10 @@ export default function SignupScreen() {
           style={[styles.header, { borderBottomColor: colors.borderSubtle }]}
         >
           <AnimatedPressable
-            onPress={() => router.replace("/welcome")}
+            onPress={() => {
+              leftScreenRef.current = true;
+              router.replace("/welcome");
+            }}
             style={styles.closeButton}
             pressScale={0.9}
             accessibilityRole="button"
@@ -161,11 +169,13 @@ export default function SignupScreen() {
           onGooglePress={async () => {
             // Backend's /social/google handles create-or-login in one call.
             const success = await signInWithGoogle();
-            if (success) router.replace("/(onboarding)/goal");
+            if (success && !leftScreenRef.current)
+              router.replace("/(onboarding)/goal");
           }}
           onFacebookPress={async () => {
             const success = await signInWithFacebook();
-            if (success) router.replace("/(onboarding)/goal");
+            if (success && !leftScreenRef.current)
+              router.replace("/(onboarding)/goal");
           }}
         />
       </ScrollView>

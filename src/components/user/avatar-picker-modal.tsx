@@ -40,12 +40,12 @@ const translations: Record<string, string> = {
   short: "Ngắn",
   long: "Dài",
   curly: "Xoăn",
-  bob: "Bob",
+  bob: "Tóc tém",
   bun: "Búi",
   // Râu
   none: "Không",
   beard: "Râu quai nón",
-  moustache: "Râu mép",
+  moustache: "Ria mép",
   // Phụ kiện
   glasses: "Kính",
   hat: "Mũ",
@@ -174,7 +174,7 @@ export function AvatarPickerModal({
         <View style={[styles.sheet, { backgroundColor: colors.card }]}>
           <View style={styles.headerRow}>
             <Text style={[styles.title, { color: colors.text }]}>
-              Chọn avatar
+              Chọn ảnh đại diện
             </Text>
             <Pressable onPress={onClose} hitSlop={10}>
               <Text style={[styles.closeText, { color: colors.textSecondary }]}>
@@ -200,20 +200,20 @@ export function AvatarPickerModal({
               "Kiểu tóc",
               "hair",
               avatarOptions.hair,
-              translateOption
+              translateOption,
             )}
             {renderOptionGroup(
               "Râu",
               "facialHair",
               avatarOptions.facialHair,
-              translateOption
+              translateOption,
             )}
             {renderColorGroup("Màu áo", "outfit", avatarOptions.outfit)}
             {renderOptionGroup(
               "Phụ kiện",
               "accessory",
               avatarOptions.accessory,
-              translateOption
+              translateOption,
             )}
             {renderColorGroup(
               "Màu nền",
@@ -229,7 +229,7 @@ export function AvatarPickerModal({
               onClose();
             }}
           >
-            <Text style={styles.saveButtonText}>Lưu avatar</Text>
+            <Text style={styles.saveButtonText}>Lưu ảnh đại diện</Text>
           </Pressable>
         </View>
       </View>

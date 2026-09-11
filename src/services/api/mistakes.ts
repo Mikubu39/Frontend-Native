@@ -18,7 +18,7 @@ export const mistakesApi = {
   },
 
   submitReview: async (data: {
-    answers: { questionId: number; selectedOptionId: number }[];
+    answers: { questionId: number; selectedOptionId?: number; isCorrect?: boolean }[];
   }): Promise<MistakeSubmitResponse> => {
     return apiClient.post<MistakeSubmitResponse>(
       API_ENDPOINTS.MISTAKES.SUBMIT,

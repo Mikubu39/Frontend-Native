@@ -4,7 +4,7 @@
 
 import React, { useEffect } from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
-import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
@@ -56,11 +56,10 @@ function HeartIcon({
 
   return (
     <Animated.View style={animStyle}>
-      <FontAwesome5
-        name="heart"
-        size={18}
-        color={filled ? Colors.secondary : `${Colors.secondary}38`}
-        solid={filled}
+      <Ionicons
+        name={filled ? "heart" : "heart-outline"}
+        size={19}
+        color={filled ? Colors.secondary : `${Colors.secondary}44`}
       />
     </Animated.View>
   );

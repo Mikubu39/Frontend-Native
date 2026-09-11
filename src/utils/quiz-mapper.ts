@@ -16,6 +16,15 @@ import {
  */
 const PUNCTUATION_ONLY_REGEX = /^[。、.,?!？！:;·…~～\-—\s]+$/;
 
+// Đuôi chia thể lịch sự です/ます (copula + trợ động từ) — cùng lý do với
+// GRAMMAR_AUX_WORDS ở glossary-context.tsx: bám vào GẦN NHƯ MỌI câu lịch sự,
+// coi là từ vựng sẽ khiến chúng bị tô sáng ở khắp câu không liên quan.
+const GRAMMAR_AUX_WORDS = new Set(["です", "でした", "ます", "ません"]);
+
+// Chỉ hiragana/katakana 1 ký tự mới đáng ngờ là trợ từ — kanji 1 ký tự (水,
+// 肉, 卵...) là danh từ thật. Xem giải thích đầy đủ ở glossary-context.tsx.
+const SINGLE_KANA_REGEX = /^[぀-ゟ゠-ヿ]$/;
+
 /**
  * Kiểm tra xem một chuỗi có hoàn toàn chỉ là dấu câu hay không.
  */
@@ -176,6 +185,11 @@ function readGlossary(metadataJson: any): Glossary | undefined {
   const out: Glossary = {};
   for (const [word, entry] of Object.entries(raw)) {
     if (!word || !entry || typeof entry !== "object") continue;
+    // Loại các mục HIRAGANA/KATAKANA dài đúng 1 ký tự (trợ từ ngữ pháp như
+    // を/て/は/が) — cùng lý do với bảng tra toàn cục ở glossary-context.tsx.
+    // KHÔNG áp cho kanji 1 ký tự (水, 肉, 卵...) — đó là danh từ thật.
+    if (word.length === 1 && SINGLE_KANA_REGEX.test(word)) continue;
+    if (GRAMMAR_AUX_WORDS.has(word)) continue;
     const { r, v } = entry as { r?: string; v?: string };
     if (r || v) out[word] = { r, v };
   }
@@ -261,7 +275,9 @@ export function mapApiQuestionsToQuizQuestions(
           glossary,
           isNew,
           originalOptions,
-          audioUrl: resolveMediaUrl(q.audioUrl),
+          audioUrl:
+            resolveMediaUrl(q.audioUrl) ??
+            resolveMediaUrl(q.metadataJson?.teachAudio),
           images: answers,
         } as PictureQuestion;
 
@@ -409,7 +425,9 @@ export function mapApiQuestionsToQuizQuestions(
           isNew,
           originalOptions,
           imageUrl: resolveMediaUrl(q.imageUrl) ?? "",
-          audioUrl: resolveMediaUrl(q.audioUrl),
+          audioUrl:
+            resolveMediaUrl(q.audioUrl) ??
+            (toJp ? undefined : resolveMediaUrl(q.metadataJson?.teachAudio)),
           answers,
         } as VocabQuestion;
       }

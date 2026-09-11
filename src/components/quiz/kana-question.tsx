@@ -8,6 +8,7 @@ import * as Haptics from "expo-haptics";
 import { AudioButton } from "@/components/ui/audio-button";
 import { DualText } from "@/components/ui/dual-text";
 import { useAudio } from "@/hooks/use-audio";
+import { useSoundEffect } from "@/hooks/use-sound-effect";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   Colors,
@@ -47,6 +48,9 @@ export function KanaQuestionCard({
   );
   const fallbackSentence = question.correctOrder?.join("") || undefined;
   const { isPlaying, play } = useAudio(question.audioUrl, fallbackSentence);
+  // Tiếng gõ gỗ hyoshigi mỗi lần nhặt/trả thẻ — nhỏ nhất trong bộ âm, đủ để
+  // tay biết thẻ đã bám mà không lấn tiếng đúng/sai ngay sau đó.
+  const { playTap } = useSoundEffect();
   const { colors, isDark } = useTheme();
 
   // Loại câu này luôn là "Nghe và sắp xếp câu": có file thật thì phát file,
@@ -69,6 +73,7 @@ export function KanaQuestionCard({
   const selectTile = (item: BankItem) => {
     if (item.isPlaced) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    playTap();
 
     const next = [...arranged, { id: item.id, char: item.char }];
     setArranged(next);
@@ -81,6 +86,7 @@ export function KanaQuestionCard({
 
   const removeTile = (index: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    playTap();
 
     const removedItem = arranged[index];
     const next = arranged.filter((_, i) => i !== index);
@@ -168,9 +174,7 @@ export function KanaQuestionCard({
                 end={{ x: 1, y: 1 }}
                 style={styles.tile}
               >
-                <DualText
-                  text={item.char}
-                  hint={question.blockRomaji?.[item.char]}
+                <DualText disableGlossary text={item.char} hint={question.blockRomaji?.[item.char]}
                   mainStyle={styles.tileText}
                   subStyle={styles.tileSubText}
                 />
@@ -215,9 +219,7 @@ export function KanaQuestionCard({
                     },
                   ]}
                 >
-                  <DualText
-                    text={item.char}
-                    hint={question.blockRomaji?.[item.char]}
+                  <DualText disableGlossary text={item.char} hint={question.blockRomaji?.[item.char]}
                     mainStyle={{ ...styles.bankTileText, opacity: 0 }}
                     subStyle={{ ...styles.bankTileSubText, opacity: 0 }}
                   />
@@ -241,9 +243,7 @@ export function KanaQuestionCard({
               >
                 {/* Thẻ rời là chữ Nhật trần; không có phiên âm thì người mới
                   không đọc được thẻ nào để mà xếp thành câu. */}
-                <DualText
-                  text={item.char}
-                  hint={question.blockRomaji?.[item.char]}
+                <DualText disableGlossary text={item.char} hint={question.blockRomaji?.[item.char]}
                   mainStyle={{ ...styles.bankTileText, color: tileTextColor }}
                   subStyle={{ ...styles.bankTileSubText, color: tileSubColor }}
                 />

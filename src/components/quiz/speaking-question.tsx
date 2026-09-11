@@ -21,6 +21,7 @@ import { AudioButton } from "@/components/ui/audio-button";
 import { useAudio } from "@/hooks/use-audio";
 import { useSpeechInput } from "@/hooks/use-speech-input";
 import { QuestionPrompt } from "@/components/quiz/question-prompt";
+import { useTheme } from "@/contexts/theme-context";
 
 interface SpeakingQuestionProps {
   question: SpeakingQuestion;
@@ -33,6 +34,7 @@ export function SpeakingQuestionCard({
   onAnswerChange,
   onSkipSpeaking,
 }: SpeakingQuestionProps) {
+  const { colors, isDark } = useTheme();
   const [hasRecorded, setHasRecorded] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [wrongMessage, setWrongMessage] = useState<string | null>(null);
@@ -131,25 +133,43 @@ export function SpeakingQuestionCard({
       <View style={styles.textContainer}>
         <JapaneseText
           text={question.textToSpeak}
-          style={styles.textToSpeak}
+          style={[styles.textToSpeak, { color: colors.text }]}
           glossary={question.glossary}
         />
         {question.romaji ? (
-          <Text style={styles.romaji}>{question.romaji}</Text>
+          <Text style={[styles.romaji, { color: colors.textSecondary }]}>
+            {question.romaji}
+          </Text>
         ) : null}
-        <Text style={styles.translation}>{question.translation}</Text>
+        <Text style={[styles.translation, { color: colors.textSecondary }]}>
+          {question.translation}
+        </Text>
 
         {/* Không nghe qua trước thì người mới không có gì để bắt chước. Có file
             thật thì phát file người bản xứ, không thì đọc bằng TTS. */}
         {question.audioUrl || question.textToSpeak ? (
-          <View style={styles.sampleRow}>
+          <View
+            style={[
+              styles.sampleRow,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : Colors.primary + "12",
+              },
+            ]}
+          >
             <AudioButton
               variant="speaker"
               size="small"
               isPlaying={isPlaying}
               onPress={() => play()}
             />
-            <Text style={styles.sampleHint}>
+            <Text
+              style={[
+                styles.sampleHint,
+                { color: isDark ? colors.text : Colors.primaryDark },
+              ]}
+            >
               {isPlaying ? "Đang phát câu mẫu..." : "Nghe câu mẫu"}
             </Text>
           </View>
@@ -174,7 +194,14 @@ export function SpeakingQuestionCard({
             </Text>
           )}
           {isRecording && partialTranscript ? (
-            <Text style={styles.partialTranscript}>{partialTranscript}</Text>
+            <Text
+              style={[
+                styles.partialTranscript,
+                { color: colors.textSecondary },
+              ]}
+            >
+              {partialTranscript}
+            </Text>
           ) : null}
         </View>
 
@@ -213,7 +240,7 @@ export function SpeakingQuestionCard({
         </View>
 
         <View style={styles.hintContainer}>
-          <Text style={styles.recordHint}>
+          <Text style={[styles.recordHint, { color: colors.textSecondary }]}>
             {hasRecorded
               ? attempts >= 4
                 ? "Chưa chính xác"
@@ -224,17 +251,6 @@ export function SpeakingQuestionCard({
                   ? "Không có quyền micro"
                   : "Chạm để nói"}
           </Text>
-
-          {!hasRecorded && onSkipSpeaking && (
-            <TouchableOpacity
-              style={styles.skipButton}
-              onPress={onSkipSpeaking}
-            >
-              <Text style={styles.skipButtonText}>
-                Bạn không thể nói lúc này?
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
       </View>
     </View>
@@ -244,7 +260,7 @@ export function SpeakingQuestionCard({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    gap: Spacing.eight,
+    gap: Spacing.four,
     paddingHorizontal: Spacing.four,
   },
   instruction: {
@@ -340,14 +356,13 @@ const styles = StyleSheet.create({
   },
   hintContainer: {
     alignItems: "center",
-    marginTop: Spacing.four,
-    minHeight: 60,
+    marginTop: Spacing.two,
+    minHeight: 28,
   },
   recordHint: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     fontWeight: FontWeights.bold,
-    marginBottom: Spacing.two,
   },
   wrongMessage: {
     color: Colors.warning,
@@ -364,15 +379,5 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     fontStyle: "italic",
     textAlign: "center",
-  },
-  skipButton: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
-  },
-  skipButtonText: {
-    color: Colors.textSecondary,
-    fontSize: FontSizes.sm,
-    textDecorationLine: "underline",
-    fontWeight: FontWeights.medium,
   },
 });

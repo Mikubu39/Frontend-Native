@@ -34,7 +34,24 @@ import { vocabularyApi } from "@/services/api/vocabulary";
 import type { Glossary } from "@/types/quiz";
 import type { VocabularyItem } from "@/types";
 
-const CACHE_KEY = "vocabulary_glossary_v2";
+// Tăng số phiên bản MỖI KHI ý nghĩa của dữ liệu cache thay đổi, nếu không máy cũ
+// sẽ tiếp tục ăn bản cache cũ cho tới lần khởi động app thành công kế tiếp.
+//
+// v3: bộ tách từ giờ phụ thuộc vào `itemType` (để đánh dấu mục cả cụm) VÀ vào các
+// từ đơn mới thêm ở migration V47 (明日, 失礼, お会計...). Máy nào còn giữ cache v2
+// sẽ hiển thị 「また明日」 dính thành một khối y như trước khi sửa — đúng lỗi đã gặp.
+const CACHE_KEY = "vocabulary_glossary_v3";
+
+// Đuôi chia thể lịch sự です/ます (copula + trợ động từ) không phải "từ vựng mới"
+// theo nghĩa mà tính năng tra-tại-chỗ nhắm tới — chúng là phần ngữ pháp bám vào
+// GẦN NHƯ MỌI câu lịch sự trong app, nên coi là từ vựng sẽ khiến です/ます bị tô
+// sáng ở khắp mọi câu không liên quan (xem thêm bộ lọc length===1 bên dưới, xử lý
+// các trợ từ 1 ký tự như を/て/は/が/...).
+const GRAMMAR_AUX_WORDS = new Set(["です", "でした", "ます", "ません"]);
+
+// Chỉ hiragana/katakana 1 ký tự mới đáng ngờ là trợ từ (を/て/は/が/め/...).
+// Kanji 1 ký tự (水, 肉, 卵...) là danh từ thật, KHÔNG được loại theo độ dài.
+const SINGLE_KANA_REGEX = /^[぀-ゟ゠-ヿ]$/;
 
 interface GlossaryContextValue {
   /** Bảng tra toàn cục: mặt chữ -> { romaji, nghĩa }. Rỗng khi chưa tải xong. */
@@ -64,14 +81,37 @@ function toGlossary(items: VocabularyItem[]): Glossary {
       continue;
     }
 
+    // 2. Loại các mục HIRAGANA/KATAKANA dài đúng 1 ký tự (thường là trợ từ ngữ
+    // pháp như を/て/は/が được dạy riêng ở bài ngữ pháp). Vì tra cứu là so khớp
+    // chuỗi con TOÀN app, 1 ký tự kana gần như luôn trùng ngẫu nhiên với trợ từ
+    // hoặc đuôi chia động từ của một câu hoàn toàn không liên quan. KHÔNG áp cho
+    // kanji 1 ký tự (水, 肉, 卵...) — đó là danh từ thật, không phải trợ từ.
+    if (item.surface.length === 1 && SINGLE_KANA_REGEX.test(item.surface)) {
+      continue;
+    }
+
+    // 3. Loại đuôi chia です/ます — xem giải thích ở GRAMMAR_AUX_WORDS phía trên.
+    if (GRAMMAR_AUX_WORDS.has(item.surface)) {
+      continue;
+    }
+
+    // Đánh dấu mục cả cụm/cả câu để bộ tách từ ưu tiên tách theo TỪ trước —
+    // xem giải thích ở `GlossaryEntry.p`.
+    const isPhrase = item.itemType === "PHRASE";
+
     out[item.surface] = {
       r: item.romaji ?? undefined,
       v: item.meaningVn,
+      p: isPhrase,
     };
     // Từ có kanji thì cách đọc kana cũng phải tra được: người học gặp 「せんせい」
     // ở bài này và 「先生」 ở bài khác, cùng một từ.
     if (item.reading && item.reading !== item.surface) {
-      out[item.reading] = { r: item.romaji ?? undefined, v: item.meaningVn };
+      out[item.reading] = {
+        r: item.romaji ?? undefined,
+        v: item.meaningVn,
+        p: isPhrase,
+      };
     }
   }
   return out;

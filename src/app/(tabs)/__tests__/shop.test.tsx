@@ -152,11 +152,13 @@ describe("ShopScreen", () => {
   it("stocks the shelves and spotlights the rarest item on the counter", async () => {
     const { getByText, getAllByText } = await renderShop();
 
-    await waitFor(() => expect(getByText("Streak Freeze")).toBeTruthy());
+    await waitFor(() =>
+      expect(getAllByText("Đóng băng chuỗi").length).toBeGreaterThan(0),
+    );
 
     // Purse and the default shelf.
     expect(getByText("300")).toBeTruthy();
-    expect(getAllByText("Energy Refill").length).toBeGreaterThan(0);
+    expect(getAllByText("Bình hồi năng lượng").length).toBeGreaterThan(0);
     // Energy refill (400 xu) is the featured item as it is the most expensive.
     expect(getByText("Hàng nổi bật")).toBeTruthy();
     // Rarity is derived from price: 200 xu is "Hiếm", 400 xu is "Sử thi".
@@ -174,30 +176,33 @@ describe("ShopScreen", () => {
       message: "Mua thành công: Streak Freeze",
     });
 
-    const { getByText } = await renderShop();
-    await waitFor(() => expect(getByText("Streak Freeze")).toBeTruthy());
+    const { getByText, getAllByText } = await renderShop();
+    await waitFor(() =>
+      expect(getAllByText("Đóng băng chuỗi").length).toBeGreaterThan(0),
+    );
 
-    fireEvent.press(getByText("Streak Freeze"));
+    fireEvent.press(getAllByText("Đóng băng chuỗi")[0]);
 
-    await waitFor(() => expect(getByText("Giữ chuỗi")).toBeTruthy());
+    await waitFor(() => expect(getByText("Mua")).toBeTruthy());
     fireEvent.press(getByText("Mua"));
 
     await waitFor(() => expect(mockedApi.buyItem).toHaveBeenCalledWith(1));
     expect(setGamificationState).toHaveBeenCalledWith({ coins: 100 });
     expect(showSuccess).toHaveBeenCalledWith(
-      "Đã mua Streak Freeze",
-      "Mua thành công: Streak Freeze",
+      "Đã mua Đóng băng chuỗi",
+      "Mua thành công: Đóng băng chuỗi",
     );
   });
 
   it("points at how to earn the gap when the purse is short", async () => {
     const { getByText, queryByText, getAllByText } = await renderShop();
     await waitFor(() =>
-      expect(getAllByText("Energy Refill").length).toBeGreaterThan(0),
+      expect(getAllByText("Bình hồi năng lượng").length).toBeGreaterThan(0),
     );
 
     fireEvent.press(
-      getAllByText("Energy Refill")[1] || getAllByText("Energy Refill")[0],
+      getAllByText("Bình hồi năng lượng")[1] ||
+        getAllByText("Bình hồi năng lượng")[0],
     );
 
     // 400 xu wanted, 300 held.
@@ -223,16 +228,20 @@ describe("ShopScreen", () => {
       message: "Sử dụng thành công: Streak Freeze",
     });
 
-    const { getByText, queryByText, getAllByText } = await renderShop();
-    await waitFor(() => expect(getByText("Streak Freeze")).toBeTruthy());
+    const { getByText, getAllByText } = await renderShop();
+    await waitFor(() =>
+      expect(getAllByText("Đóng băng chuỗi").length).toBeGreaterThan(0),
+    );
 
     fireEvent.press(getByText("Túi đồ"));
 
     // The owned item is on this shelf, but Energy Refill is still on the counter.
-    await waitFor(() => expect(getAllByText("Energy Refill").length).toBe(1)); // only 1 on counter
+    await waitFor(() =>
+      expect(getAllByText("Bình hồi năng lượng").length).toBe(1),
+    ); // only 1 on counter
     expect(getByText("×2")).toBeTruthy();
 
-    fireEvent.press(getByText("Streak Freeze"));
+    fireEvent.press(getAllByText("Đóng băng chuỗi")[0]);
     await waitFor(() => expect(getByText("Dùng ngay")).toBeTruthy());
     fireEvent.press(getByText("Dùng ngay"));
 

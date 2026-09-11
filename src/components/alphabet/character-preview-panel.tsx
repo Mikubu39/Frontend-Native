@@ -17,6 +17,7 @@ import {
   Shadows,
   Spacing,
 } from "@/constants/theme";
+import { darken } from "@/utils/color";
 import { AlphabetCharacter, MAX_MASTERY_LEVEL } from "@/types/alphabet";
 import { clampMasteryLevel, getMasteryPalette } from "./mastery";
 
@@ -208,7 +209,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     alignSelf: "flex-start",
-    ...Shadows.glow(Colors.primary),
+    // Same physical edge as the primary button, not a coloured halo.
+    borderBottomWidth: 3,
+    borderBottomColor: darken(Colors.primary, 0.28),
   },
   audioDisabled: {
     backgroundColor: Colors.locked,

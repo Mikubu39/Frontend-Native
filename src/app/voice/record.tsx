@@ -17,6 +17,7 @@ import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, FontSizes, FontWeights, Spacing } from "@/constants/theme";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { ModalCard } from "@/components/ui/modal-card";
 import { useTheme } from "@/contexts/theme-context";
 import { pronunciationApi } from "@/services/api/pronunciation";
 import { useSoundEffect } from "@/hooks/use-sound-effect";
@@ -25,7 +26,6 @@ import {
   QuizBottomBar,
   QuizHeader,
   SpeakingQuestionCard,
-  QuestionMascot,
 } from "@/components/quiz";
 
 const MOCK_QUEUE = [
@@ -69,6 +69,7 @@ export default function RecordScreen() {
   const [hasInteracted, setHasInteracted] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [currentIsCorrect, setCurrentIsCorrect] = useState(false);
+  const [showSkipModal, setShowSkipModal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -201,7 +202,6 @@ export default function RecordScreen() {
           style={{ width: "100%", maxWidth: 480, alignSelf: "center" }}
         >
           <View pointerEvents={hasSubmitted ? "none" : "auto"}>
-            <QuestionMascot seed={index} />
             <SpeakingQuestionCard
               question={
                 {
@@ -210,6 +210,7 @@ export default function RecordScreen() {
                   textToSpeak: phrase.surface,
                   translation: phrase.meaningVn,
                   romaji: phrase.romaji,
+                  audioUrl: phrase.audioUrl,
                   instruction: "Phát âm câu sau",
                   glossary: {},
                 } as any
@@ -233,8 +234,55 @@ export default function RecordScreen() {
           onCheck={checkAnswer}
           onNext={handleNext}
           isLastQuestion={index + 1 >= queue.length}
+          onSkipSpeaking={() => setShowSkipModal(true)}
         />
       </View>
+
+      {showSkipModal && (
+        <ModalCard onClose={() => setShowSkipModal(false)}>
+          <View style={styles.skipModalContent}>
+            <Ionicons name="mic-off-circle" size={54} color={Colors.warning} />
+            <Text style={[styles.skipModalTitle, { color: colors.text }]}>
+              Bạn không thể nói lúc này?
+            </Text>
+            <Text
+              style={[
+                styles.skipModalSubtitle,
+                { color: colors.textSecondary },
+              ]}
+            >
+              Bạn có thể tạm dừng để quay lại luyện phát âm sau, hoặc bỏ qua câu
+              này để tiếp tục câu kế tiếp.
+            </Text>
+
+            <View style={styles.skipModalBtnGroup}>
+              <GradientButton
+                title="BỎ QUA CÂU NÀY"
+                onPress={() => {
+                  setShowSkipModal(false);
+                  handleNext();
+                }}
+                style={{ width: "100%" }}
+              />
+              <GradientButton
+                title="THOÁT VỀ ÔN TẬP"
+                variant="outline"
+                onPress={() => {
+                  setShowSkipModal(false);
+                  router.back();
+                }}
+                style={{ width: "100%" }}
+              />
+              <GradientButton
+                title="Ở LẠI"
+                variant="ghost"
+                onPress={() => setShowSkipModal(false)}
+                style={{ width: "100%" }}
+              />
+            </View>
+          </View>
+        </ModalCard>
+      )}
     </SafeAreaView>
   );
 }
@@ -267,5 +315,26 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingHorizontal: Spacing.six,
     paddingBottom: Spacing.six,
+  },
+  skipModalContent: {
+    alignItems: "center",
+    gap: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  skipModalTitle: {
+    fontSize: FontSizes.xl,
+    fontWeight: FontWeights.extrabold,
+    textAlign: "center",
+  },
+  skipModalSubtitle: {
+    fontSize: FontSizes.sm,
+    textAlign: "center",
+    lineHeight: 20,
+    paddingHorizontal: Spacing.two,
+  },
+  skipModalBtnGroup: {
+    width: "100%",
+    gap: Spacing.two,
+    marginTop: Spacing.two,
   },
 });

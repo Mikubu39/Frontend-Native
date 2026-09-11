@@ -18,7 +18,7 @@ import Animated, {
   ZoomIn,
 } from "react-native-reanimated";
 import { useRouter } from "expo-router";
-import { FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   Colors,
@@ -69,7 +69,7 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
       case "ACTIVE":
         return {
           gradient: [Colors.streakActive, "#FF4500"] as [string, string],
-          icon: "fire" as const,
+          icon: "flame" as keyof typeof Ionicons.glyphMap,
           shadowColor: Colors.streakActive,
           streakNumberColor: Colors.streakActive,
           badgeText: "ĐÃ GIỮ LỬA HÔM NAY",
@@ -80,15 +80,18 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
         };
       case "FROZEN":
         return {
-          gradient: [Colors.streakFrozen, Colors.primaryLight] as [string, string],
-          icon: "snowflake" as const,
+          gradient: [Colors.streakFrozen, Colors.primaryLight] as [
+            string,
+            string,
+          ],
+          icon: "snow" as keyof typeof Ionicons.glyphMap,
           shadowColor: Colors.streakFrozen,
           streakNumberColor: Colors.streakFrozen,
           badgeText: "ĐANG ĐÓNG BĂNG",
           badgeBg: `${Colors.streakFrozen}26`,
           badgeColor: Colors.streakFrozen,
           description:
-            "Chuỗi ngày học đang được bảo vệ an toàn bằng khiên băng Streak Freeze. Hãy học hôm nay để ngọn lửa bùng cháy trở lại!",
+            "Chuỗi ngày học đang được bảo vệ an toàn bằng Đóng băng chuỗi. Hãy học hôm nay để ngọn lửa bùng cháy trở lại!",
         };
       case "UNLIT":
       default:
@@ -96,7 +99,7 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
           gradient: isDark
             ? (["#4B5563", "#374151"] as [string, string])
             : (["#9CA3AF", "#6B7280"] as [string, string]),
-          icon: "fire" as const,
+          icon: "flame" as keyof typeof Ionicons.glyphMap,
           shadowColor: isDark ? "#4B5563" : "#9CA3AF",
           streakNumberColor: isDark ? "#D1D5DB" : "#6B7280",
           badgeText: "CHƯA HỌC HÔM NAY",
@@ -112,7 +115,9 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
 
   useEffect(() => {
     if (visible) {
-      flameScale.value = reduceMotion ? 1 : withSpring(1, { damping: 10, stiffness: 100 });
+      flameScale.value = reduceMotion
+        ? 1
+        : withSpring(1, { damping: 10, stiffness: 100 });
       if (reduceMotion) {
         flameRotation.value = 0;
       } else {
@@ -213,12 +218,7 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <FontAwesome5
-                  name={statusConfig.icon}
-                  size={36}
-                  color="#FFFFFF"
-                  solid
-                />
+                <Ionicons name={statusConfig.icon} size={38} color="#FFFFFF" />
               </LinearGradient>
             </Animated.View>
           </View>
@@ -346,19 +346,9 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
                       ]}
                     >
                       {cell.hasCompleted ? (
-                        <FontAwesome5
-                          name="check"
-                          size={11}
-                          color="#FFFFFF"
-                          solid
-                        />
+                        <Ionicons name="checkmark" size={12} color="#FFFFFF" />
                       ) : cell.isFrozenDay ? (
-                        <FontAwesome5
-                          name="snowflake"
-                          size={11}
-                          color="#FFFFFF"
-                          solid
-                        />
+                        <Ionicons name="snow" size={12} color="#FFFFFF" />
                       ) : (
                         <View
                           style={[
@@ -393,7 +383,7 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
             ]}
           >
             <View style={styles.freezeIconWrap}>
-              <FontAwesome5 name="snowflake" size={16} color="#0284C7" solid />
+              <Ionicons name="snow" size={18} color="#0284C7" />
             </View>
             <View style={styles.freezeTextGroup}>
               <Text
@@ -402,7 +392,7 @@ export function StreakModal({ visible, onClose }: StreakModalProps) {
                   { color: isDark ? "#E0F2FE" : "#0284C7" },
                 ]}
               >
-                Băng tuyết giữ chuỗi
+                Đóng băng chuỗi
               </Text>
               <Text
                 style={[
@@ -595,7 +585,7 @@ const styles = StyleSheet.create({
   shopButton: {
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
-    backgroundColor: "#38BDF8",
+    backgroundColor: Colors.primary,
     borderRadius: BorderRadius.sm,
   },
   shopButtonText: {

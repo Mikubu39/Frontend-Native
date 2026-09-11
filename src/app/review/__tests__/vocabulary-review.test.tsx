@@ -80,7 +80,7 @@ beforeEach(() => {
   mockedApi.submitReview.mockResolvedValue({
     reviewedCount: 2,
     correctCount: 1,
-    remainingDue: 0,
+    remainingDue: 3,
   });
 });
 
@@ -138,6 +138,9 @@ describe("Ôn tập từ vựng (SM-2)", () => {
             correctCount: 1,
             wrongCount: 1,
             lessonType: "REVIEW_VOCAB",
+            // Server báo còn 3 từ tới hạn -> phải mang theo để màn kết quả
+            // mời "Ôn Tiếp" thay vì đá thẳng về trang chủ.
+            remainingCount: 3,
           }),
         }),
       ),

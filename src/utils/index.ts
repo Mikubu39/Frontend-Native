@@ -7,3 +7,5 @@ export * from "./lesson-intro";
 export * from "./qr";
 export * from "./streak";
 export * from "./achievement-icon";
+export * from "./rank-tier";
+export * from "./color";

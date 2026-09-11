@@ -6,20 +6,19 @@
 
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
-import { FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withSequence,
   withTiming,
-  interpolate,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { AnimationPresets, Colors } from "@/constants/theme";
 
 interface AnimatedTabIconProps {
-  iconName: string;
+  iconName: keyof typeof Ionicons.glyphMap;
   focused: boolean;
   size?: number;
 }
@@ -66,11 +65,10 @@ export function AnimatedTabIcon({
   return (
     <View style={styles.wrapper}>
       <Animated.View style={[styles.container, animatedStyle]}>
-        <FontAwesome5
+        <Ionicons
           name={iconName}
           size={size - 4}
           color={focused ? Colors.tabActive : Colors.tabInactive}
-          solid={focused}
         />
       </Animated.View>
       {/* Active Dot Indicator */}

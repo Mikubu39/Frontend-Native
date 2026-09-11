@@ -20,8 +20,8 @@ import {
 } from "@/constants/theme";
 import type { ShelfEntry } from "@/types/shop";
 import { formatCoins } from "@/utils/shop";
+import { CoinMark } from "@/components/ui/coin-mark";
 import { BuffTicker } from "./buff-ticker";
-import { CoinMark } from "./coin-mark";
 import { FeaturedCase } from "./featured-case";
 
 interface ShopCounterProps {
